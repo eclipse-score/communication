@@ -84,6 +84,31 @@ into private interfaces, or parenthesize calls merely to suppress method
 checking. An interaction that the checker skips is not a verified interaction.
 Sequence pictures do not establish C++ scheduling or resource-lifetime safety.
 
+## Activity-Conditional Parsing
+
+Tooling 3.0.2 treats an `if` immediately following `else` as an `elseif` chain,
+even when the authored nested conditional has its own `endif`. See
+[activity nested-conditional parsing](issues/tooling-activity-nested-else-if.md)
+for the reproduced failure and the behavior-preserving notation used in the
+client-connection pilot. Recheck the resolver on a tooling update rather than
+treating this as a PlantUML language restriction.
+
+## Activity Procedure Navigation
+
+Separate activity procedures are supported. Use a named Sphinx target and
+caption `:ref:` links to navigate from caller views; the current SVG-object
+renderer does not make a bare page-fragment link inside an activity image point
+to the containing unit page. See [activity procedure navigation](issues/tooling-activity-procedure-navigation.md)
+for the reproduced limitation and verified shared-finalization pattern.
+
+The [documentation-check pilot](../../../../tools/documentation/README.md)
+provides a declared-tool render target and a reusable HTML/SVG integrity test.
+The [build/test commands](build-and-test.md#requirements-and-architecture)
+replace recurring cache-path renderer calls and ad hoc HTML scripts. Its client
+contract checks diagram presence and caption navigation, not C++ operation or
+runtime test counts. Tool regression tests include SVG-object link bases,
+figure permalinks, and Bazel runfiles symlink paths.
+
 ## Historical Parser Workarounds
 
 Earlier tooling investigations found a resolver failure when sequence groups

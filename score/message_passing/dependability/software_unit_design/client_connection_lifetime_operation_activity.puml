@@ -1,0 +1,56 @@
+@startuml client_connection_lifetime_operation_activity
+title ClientConnectionLifetime - operation scope
+
+start
+if (Entry is Operation construction?) then (yes)
+    :Retain lifetime and caller-owned lock references;
+    :Set admitted_ = lifetime.IsAccepting();
+    :Assert the lock is owned and belongs to this lifetime;
+    if (admitted_?) then (yes)
+        :Increment active_operations_ under the held mutex;
+    else (no)
+        :Leave the operation count unchanged;
+    endif
+    :Return the scoped operation;
+    stop
+else (other)
+    :Inspect the active operation entry;
+endif
+
+if (Entry is Execute(actor)?) then (yes)
+    :Assert admitted_;
+    :Unlock the referenced mutex;
+    :Invoke actor(descriptor_);
+    :Relock the referenced mutex;
+    :Return the actor result;
+    stop
+else (destruction)
+    :End the operation scope;
+endif
+
+if (admitted_?) then (yes)
+    if (Referenced lock is not owned?) then (yes)
+        :Reacquire the referenced mutex;
+    else (no)
+        :Continue under the already-held mutex;
+    endif
+    :Decrement active_operations_;
+    if (active_operations_ == 0 and retirement_pending_?) then (yes)
+        :Invoke schedule_retirement_ under the mutex;
+    else (no)
+        :No deferred retirement needs scheduling;
+    endif
+else (no)
+    :No admitted operation to release;
+endif
+:Return without releasing the caller's lock;
+stop
+
+legend
+    Operation is non-copyable and non-movable.
+    Registration outlives unlocked actor execution and its continuation.
+    The scheduler actor enqueues work; it must not finalize inline or reenter.
+    Queue reservation uses the same mutex as lifetime admission.
+endlegend
+
+@enduml

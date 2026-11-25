@@ -1,0 +1,53 @@
+@startuml client_connection_endpoint_callbacks_activity
+title ClientConnection - registered endpoint callbacks
+
+start
+if (Callback is input?) then (yes)
+    :reason = ProcessInputEvent();
+    if (reason != kNone?) then (yes)
+        if (TrySetStopReason(reason) succeeds?) then (yes)
+            :ProcessStateChange(kStopping);
+            :UnregisterPosixEndpoint(posix_endpoint_);
+            note right
+                Disconnect dispatch invokes SwitchToStopState().
+                It is a separate registered callback, not an extra
+                direct call made by this input wrapper.
+            end note
+        else (no)
+            :Preserve the existing stop reason and cleanup owner;
+        endif
+    else (no)
+        :No stop transition requested by this input result;
+    endif
+else (no)
+    :The callback is not input;
+    if (Callback is ping?) then (yes)
+        if (notify_callback_ is non-empty?) then (yes)
+            :Invoke notify_callback_ with an empty span;
+        else (no)
+            :Ignore this ping;
+        endif
+    else (disconnect)
+        :SwitchToStopState();
+        note right
+            This lambda does not select another reason or repeat the gate.
+            Shared finalization asserts kStopping, a selected stop reason,
+            and engine callback context.
+        end note
+    endif
+endif
+
+:Return from the invoked callback;
+stop
+
+legend
+    These callbacks are installed on the embedded endpoint by TryConnect().
+    The output callback is empty; there is no client output-event handler here.
+    API Stop() and input failure compete for the same stop transition.
+    Only the input winner publishes kStopping and unregisters the endpoint.
+    A losing input path leaves the API winner's cleanup in place.
+    Ping delivery is distinct from protocol NOTIFY and does not receive a message.
+    Disconnect dispatch timing is an engine boundary, not fixed by this view.
+endlegend
+
+@enduml

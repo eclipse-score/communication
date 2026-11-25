@@ -1,0 +1,69 @@
+@startuml client_connection_switch_to_stop_state_activity
+title ClientConnection - shared stop finalization
+
+start
+:SwitchToStopState();
+note right
+    Entry conditions asserted in debug builds:
+    state_ == kStopping, stop_reason_ != kNone,
+    and execution on the engine callback thread.
+    A caller has already claimed the stop transition.
+end note
+if (lifetime_.RetirementPending()?) then (yes)
+    :Initial cancellation is already complete;
+else (no)
+    :Begin the initial cancellation phase;
+    :Disable the endpoint disconnect callback;
+    :CleanUpOwner(this);
+    :sends_.CancelPending();
+    if (lifetime_.CancellationFinished()?) then (yes)
+        :No operation remains after cancellation;
+    else (no)
+        :Return in kStopping without closing the descriptor;
+        note right
+            The last Operation destructor schedules
+            disconnection_command_ to reenter this procedure.
+            There is no polling or wait inside Restart().
+        end note
+        stop
+    endif
+endif
+:FinishStopState();
+:lifetime_.RetireDescriptor();
+if (The detached descriptor is valid?) then (yes)
+    :CloseClientConnection(detached descriptor) without lifetime_.mutex_;
+else (no)
+    :No descriptor to close;
+endif
+
+if (state_callback is empty?) then (yes)
+    :Publish kStopped;
+else (no)
+    :Keep a local shared reference to CallbackContext;
+    :Lock context.finalize_mutex;
+    :Publish kStopped;
+    :Invoke state_callback(kStopped);
+    note right
+        Restart() can reenter kStarting before this callback returns.
+        Destruction releases the connection's context reference.
+        The local reference keeps the callback and mutex alive.
+        No connection members are accessed after this invocation.
+    end note
+    :Return from the stopped-state callback;
+    :Unlock context.finalize_mutex;
+    :Release the local shared reference;
+endif
+stop
+
+legend
+    Shared cleanup reached from API stopping, failed connection
+    establishment, and endpoint-disconnect dispatch.
+    This procedure does not select or reset the stop reason.
+    The caller's gate owns stopping for the current lifecycle.
+    Cancellation runs once; a deferred entry skips that initial phase.
+    Cancellation and retirement belong to separate helpers, not facade locks.
+    Descriptor closure follows all registered send termination bookkeeping.
+    Close itself may block: no finite QNX IPC termination bound is assumed.
+endlegend
+
+@enduml

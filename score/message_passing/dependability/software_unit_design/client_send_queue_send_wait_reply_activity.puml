@@ -1,0 +1,70 @@
+@startuml client_send_queue_send_wait_reply_activity
+title ClientSendQueue - sending and waiting for a reply
+
+start
+:SendWaitReply(message, reply);
+if (message.size() > max_send_size_?) then (yes)
+    :Return EMSGSIZE;
+    stop
+else (no)
+    :Message size is admissible;
+endif
+if (!lifetime_.IsAccepting()?) then (yes)
+    :Return EINVAL;
+    stop
+else (no)
+    :Prepare result and NonAllocatingFuture;
+endif
+:Create completion callback capturing reply and future;
+note right
+    On error, store the error and mark the future ready.
+    An oversized reply stores EMSGSIZE.
+    Otherwise copy the reply into the caller's buffer,
+    store its trimmed span, and mark the future ready.
+end note
+:Lock lifetime_.mutex_ and create Operation;
+if (Operation rejected admission?) then (yes)
+    :End rejected operation scope and unlock;
+    :Return EINVAL;
+    stop
+else (no)
+    :Retain the admitted operation;
+endif
+if (reply slot engaged?) then (yes)
+    :TryQueue(message, move(completion callback));
+    if (Queue admission failed?) then (yes)
+        :End Operation scope and unlock;
+        :Return ENOBUFS;
+        stop
+    else (no)
+        :Queued request admitted with its completion callback;
+    endif
+else (direct)
+    :Reserve completion and identify this sender;
+    :SendTransport(operation, REQUEST, message);
+    if (Transport failed and this sender still owns completion?) then (yes)
+        :Reset the slot and sender owner;
+        :ArmIfNeeded();
+        :End Operation scope and unlock;
+        :Return the transport error;
+        stop
+    else (no)
+        :Keep successful or already-transferred completion;
+    endif
+endif
+:Unlock lifetime_.mutex_;
+:future.Wait(): wait for its ready predicate;
+:Relock lifetime_.mutex_;
+:End Operation scope and unlock;
+:Return the completion result;
+stop
+
+legend
+    Callback-thread rejection belongs to the facade, not this helper.
+    A free reply slot selects direct transport independently of config modes.
+    Stop cancellation wakes the future; no application reply is required.
+    The operation remains registered through completion and termination.
+    No overall reply deadline is imposed here.
+endlegend
+
+@enduml

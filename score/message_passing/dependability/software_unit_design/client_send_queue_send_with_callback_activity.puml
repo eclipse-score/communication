@@ -1,0 +1,50 @@
+@startuml client_send_queue_send_with_callback_activity
+title ClientSendQueue - sending with a reply callback
+
+start
+:SendWithCallback(message, callback);
+if (message.size() > max_send_size_?) then (yes)
+    :Return EMSGSIZE;
+    stop
+else (no)
+    :Lock lifetime_.mutex_;
+endif
+:Create ClientConnectionLifetime::Operation;
+if (Operation rejected admission?) then (yes)
+    :End rejected operation scope and unlock;
+    :Return EINVAL;
+    stop
+else (no)
+    :Retain the admitted operation;
+endif
+if (truly_async or reply slot engaged?) then (yes)
+    :TryQueue(message, move(callback));
+    :Select acceptance or ENOBUFS from admission;
+else (direct)
+    :Reserve waiting_for_reply_ and record this sender;
+    :SendTransport(operation, REQUEST, message);
+    :Remember whether this sender still owns completion;
+    if (This sender still owns completion?) then (yes)
+        :Clear the temporary sender owner;
+        if (Transport failed?) then (yes)
+            :Reset waiting_for_reply_;
+            :ArmIfNeeded();
+        else (no)
+            :Keep the accepted callback pending;
+        endif
+        :Select the transport result;
+    else (no)
+        :Select acceptance without changing transferred completion;
+    endif
+endif
+:End Operation scope and unlock;
+:Return the selected result;
+stop
+
+legend
+    The reply callback is reserved before IPC unlocks the mutex.
+    Input or stopping may transfer completion before transport returns.
+    Late errors neither erase a later request nor repeat local rejection.
+endlegend
+
+@enduml
