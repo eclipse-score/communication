@@ -77,5 +77,94 @@ section "factory_resources" {
                  safety = ScoreReq.Asil.B
             }
         }
+
+        section "Open" {
+            // ToDo
+        }
+
+        section "CreateOrOpen" {
+            // ToDo - maybe not needed, as CreateOrOpen is implemented via Create and Open? Check whether additional failure modes are needed for CreateOrOpen.
+        }
+
+        section "Remove" {
+            // ToDo
+        }
+    }
+
+    section "SharedMemoryResource" {
+
+        section "allocate" {
+            // ToDo
+        }
+
+        section "deallocate" {
+            // ToDo
+        }
+
+        section "getPath" {
+            // ToDo
+        }
+
+        section "getOwnerUid" {
+            // ToDo
+        }
+
+        section "getMemoryResourceProxy" {
+            // ToDo
+        }
+
+        section "UnlinkFilesystemEntry" {
+            // ToDo
+        }
+
+        section "IsInTypedMemory" {
+            // ToDo
+        }
+    }
+}
+
+section "allocator_pointer" {
+
+    section "OffsetPtr" {
+
+        section "DoPointerArithmetic" {
+            // ToDo
+        }
+
+        section "DoPointerTargetAccess" {
+            // ToDo
+        }
+
+        section "IsValid" {
+            // ToDo
+        }
+
+        section "EnableOffsetPtrBoundsChecking" {
+            // ToDo
+        }
+    }
+
+    section "PolymorphicOffsetPtrAllocator" {
+
+        section "allocate" {
+            // ToDo
+        }
+
+        section "deallocate" {
+            // ToDo
+        }
+
+        section "getMemoryResourceProxy" {
+            // ToDo
+        }
+    }
+}
+
+section "pointer_arithmetic" {
+
+    section "PointerArithmeticUtil" {
+
+        // ToDo: The APIs of PointerArithmeticUtil are currently too fine-grained and shall be aggregated into fewer APIs.
+        // Then, the failure modes can be defined for these aggregated APIs.
     }
 }

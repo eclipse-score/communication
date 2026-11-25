@@ -61,7 +61,7 @@ namespace score::memory::shared {
       + getPath() : String [0..1]
       + getOwnerUid() : UserId
       + getMemoryResourceProxy() : MemoryResourceProxy
-      + UnlinkFilesystemEntry()
+      + UnlinkFilesystemEntry() : void
       + IsInTypedMemory() : Boolean
     }
 
