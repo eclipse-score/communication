@@ -1,0 +1,145 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml skeleton_offer_seq
+title "Lola Skeleton OfferService Sequence"
+hide footbox
+
+actor "ExternalEndpoint" as Process
+participant "mw_com::binding_independent::skeleton_and_service_elements" as skeleton_and_service_elements
+participant "mw_com::mw_com_binding_factories" as mw_com_binding_factories
+participant "mw_com::lola_binding::skeleton_and_service_elements" as lola_skeleton_and_service_elements
+participant "mw_com::lola_binding::event_data_control" as event_data_control
+participant "memory::shared::memory_shared" as memory_shared
+participant "mw_com::lola_binding::message_passing_service" as message_passing_service
+participant "mw_com::binding_independent::service_discovery" as service_discovery
+
+activate Process
+
+' Start message passing thread
+Process -> message_passing_service: Construct
+activate message_passing_service
+
+message_passing_service -> message_passing_service: Start message reception thread
+note right of message_passing_service: We currently have no official way of representing a thread. \nFor now, this is represented by the lifetime of the \nMessage Passing Service.
+
+' Create Skeleton
+Process -> skeleton_and_service_elements: Create(InstanceSpecifier)
+activate skeleton_and_service_elements
+
+skeleton_and_service_elements --> Process: return: SkeletonWrapperClass<Interface>
+deactivate skeleton_and_service_elements
+
+== Perform required setup before offering service ==
+' Register method handlers
+loop for all methods
+
+Process -> skeleton_and_service_elements: RegisterMethodHandler(method_handler)
+activate skeleton_and_service_elements
+
+skeleton_and_service_elements --> Process
+deactivate skeleton_and_service_elements
+
+end
+
+' Register field set handlers
+loop for all fields 
+
+alt if setter enabled
+
+Process -> skeleton_and_service_elements: RegisterFieldSetHandler(set_handler)
+activate skeleton_and_service_elements
+
+skeleton_and_service_elements --> Process
+deactivate skeleton_and_service_elements
+
+end
+
+Process -> skeleton_and_service_elements: Update(initial_field_value)
+activate skeleton_and_service_elements
+
+skeleton_and_service_elements -> skeleton_and_service_elements: Cache initial_field_value to be put in shared memory in OfferService.
+
+skeleton_and_service_elements --> Process
+deactivate skeleton_and_service_elements
+
+end
+
+== OfferService ==
+
+' Offer service
+Process -> skeleton_and_service_elements: OfferService
+activate skeleton_and_service_elements
+
+skeleton_and_service_elements -> lola_skeleton_and_service_elements: OfferSkeleton()
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements --> skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+' Offer service for all events
+loop for all events
+
+skeleton_and_service_elements -> lola_skeleton_and_service_elements: OfferSkeletonEvent()
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements --> skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+end loop
+
+' Offer service for all fields
+loop for all fields
+
+skeleton_and_service_elements -> lola_skeleton_and_service_elements: RegisterMethodHandler(get_handler)
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements --> skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+skeleton_and_service_elements -> lola_skeleton_and_service_elements: OfferSkeletonEvent()
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements --> skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+skeleton_and_service_elements -> lola_skeleton_and_service_elements: Update(initial_field_value)
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements --> skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+note right of skeleton_and_service_elements
+  Update sends the cached initial field value that was set by the user in the Update call before the service was offered.
+end note
+
+end loop
+
+skeleton_and_service_elements -> lola_skeleton_and_service_elements: VerifyAllMethodHandlersRegistered()
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements --> skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+skeleton_and_service_elements -> service_discovery: OfferService(InstanceIdentifier)
+activate service_discovery
+
+service_discovery --> skeleton_and_service_elements
+deactivate service_discovery
+
+skeleton_and_service_elements --> Process
+deactivate skeleton_and_service_elements
+
+deactivate Process
+
+@enduml

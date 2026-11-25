@@ -14,7 +14,12 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "architectural_d
 
 architectural_design(
     name = "software_architectural_design",
-    dynamic = [],
+    dynamic = [
+        "dynamic_design/skeleton_create_seq.puml",
+        "dynamic_design/skeleton_offer_seq.puml",
+        "dynamic_design/skeleton_subdiagrams/lola_skeleton_binding_offer.puml",
+        "dynamic_design/skeleton_subdiagrams/lola_skeleton_event_binding_offer.puml",
+    ],
     static = [
         "static_design/overall.puml",
         "static_design/binding_independent.puml",
