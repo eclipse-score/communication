@@ -5295,7 +5295,7 @@
     "@@score_toolchains_rust+//extensions:ferrocene_toolchain_ext.bzl%ferrocene_toolchain_ext": {
       "general": {
         "bzlTransitiveDigest": "c4l1Guf+m2vzVvfP7Q1drD9rd3iUhmLDG1YDckphLdg=",
-        "usagesDigest": "9ib1/ALbTlZqQCzm3/nlpmrCQG8MVNJXQQFA8nySIWE=",
+        "usagesDigest": "rbyXG54m4TJKOEghRRziur8tikfXelUOa6Pxt3qrQoM=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "ferrocene_x86_64_unknown_linux_gnu_llvm": {
@@ -5314,7 +5314,6 @@
               "stdlib_linkflags": [],
               "extra_rustc_flags": [
                 "-Clink-arg=-Wl,--no-as-needed",
-                "-Clink-arg=-lc++",
                 "-Clink-arg=-lm",
                 "-Clink-arg=-lc"
               ],
