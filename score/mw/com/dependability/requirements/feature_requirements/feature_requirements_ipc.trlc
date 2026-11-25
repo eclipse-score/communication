@@ -239,6 +239,13 @@ ScoreReq.FeatReq FEAT_BindingAgnosticPublicAPI {
     version = 1
 }
 
+ScoreReq.FeatReq FEAT_GenericAPI {
+    description = "The communication framework shall provide a generic API that allows applications to offer and consume service instances without compile-time knowledge of the service interface data types."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.ASR_InterProcessCommunication@1 ]
+    version = 1
+}
+
 ScoreReq.FeatReq FEAT_MultiBindingDeploymentConfiguration {
     description = "The association between a service instance and its binding shall be specified in the deployment configuration."
     safety = ScoreReq.Asil.B
