@@ -46,7 +46,11 @@ skinparam linetype ortho
 
 namespace score::memory::shared {
 
-  package "public API of unit factory_resources" {
+  ' Declarations for cross-unit references
+  class ManagedMemoryResource
+  class MemoryResourceProxy
+
+  package "public API of unit factory_resources" as factory_resources {
 
     interface SharedMemoryFactory {
       + Open(path : String, isReadWrite : Boolean, allowedProviders : UserId [0..*]) : ISharedMemoryResource [0..1]
@@ -68,7 +72,7 @@ namespace score::memory::shared {
     SharedMemoryFactory *-- "n" SharedMemoryResource : creates
   }
 
-  package "public API of unit allocator_pointer" {
+  package "public API of unit allocator_pointer" as allocator_pointer {
 
     class "OffsetPtr<T>" as OffsetPtr {
       + DoPointerArithmetic(incrementOrDecrement : Integer) : OffsetPtr<T>
@@ -94,9 +98,13 @@ namespace score::memory::shared {
 
     PolymorphicOffsetPtrAllocator *-- "1" OffsetPtr : uses
 
+    ' Cross-unit relations: constructed from and dispatches to types provided by factory_resources.
+    PolymorphicOffsetPtrAllocator ..> ManagedMemoryResource : constructed from
+    PolymorphicOffsetPtrAllocator ..> MemoryResourceProxy : references
+
   }
 
-  package "public API of unit pointer_arithmetic" {
+  package "public API of unit pointer_arithmetic" as pointer_arithmetic {
 
     interface PointerArithmeticUtil <<utility>> {
       + {static} AddOffsetToPointerAsInteger(pointerAsInteger : UnsignedInteger, offset : UnsignedInteger) : UnsignedInteger
@@ -122,25 +130,19 @@ namespace score::memory::shared {
       signatures (modeled there as a <<utility>> class, consistent with this abstraction).
     end note
 
+    ' Cross-unit relations: factory_resources and allocator_pointer internally use these utility functions.
+    ManagedMemoryResource ..> PointerArithmeticUtil : uses
+    MemoryResourceProxy ..> PointerArithmeticUtil : uses
+    OffsetPtr ..> PointerArithmeticUtil : uses
+
   }
 
-  ' Cross-unit relations: allocator_pointer's PolymorphicOffsetPtrAllocator is constructed from
-  ' and dispatches to types provided by factory_resources.
-  PolymorphicOffsetPtrAllocator ..> ManagedMemoryResource : constructed from
-  PolymorphicOffsetPtrAllocator ..> MemoryResourceProxy : references
-
-  ' Cross-unit relations: both factory_resources and allocator_pointer internally use
-  ' pointer_arithmetic's utility functions (e.g. for offset/alignment calculations).
-  ManagedMemoryResource ..> PointerArithmeticUtil : uses
-  MemoryResourceProxy ..> PointerArithmeticUtil : uses
-  OffsetPtr ..> PointerArithmeticUtil : uses
-
 }
-
-package "external types (other components)" {
+package external_types_other_components {
     class FileDescriptor <<external>>
 }
 
+interface ISharedMemoryResource
 ISharedMemoryResource ..> FileDescriptor : uses
 
 @enduml
