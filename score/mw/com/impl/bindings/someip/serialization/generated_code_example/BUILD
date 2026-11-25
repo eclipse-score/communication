@@ -36,8 +36,6 @@ cc_library(
     name = "speed_rpm_serializer",
     srcs = ["speed_rpm_serializer.cpp"],
     hdrs = ["speed_rpm_serializer.h"],
-    # The extern "C" factory symbols are not referenced by the library itself; keep them in the .so.
-    alwayslink = True,
     deps = [
         ":speed_rpm",
         "//score/mw/com/impl/bindings/someip/serialization/strategy:someip_strategy",
@@ -48,6 +46,8 @@ cc_library(
         "@score_baselibs//score/serialization",
         "@score_baselibs//score/serialization/error",
     ],
+    # The extern "C" factory symbols are not referenced by the library itself; keep them in the .so.
+    alwayslink = True,
 )
 
 # Generated SOME/IP serialization library loaded by mw::com via dlopen. The version script restricts the
