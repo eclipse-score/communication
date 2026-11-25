@@ -157,18 +157,18 @@ common:linux_arm64_gcc_12 --config=linux_aarch64_score_gcc_12_2_0_posix
 # https://www.qnx.com/download/download/79858/installation.tgz failed) then the reason might be, that you did not yet
 # accept the "Download Center Usage Policy". In this case do the download once in the browser, which redirects you to
 # the acceptance page once.
-common:_qnx_credential_helper --credential_helper_timeout="60s" # QNX credential helper can be slow
-common:_qnx_credential_helper --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
-common:_qnx_credential_helper --sandbox_writable_path=/var/tmp
+common:_qnx_license --credential_helper_timeout="60s" # QNX credential helper can be slow
+common:_qnx_license --credential_helper=*.qnx.com=%workspace%/third_party/qnx_credential_helper.py
+common:_qnx_license --sandbox_writable_path=/var/tmp
 
-common:qnx_x86_64 --config=_qnx_credential_helper
+common:qnx_x86_64 --config=_qnx_license
 common:qnx_x86_64 --platforms=@score_bazel_platforms//:x86_64-qnx-sdp_8.0.0-posix
 common:qnx_x86_64 --extra_toolchains=@score_qnx_x86_64_ifs_toolchain//:ifs-x86_64-qnx-sdp_8.0.0
 common:qnx_x86_64 --extra_toolchains=@score_qcc_x86_64_toolchain//:x86_64-qnx-sdp_8.0.0
 common:qnx_x86_64 --extra_toolchains=@score_toolchains_rust//toolchains/ferrocene:ferrocene_x86_64_pc_nto_qnx800
 common:qnx_x86_64 --test_env=QEMU_CPU=Cascadelake-Server-v5
 
-common:qnx_arm64 --config=_qnx_credential_helper
+common:qnx_arm64 --config=_qnx_license
 common:qnx_arm64 --platforms=@score_bazel_platforms//:aarch64-qnx-sdp_8.0.0-posix
 common:qnx_arm64 --extra_toolchains=@score_qnx_aarch64_ifs_toolchain//:ifs-aarch64-qnx-sdp_8.0.0
 common:qnx_arm64 --extra_toolchains=@score_qcc_aarch64_toolchain//:aarch64-qnx-sdp_8.0.0
