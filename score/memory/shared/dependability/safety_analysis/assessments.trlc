@@ -1,0 +1,54 @@
+/********************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package MemoryShared
+
+import ScoreReq
+import memory_shared_fta
+
+ScoreReq.RootCauseAssessment ExpectedCreatorsPassedByUser {
+    root_causes = [memory_shared_fta.NoExpectedCreatorsPassed, memory_shared_fta.WrongExpectedCreatorsPassed]
+    measures    = [MemoryShared.AoU_PassExpectedCreators@1]
+    safety      = ScoreReq.Asil.B
+    rationale   = "Which creators are expected is only known to the user; the library checks against exactly the list it is given."
+    version     = 1
+}
+
+ScoreReq.RootCauseAssessment CreatorCheckImplemented {
+    root_causes = [memory_shared_fta.CreatorCheckFaulty]
+    measures    = [
+        MemoryShared.RejectObjectOfUnexpectedCreator@1,
+        MemoryShared.DetermineCreatorFromObjectOwner@1,
+        MemoryShared.DetermineCreatorOfTypedMemoryObjectViaProvider@1
+    ]
+    safety      = ScoreReq.Asil.B
+    rationale   = "The creator check and the determination of the creator are specified as ASIL-B component requirements and verified by their tests."
+    version     = 1
+}
+
+ScoreReq.RootCauseAssessment FactoryImplementationUsed {
+    root_causes = [memory_shared_fta.FactoryRedirectedToMock]
+    measures    = [MemoryShared.AoU_DoNotInjectMockImpl@1]
+    safety      = ScoreReq.Asil.B
+    rationale   = """Without InjectMock being called, all factory calls are executed by the default factory implementation,
+    which executes the required creator check."""
+    version     = 1
+}
+
+ScoreReq.RootCauseAssessment FactoryUsedWithinLifetime {
+    root_causes = [memory_shared_fta.FactoryUsedOutsideItsLifetime]
+    measures    = [MemoryShared.AoU_NoFactoryUseFromStaticObjects@1]
+    safety      = ScoreReq.Asil.B
+    rationale   = """Outside static construction and destruction the factory implementation exists,
+    so every factory call is executed by it, including the creator check."""
+    version     = 1
+}

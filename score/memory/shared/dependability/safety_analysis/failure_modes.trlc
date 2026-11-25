@@ -14,5 +14,15 @@ package MemoryShared
 
 import ScoreReq
 
-// Intentionally empty: no FailureMode records yet. Wiring this
-// empty source is sufficient to activate the Public API coverage check.
+section "FactoryResources" {
+    section "OpenExistingObject" {
+        ScoreReq.FailureMode ObjectOfUnexpectedCreatorProvided {
+            guidewords = [ ScoreReq.Guideword.Wrong ]
+            description = "Opening an existing shared memory object (Open, CreateOrOpen) provides an object that was created by a software element other than the one expected by the caller."
+            failureeffect = "The caller processes data of an unexpected, possibly lower-integrity (e.g. QM) software element as valid ASIL-B data."
+            version = 1
+            safety = ScoreReq.Asil.B
+            rationale = "Shared memory objects are located by name only, so any software element with access to the name can create an object under it. Detecting this is required by ASR_CreatorVerification."
+        }
+    }
+}

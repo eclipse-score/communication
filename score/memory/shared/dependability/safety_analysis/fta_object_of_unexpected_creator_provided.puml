@@ -1,0 +1,41 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("Object of unexpected creator provided", "MemoryShared.ObjectOfUnexpectedCreatorProvided")
+
+$OrGate("OG1", "MemoryShared.ObjectOfUnexpectedCreatorProvided")
+
+$IntermediateEvent("The creator check is not executed", "IE_CheckNotExecuted", "OG1")
+$IntermediateEvent("The creator check is executed but does not reject", "IE_CheckDoesNotReject", "OG1")
+
+
+$OrGate("OG_CheckNotExecuted", "IE_CheckNotExecuted")
+$RootCause("No list of expected creators passed (std::nullopt)", "NoExpectedCreatorsPassed", "OG_CheckNotExecuted")
+$RootCause("Factory calls redirected to a test double via InjectMock", "FactoryRedirectedToMock", "OG_CheckNotExecuted")
+$RootCause("Factory used before its static initialization or after its static destruction", "FactoryUsedOutsideItsLifetime", "OG_CheckNotExecuted")
+
+$OrGate("OG_CheckDoesNotReject", "IE_CheckDoesNotReject")
+$IntermediateEvent("The creator check is executed on wrong input", "IE_CheckOnWrongInput", "OG_CheckDoesNotReject")
+$RootCause("Unexpected software element runs under the caller's or an expected creator's UID", "UnexpectedElementSharesUid", "OG_CheckDoesNotReject")
+$RootCause("Creator check implementation is faulty", "CreatorCheckFaulty", "OG_CheckDoesNotReject")
+
+$OrGate("OG_CheckOnWrongInput", "IE_CheckOnWrongInput")
+$RootCause("Caller passes a list of expected creators that contains the unexpected creator or the typed memory daemon", "WrongExpectedCreatorsPassed", "OG_CheckOnWrongInput")
+$RootCause("Operating system reports a wrong owner of the shared memory object", "OsReportsWrongOwner", "OG_CheckOnWrongInput")
+$RootCause("Typed memory provider reports a wrong creator", "TypedMemoryProviderReportsWrongCreator", "OG_CheckOnWrongInput")
+
+@enduml
