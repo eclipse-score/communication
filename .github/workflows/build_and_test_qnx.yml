@@ -124,18 +124,18 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-      pull-requests: read
       actions: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.head_ref || github.event.pull_request.head.ref || github.ref }}
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
           # Fork code is intentionally built, but only after the `test-qnx` label
           # and `workflow-approval` environment gate (see `precheck`/`approval`).
           # Reviewers must inspect the fork diff before approving.
           allow-unsafe-pr-checkout: true
+          persist-credentials: false
       - name: Setup QNX and QEMU environment
         uses: ./.github/actions/00_infrastructure/setup_qnx_environment
         with:
