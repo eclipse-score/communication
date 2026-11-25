@@ -14,14 +14,6 @@
 @startuml generic_skeleton_model
 title "Generic Skeleton Extension"
 
-class "score::mw::com::impl::HandleType" as score_mw_com_impl_HandleType {
-  -indentifier_: InstanceIdentifier
-  +operator==(const HandleType& other): bool
-  +operator<(const HandleType& other): bool
-  +GetInstanceId(): InstanceIdentifier&
-  +GetServiceInstanceDeployment(): ServiceInstanceDeployment&
-}
-
 class "SkeletonBindingFactory" as SkeletonBindingFactory {
   +{static} Create(InstanceIdentifier identifier): std::unique_ptr<SkeletonBinding>
 }
