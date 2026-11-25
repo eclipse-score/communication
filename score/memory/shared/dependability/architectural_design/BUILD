@@ -40,7 +40,7 @@ architectural_design(
         #"public_api.puml",  # rejected by the rules_score PlantUML parser
     ],
     static = [
-        # "static_design/overall.puml",  # rejected by the rules_score PlantUML parser
+        "static_design/overall.puml",
     ],
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/memory/shared/dependability:__subpackages__"],
