@@ -62,6 +62,9 @@ class Skeleton final : public SkeletonBinding
     void PrepareStopOffer(
         std::optional<UnregisterShmObjectTraceCallback> unregister_shm_object_trace_callback) override;
 
+    /// \brief The SOME/IP binding does not support methods yet, so there are no method handlers to stop.
+    void StopMethodHandling() override {}
+
     BindingType GetBindingType() const noexcept override
     {
         return BindingType::kSomeIp;

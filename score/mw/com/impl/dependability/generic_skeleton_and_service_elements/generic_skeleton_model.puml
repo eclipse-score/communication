@@ -34,6 +34,7 @@ end note
 abstract class "SkeletonBinding" as SkeletonBinding {
   +{abstract} PrepareOffer() : Result<void>
   +{abstract} PrepareStopOffer() : void
+  +{abstract} StopMethodHandling() : void
 }
 
 class "mw::com::impl::GenericSkeleton" as mw_com_impl_GenericSkeleton #yellow {
@@ -53,6 +54,7 @@ class "lola::Skeleton" as lola_Skeleton {
   +Skeleton(const InstanceIdentifier&, MethodCallProcessingMode)
   +PrepareOffer(): Result<void>
   +PrepareStopOffer(): void
+  +StopMethodHandling(): void
   +Register(ElementFqId element_fq_id, const SkeletonEventProperties& event_properties, std::size_t size, std::size_t alignment): std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite>
   +RegisterGeneric(ElementFqId element_fq_id, const SkeletonEventProperties& event_properties, std::size_t size, std::size_t alignment): std::pair<score::memory::shared::OffsetPtr<void>, EventDataControlComposite>
   +DisconnectQmConsumers(): void

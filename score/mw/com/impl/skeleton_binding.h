@@ -94,6 +94,12 @@ class SkeletonBinding
      */
     virtual void PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback>) = 0;
 
+    /// \brief Unregisters all method call handlers and blocks until handler calls that are currently running have
+    ///  finished. It shall be called before tearing down the state of the events and fields, as handlers (e.g. of
+    ///  field getters and setters) access it. Calling it again is allowed. It must not be called from within a
+    ///  handler or while holding a lock that a handler needs.
+    virtual void StopMethodHandling() = 0;
+
     /// \brief Gets the binding type of the binding
     virtual BindingType GetBindingType() const noexcept = 0;
     virtual bool VerifyAllMethodHandlersRegistered() const = 0;

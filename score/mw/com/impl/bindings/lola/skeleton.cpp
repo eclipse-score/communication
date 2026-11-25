@@ -448,33 +448,13 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
             tracing::TracingRuntime::kDummyElementTypeForShmRegisterCallback);
     }
 
-    // Unregister any MethodCallHandlers that were registered by the SkeletonMethods and destroy registration guards
-    // which will destroy any registered ServiceMethodSubscribedHandlers. Expiring the scopes below will try to
-    // acquire a write lock on a mutex, while any calls to handlers will try to acquire a read lock. Therefore, if
-    // handlers can still be called while calling Expire(), then it's possible that the Expire() call will be
-    // blocked for a longer period of time (in case we get new handler calls) depending on thread/mutex scheduling.
-    // Therefore, we first unregister all handlers and then expire the scopes.
-    method_subscription_registration_guard_qm_.reset();
-    method_subscription_registration_guard_asil_b_.reset();
-    method_unsubscription_registration_guard_qm_.reset();
-    method_unsubscription_registration_guard_asil_b_.reset();
-    for (auto& skeleton_method : skeleton_methods_)
-    {
-        skeleton_method.second.get().UnregisterMethodCallHandlers();
-    }
-
-    // Clean up method resources
-    // Expiring the method subscribed handler scope will wait until any current subscription calls are finished and
-    // will block any new subscription calls once it returns.
-    on_service_method_subscribed_handler_scope_.Expire();
-
-    // Expiring the method call handler scope will wait until all current method calls are finished and will block
-    // any new handlers from being called once it returns.
-    method_call_handler_scope_.Expire();
+    // Normally already done by SkeletonBase::StopOfferService() before events and fields are torn down; repeating it
+    // is harmless. A failed OfferService() only gets here after its events and fields were torn down.
+    StopMethodHandling();
 
     // Destroy our pointers to all opened shared memory regions. We can call this without locking a mutex since
     // OnServiceMethodsSubscribed (in which method_resources_ is also modified) cannot be called after its scope
-    // (on_service_method_subscribed_handler_scope_) is expired above.
+    // (on_service_method_subscribed_handler_scope_) is expired in StopMethodHandling().
     method_resources_.Clear();
 
     memory::shared::ExclusiveFlockMutex service_instance_usage_mutex{*service_instance_usage_marker_file_};
@@ -521,6 +501,32 @@ auto Skeleton::PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> 
     }
 
     memory_manager_.Reset();
+}
+
+void Skeleton::StopMethodHandling()
+{
+    // Unregister any MethodCallHandlers that were registered by the SkeletonMethods and destroy registration guards
+    // which will destroy any registered ServiceMethodSubscribedHandlers. Expiring the scopes below will try to
+    // acquire a write lock on a mutex, while any calls to handlers will try to acquire a read lock. Therefore, if
+    // handlers can still be called while calling Expire(), then it's possible that the Expire() call will be
+    // blocked for a longer period of time (in case we get new handler calls) depending on thread/mutex scheduling.
+    // Therefore, we first unregister all handlers and then expire the scopes.
+    method_subscription_registration_guard_qm_.reset();
+    method_subscription_registration_guard_asil_b_.reset();
+    method_unsubscription_registration_guard_qm_.reset();
+    method_unsubscription_registration_guard_asil_b_.reset();
+    for (auto& skeleton_method : skeleton_methods_)
+    {
+        skeleton_method.second.get().UnregisterMethodCallHandlers();
+    }
+
+    // Expiring the method subscribed handler scope will wait until any current subscription calls are finished and
+    // will block any new subscription calls once it returns.
+    on_service_method_subscribed_handler_scope_.Expire();
+
+    // Expiring the method call handler scope will wait until all current method calls are finished and will block
+    // any new handlers from being called once it returns.
+    method_call_handler_scope_.Expire();
 }
 
 Skeleton::~Skeleton() noexcept

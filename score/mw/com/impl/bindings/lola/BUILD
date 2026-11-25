@@ -1134,6 +1134,7 @@ cc_unit_test(
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl/bindings/lola/test:skeleton_test_resources",
         "//score/mw/com/impl/configuration/test:configuration_store",
+        "@score_baselibs//score/concurrency:notification",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
         "@score_baselibs//score/memory:data_type_size_info",

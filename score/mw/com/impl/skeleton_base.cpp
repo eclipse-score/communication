@@ -245,6 +245,9 @@ auto SkeletonBase::StopOfferService() -> void
     {
         StopOfferServiceInServiceDiscovery(instance_id_);
 
+        // Method handlers (e.g. of field getters and setters) access the state of the events and fields. They must
+        // therefore be finished before that state is torn down below.
+        binding_->StopMethodHandling();
         for (auto& method : methods_)
         {
             method.second.get().Get().SetServiceOffered(false);

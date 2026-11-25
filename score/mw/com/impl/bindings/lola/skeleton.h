@@ -114,6 +114,8 @@ class Skeleton final : public SkeletonBinding
 
     void PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> unregister_shm_object_callback) override;
 
+    void StopMethodHandling() override;
+
     BindingType GetBindingType() const noexcept override
     {
         return BindingType::kLoLa;

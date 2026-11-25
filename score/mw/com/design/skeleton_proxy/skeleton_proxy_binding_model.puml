@@ -47,6 +47,7 @@ class "lola::Skeleton" as LolaSkeleton {
   Skeleton(InstanceIdentifier, SkeletonEvents&
   +PrepareOffer(SkeletonBinding::SkeletonEventBindings&, SkeletonBinding::SkeletonFieldBindings&): Result<void>
   +PrepareStopOffer(): void
+  +StopMethodHandling(): void
 
   +template <typename SampleType>\n Register(ElementFqId, size_t num_slots): std::pair<EventDataStorage<SampleType>*, EventDataControlComposite<>>
 }
