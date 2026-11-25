@@ -41,7 +41,6 @@ coverage --dynamic_mode=off
 coverage --experimental_generate_llvm_lcov
 coverage --experimental_use_llvm_covmap
 coverage --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
-coverage --extra_toolchains=@ferrocene_x86_64_unknown_linux_gnu_llvm//:rust_ferrocene_toolchain
 
 # Use llvm-cov directly for HTML report generation instead of genhtml/lcov.
 # The custom merger (per-test) receives profraw files and produces a zip with profdata + HTML.
