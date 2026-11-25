@@ -910,12 +910,6 @@
       "signature": "operator-> : pointer () const noexcept"
     },
     {
-      "name": "operator<",
-      "qualified_name": "score::mw::com::SamplePtr::operator<",
-      "kind": "method",
-      "signature": "operator< : bool (const SamplePtr<SampleType> &) const noexcept"
-    },
-    {
       "name": "operator=",
       "qualified_name": "score::mw::com::SamplePtr::operator=",
       "kind": "method",
@@ -926,12 +920,6 @@
       "qualified_name": "score::mw::com::SamplePtr::operator=",
       "kind": "method",
       "signature": "operator= : SamplePtr<SampleType> &(std::nullptr_t) noexcept"
-    },
-    {
-      "name": "operator>",
-      "qualified_name": "score::mw::com::SamplePtr::operator>",
-      "kind": "method",
-      "signature": "operator> : bool (const SamplePtr<SampleType> &) const noexcept"
     },
     {
       "name": "~SamplePtr<SampleType>",
