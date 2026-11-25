@@ -75,7 +75,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           DRY_RUN_INPUT: ${{ inputs.dry_run }}
           ENABLED: ${{ vars.PR_STATE_ENABLED }}
-        run: |
+        run: |-
           args=(--repo "${REPO}")
           if [ "${EVENT_NAME}" = "workflow_dispatch" ]; then
             [ "${DRY_RUN_INPUT}" = "true" ] && args+=(--dry-run)

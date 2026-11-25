@@ -40,7 +40,7 @@ jobs:
         env:
           REPO: ${{ github.repository }}
           ENABLED: ${{ vars.PR_STATE_ENABLED }}
-        run: |
+        run: |-
           args=(--repo "${REPO}")
           [ "${ENABLED}" = "true" ] || args+=(--dry-run)
           python3 tools/pr-state/pr_digest.py "${args[@]}"
