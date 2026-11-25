@@ -60,6 +60,15 @@ What a flag gates, and what happens if it is disabled:
 
 Details on the FlatBuffers configuration can be found in [impl/configuration/SCHEMA_UPDATE.md](impl/configuration/SCHEMA_UPDATE.md#build-flag).
 
+### Public API surface
+
+The public API is only guaranteed to be stable without experimental features, and a feature flag can change it.
+Therefore `//score/mw/com:api_surface_test` checks the public API against [api_surface.lock.json](api_surface.lock.json)
+only in the default configuration, where no experimental feature is enabled. It is skipped if any feature flag is set,
+so the CI runs it only for the defaults, not for `--config=activate_all_experimental_features`. The API of experimental
+features is not checked and may change at any time. Regenerate the lock file in the default configuration with
+`bazel run //score/mw/com:api_surface_test.update`.
+
 ## Documentation for users
 
 If you are an adaptive application developer, and you want to use `mw::com` to do local

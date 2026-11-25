@@ -15,7 +15,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("@score_tooling//api_surface:api_surface.bzl", "api_surface_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw/com/flags:flags.bzl", "if_e2e_enabled")
+load("//score/mw/com/flags:flags.bzl", "NO_EXPERIMENTAL_FEATURES_ONLY", "if_e2e_enabled")
 
 # Capture README.md for Sphinx documentation.
 sphinx_docs_library(
@@ -164,15 +164,15 @@ cc_unit_test(
 # --- API Surface Stability Check ---
 
 # The public API depends on the feature flags (see //score/mw/com/flags), e.g. E2E protection adds
-# SamplePtr::GetE2EResult(). Its stability is only guaranteed in the default configuration, so the API surface is only
-# checked there and the tests are skipped if E2E is enabled. The macro of api_surface_test has no
-# target_compatible_with parameter, but targets depending on an incompatible target are incompatible as well.
+# SamplePtr::GetE2EResult(). Its stability is only guaranteed without experimental features, so the API surface is only
+# checked in the default configuration and the tests are skipped if any feature flag is set. The macro of
+# api_surface_test has no target_compatible_with parameter, but targets depending on an incompatible target are
+# incompatible as well.
+# TODO: Temporary workaround. Pass NO_EXPERIMENTAL_FEATURES_ONLY as target_compatible_with to api_surface_test and
+# remove this wrapper once eclipse-score/tooling#604 is released and score_tooling is updated.
 cc_library(
     name = "com_for_api_surface",
-    target_compatible_with = select({
-        "//score/mw/com/flags:e2e_enabled": ["@platforms//:incompatible"],
-        "//conditions:default": [],
-    }),
+    target_compatible_with = NO_EXPERIMENTAL_FEATURES_ONLY,
     deps = [":com"],
 )
 
