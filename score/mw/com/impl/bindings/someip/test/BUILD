@@ -12,12 +12,12 @@
 # *******************************************************************************
 
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw/com/flags:flags.bzl", "SOMEIP_ENABLED_ONLY")
+load("//score/mw/com/flags:flags.bzl", "E2E_ENABLED_ONLY", "SOMEIP_ENABLED_ONLY")
 
 cc_unit_test(
     name = "e2e_event_protection_test",
     srcs = ["e2e_event_protection_test.cpp"],
-    target_compatible_with = SOMEIP_ENABLED_ONLY,
+    target_compatible_with = SOMEIP_ENABLED_ONLY + E2E_ENABLED_ONLY,
     deps = [
         "//score/mw/com/impl/bindings/someip:e2e_event_protection",
         "//score/mw/com/impl/configuration",

@@ -11,7 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 #include "score/mw/com/impl/proxy_event_binding.h"
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 #include "score/mw/com/impl/e2e/e2e_result.h"
+#endif
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
 
@@ -99,6 +101,7 @@ TEST(ProxyEventBindingMakeSamplePtrTest, WrapsBindingSamplePointer)
     EXPECT_EQ(unit.get(), sample);
 }
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 TEST(ProxyEventBindingMakeSamplePtrTest, DefaultRawCheckOutcomeLeavesE2EResultDisabled)
 {
     // Given a binding-specific sample pointer
@@ -135,6 +138,7 @@ TEST(ProxyEventBindingMakeSamplePtrTest, ProvidedRawCheckOutcomeIsCarriedOnSampl
     EXPECT_EQ(e2e_result.historical_health, e2e::HistoricalHealthStatus::kDisabled);
     EXPECT_EQ(e2e_result.summary, e2e::Summary::kDisabled);
 }
+#endif
 
 TEST(ProxyEventBindingMakeSamplePtrTest, TakesOwnershipOfReferenceGuard)
 {

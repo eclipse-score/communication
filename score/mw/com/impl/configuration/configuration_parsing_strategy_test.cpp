@@ -221,11 +221,6 @@ TEST_P(ConfigurationParsingStrategyTest, ParseExampleJson)
     ASSERT_NE(lola_service_type_deployment, nullptr);
     EXPECT_EQ(lola_service_type_deployment->service_id_, 1234);
     EXPECT_EQ(lola_service_type_deployment->events_.at("CurrentPressureFrontLeft"), 20);
-    ASSERT_EQ(lola_service_type_deployment->e2e_events_.size(), 1U);
-    const auto& e2e_event_deployment = lola_service_type_deployment->e2e_events_.at("CurrentPressureFrontLeft");
-    EXPECT_EQ(e2e_event_deployment.profile_, E2EProfile::kP4);
-    EXPECT_EQ(e2e_event_deployment.data_id_, 58U);
-    EXPECT_EQ(e2e_event_deployment.max_delta_counter_, 2U);
     EXPECT_EQ(lola_service_type_deployment->fields_.at("CurrentTemperatureFrontLeft"), 30);
     EXPECT_EQ(lola_service_type_deployment->methods_.at("SetPressure"), 40);
 
@@ -246,6 +241,40 @@ TEST_P(ConfigurationParsingStrategyTest, ParseExampleJson)
 
     EXPECT_EQ(config.GetGlobalConfiguration().GetShmSizeCalcMode(), ShmSizeCalculationMode::kSimulation);
 }
+
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+TEST_P(ConfigurationParsingStrategyTest, ParseE2EEventDeployment)
+{
+    // Given a JSON which configures an E2E protection for an event of a service type
+
+    // When parsing the JSON
+    const auto config = Parse(GetParam(), "e2e_event");
+
+    // Then the service type deployment holds the configured E2E deployment of the event
+    const auto& service_type_deployment =
+        config
+            .GetServiceTypeDeployment(make_ServiceIdentifierType("/score/ncar/services/TirePressureService", 12U, 34U))
+            .value()
+            .get();
+    const auto* const lola_service_type_deployment =
+        std::get_if<LolaServiceTypeDeployment>(&service_type_deployment.binding_info_);
+    ASSERT_NE(lola_service_type_deployment, nullptr);
+    ASSERT_EQ(lola_service_type_deployment->e2e_events_.size(), 1U);
+    const auto& e2e_event_deployment = lola_service_type_deployment->e2e_events_.at("CurrentPressureFrontLeft");
+    EXPECT_EQ(e2e_event_deployment.profile_, E2EProfile::kP4);
+    EXPECT_EQ(e2e_event_deployment.data_id_, 58U);
+    EXPECT_EQ(e2e_event_deployment.max_delta_counter_, 2U);
+}
+#else
+TEST_P(ConfigurationParsingStrategyTest, E2EConfigurationWithoutE2ESupportWillDie)
+{
+    // Given a JSON which configures an E2E protection for an event, but E2E support is disabled in this build
+
+    // When parsing the JSON
+    // That the application will terminate instead of silently running without the configured protection
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "e2e_event"));
+}
+#endif
 
 TEST_P(ConfigurationParsingStrategyTest, InvalidPathWillDie)
 {

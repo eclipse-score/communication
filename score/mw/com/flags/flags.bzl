@@ -31,3 +31,21 @@ def if_someip_enabled(labels):
         "//score/mw/com/flags:someip_enabled": labels,
         "//conditions:default": [],
     })
+
+# Use as `target_compatible_with` of targets that must only be built when E2E support is enabled (--config=e2e).
+# Targets depending on such a target have to select() it away themselves.
+E2E_ENABLED_ONLY = select({
+    "//score/mw/com/flags:e2e_enabled": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
+def if_e2e_enabled(labels):
+    """Returns `labels` only if E2E support is enabled (--config=e2e), an empty list otherwise.
+
+    Use it to add dependencies on E2E targets (which are incompatible if the flag is off) to a target that is
+    built regardless of the flag, e.g. `deps = [":sample_ptr"] + if_e2e_enabled([":e2e_result"])`.
+    """
+    return select({
+        "//score/mw/com/flags:e2e_enabled": labels,
+        "//conditions:default": [],
+    })

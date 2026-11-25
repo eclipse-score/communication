@@ -14,7 +14,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw/com/flags:flags.bzl", "SOMEIP_ENABLED_ONLY", "if_someip_enabled")
+load("//score/mw/com/flags:flags.bzl", "SOMEIP_ENABLED_ONLY", "if_e2e_enabled", "if_someip_enabled")
 
 unit(
     name = "mw_com_binding_factories",
@@ -792,13 +792,13 @@ cc_library(
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":sample_allocatee_ptr",
+        "//score/mw/com/flags:e2e_feature",
         "//score/mw/com/impl:sample_reference_tracker",
         "//score/mw/com/impl/bindings/lola:event",
         "//score/mw/com/impl/bindings/mock_binding:sample_allocatee_ptr",
         "//score/mw/com/impl/bindings/mock_binding:sample_ptr",
-        "//score/mw/com/impl/e2e:e2e_result",
         "@score_baselibs//score/language/futurecpp",
-    ],
+    ] + if_e2e_enabled(["//score/mw/com/impl/e2e:e2e_result"]),
 )
 
 cc_unit_test(

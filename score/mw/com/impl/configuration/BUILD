@@ -19,7 +19,7 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//bazel/rules:expand_template.bzl", "expand_template")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
-load("//score/mw/com/flags:flags.bzl", "SOMEIP_ENABLED_ONLY", "if_someip_enabled")
+load("//score/mw/com/flags:flags.bzl", "E2E_ENABLED_ONLY", "SOMEIP_ENABLED_ONLY", "if_e2e_enabled", "if_someip_enabled")
 load("//score/mw/com/impl/configuration/converter:json_to_flatbuffer_rule.bzl", "json_to_flatbuffer")
 
 # Compile-time switch for the (experimental) FlatBuffers configuration path, see //score/mw/com/flags.
@@ -244,6 +244,7 @@ cc_library(
     deps = [
         ":configuration_local",
         ":i_configuration_parsing_strategy",
+        "//score/mw/com/flags:e2e_feature",
         "//score/mw/com/flags:someip_feature",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -687,12 +688,12 @@ cc_library(
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
-        ":e2e_event_type_deployment",
+        "//score/mw/com/flags:e2e_feature",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:service_element_type",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/safecpp/safe_math",
-    ],
+    ] + if_e2e_enabled([":e2e_event_type_deployment"]),
 )
 
 cc_library(
@@ -700,6 +701,7 @@ cc_library(
     srcs = ["e2e_event_type_deployment.cpp"],
     hdrs = ["e2e_event_type_deployment.h"],
     tags = ["FFI"],
+    target_compatible_with = E2E_ENABLED_ONLY,
     deps = ["@score_baselibs//score/language/safecpp/safe_math"],
 )
 

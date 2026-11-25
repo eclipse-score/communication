@@ -40,6 +40,7 @@ see [CI.md](../../../CI.md#feature-flags).
 |-------------------------------|------------------------------------------------------------|-------------------------|---------------------------------------------|
 | FlatBuffers configuration     | `//score/mw/com/flags:experimental_enable_flatbuffers_configuration` | `--config=flatbuffers` | `SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED` |
 | SOME/IP binding               | `//score/mw/com/flags:experimental_enable_someip_binding`  | `--config=someip`       | `SCORE_MW_COM_SOMEIP_BINDING_ENABLED`       |
+| E2E protection                | `//score/mw/com/flags:experimental_enable_e2e_protection`  | `--config=e2e`          | `SCORE_MW_COM_E2E_PROTECTION_ENABLED`       |
 
 ## Documentation for users
 

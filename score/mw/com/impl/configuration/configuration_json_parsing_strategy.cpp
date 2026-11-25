@@ -68,10 +68,12 @@ constexpr auto kEventsKey = "events"sv;
 constexpr auto kEventNameKey = "eventName"sv;
 constexpr auto kEventIdKey = "eventId"sv;
 constexpr auto kE2EKey = "e2e"sv;
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 constexpr auto kE2EProfileKey = "profile"sv;
 constexpr auto kE2EDataIdKey = "dataId"sv;
 constexpr auto kE2EMaxDeltaCounterKey = "maxDeltaCounter"sv;
 constexpr auto kE2EP4Profile = "P04"sv;
+#endif
 constexpr auto kFieldsKey = "fields"sv;
 constexpr auto kFieldNameKey = "fieldName"sv;
 constexpr auto kFieldIdKey = "fieldId"sv;
@@ -908,6 +910,7 @@ auto ParseServiceInstances(const score::json::Object& object, TracingConfigurati
     return service_instance_deployments;
 }
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseE2EEventTypeDeployment(const score::json::Object& event_object) -> std::optional<E2EEventTypeDeployment>
@@ -941,6 +944,7 @@ auto ParseE2EEventTypeDeployment(const score::json::Object& event_object) -> std
 
     return E2EEventTypeDeployment{E2EProfile::kP4, data_id_casted.value(), max_delta_counter_casted.value()};
 }
+#endif
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
@@ -980,6 +984,7 @@ void ParseEventTypeDeployments(const score::json::Object& json_map, BindingServi
                                                           "Configuration corrupted, check with json schema");
         EmplaceOrFatal(service.events_, event_name_casted.value().get(), event_id_casted.value(), "An event");
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
         const auto e2e_event_deployment = ParseE2EEventTypeDeployment(event_object);
         if (e2e_event_deployment.has_value())
         {
@@ -988,6 +993,16 @@ void ParseEventTypeDeployments(const score::json::Object& json_map, BindingServi
                            e2e_event_deployment.value(),
                            "An E2E event deployment");
         }
+#else
+        if (event_object.find(kE2EKey) != event_object.cend())
+        {
+            score::mw::log::LogFatal("lola")
+                << "E2E configuration of event" << event_name_casted.value().get()
+                << "found, but E2E support is disabled. Enable it with "
+                   "--config=e2e (//score/mw/com/flags:experimental_enable_e2e_protection).";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+#endif
     }
 }
 

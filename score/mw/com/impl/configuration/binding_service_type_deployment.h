@@ -14,7 +14,9 @@
 #define SCORE_MW_COM_IMPL_CONFIGURATION_BINDING_SERVICE_TYPE_DEPLOYMENT_H
 
 #include "score/mw/com/impl/binding_type.h"
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 #include "score/mw/com/impl/configuration/e2e_event_type_deployment.h"
+#endif
 #include "score/mw/com/impl/service_element_type.h"
 
 #include "score/json/json_parser.h"
@@ -37,7 +39,9 @@ class BindingServiceTypeDeployment
     using EventIdMapping = std::unordered_map<std::string, EventIdType>;
     using FieldIdMapping = std::unordered_map<std::string, FieldIdType>;
     using MethodIdMapping = std::unordered_map<std::string, MethodIdType>;
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
     using E2EEventMapping = std::unordered_map<std::string, E2EEventTypeDeployment>;
+#endif
     using ServiceId = ServiceIdType;
 
     explicit BindingServiceTypeDeployment(const score::json::Object& json_object);
@@ -45,8 +49,12 @@ class BindingServiceTypeDeployment
     explicit BindingServiceTypeDeployment(const ServiceIdType service_id,
                                           EventIdMapping events = {},
                                           FieldIdMapping fields = {},
-                                          MethodIdMapping methods = {},
-                                          E2EEventMapping e2e_events = {}) noexcept;
+                                          MethodIdMapping methods = {}
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+                                          ,
+                                          E2EEventMapping e2e_events = {}
+#endif
+                                          ) noexcept;
 
     json::Object Serialize() const noexcept;
     std::string_view ToHashString() const noexcept;
@@ -62,8 +70,10 @@ class BindingServiceTypeDeployment
     FieldIdMapping fields_;  // key = field name
     // coverity[autosar_cpp14_m11_0_1_violation]
     MethodIdMapping methods_;  // key = method name
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
     // coverity[autosar_cpp14_m11_0_1_violation]
     E2EEventMapping e2e_events_;  // key = event name
+#endif
 
     /**
      * \brief The size of the hash string returned by ToHashString()

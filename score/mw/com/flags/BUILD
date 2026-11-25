@@ -64,3 +64,33 @@ cc_library(
     }),
     visibility = ["//score/mw/com:__subpackages__"],
 )
+
+# Gates the (experimental) E2E protection: the E2E result carried by SamplePtr, its public API, the E2E event deployment
+# configuration and the E2E building blocks in //score/mw/com/impl/e2e. Enable with --config=e2e (see .bazelrc).
+# Experimental feature flag: must be part of --config=activate_all_experimental_features
+# in .bazelrc (see CI.md#feature-flags).
+bool_flag(
+    name = "experimental_enable_e2e_protection",
+    build_setting_default = False,
+    visibility = ["//score/mw/com:__subpackages__"],
+)
+
+config_setting(
+    name = "e2e_enabled",
+    flag_values = {
+        ":experimental_enable_e2e_protection": "True",
+    },
+    visibility = ["//score/mw/com:__subpackages__"],
+)
+
+# Propagates SCORE_MW_COM_E2E_PROTECTION_ENABLED to every target which (transitively) depends on it. Targets that
+# contain `#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)` must depend on this library, so that all translation units
+# agree on the layout of types such as SamplePtr.
+cc_library(
+    name = "e2e_feature",
+    defines = select({
+        ":e2e_enabled": ["SCORE_MW_COM_E2E_PROTECTION_ENABLED"],
+        "//conditions:default": [],
+    }),
+    visibility = ["//score/mw/com:__subpackages__"],
+)

@@ -15,6 +15,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_python//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
 load("@score_tooling//api_surface:api_surface.bzl", "api_surface_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
+load("//score/mw/com/flags:flags.bzl", "if_e2e_enabled")
 
 # Capture README.md for Sphinx documentation.
 sphinx_docs_library(
@@ -44,10 +45,10 @@ cc_library(
         "//score/mw/com:__subpackages__",
     ],
     deps = [
+        "//score/mw/com/flags:e2e_feature",
         "//score/mw/com/impl",
         "//score/mw/com/impl:event_receive_handler",
-        "//score/mw/com/impl/e2e:e2e_result",
-    ],
+    ] + if_e2e_enabled(["//score/mw/com/impl/e2e:e2e_result"]),
 )
 
 cc_library(
@@ -162,11 +163,24 @@ cc_unit_test(
 
 # --- API Surface Stability Check ---
 
+# The public API depends on the feature flags (see //score/mw/com/flags), e.g. E2E protection adds
+# SamplePtr::GetE2EResult(). Its stability is only guaranteed in the default configuration, so the API surface is only
+# checked there and the tests are skipped if E2E is enabled. The macro of api_surface_test has no
+# target_compatible_with parameter, but targets depending on an incompatible target are incompatible as well.
+cc_library(
+    name = "com_for_api_surface",
+    target_compatible_with = select({
+        "//score/mw/com/flags:e2e_enabled": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = [":com"],
+)
+
 api_surface_test(
     name = "api_surface_test",
     check_docs = False,
     lock_file = "api_surface.lock.json",
-    target = ":com",
+    target = ":com_for_api_surface",
 )
 
 api_surface_test(
@@ -174,5 +188,5 @@ api_surface_test(
     check_docs = True,
     lock_file = "api_surface.lock.json",
     tags = ["manual"],
-    target = ":com",
+    target = ":com_for_api_surface",
 )

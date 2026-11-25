@@ -12,14 +12,14 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//score/mw/com/flags:flags.bzl", "SOMEIP_ENABLED_ONLY")
+load("//score/mw/com/flags:flags.bzl", "E2E_ENABLED_ONLY", "SOMEIP_ENABLED_ONLY")
 
 cc_library(
     name = "e2e_event_protection",
     srcs = ["e2e_event_protection.cpp"],
     hdrs = ["e2e_event_protection.h"],
     tags = ["FFI"],
-    target_compatible_with = SOMEIP_ENABLED_ONLY,
+    target_compatible_with = SOMEIP_ENABLED_ONLY + E2E_ENABLED_ONLY,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         "//score/mw/com/impl/configuration",

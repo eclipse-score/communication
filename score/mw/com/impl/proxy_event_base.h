@@ -14,7 +14,9 @@
 #ifndef SCORE_MW_COM_IMPL_PROXY_EVENT_BASE_H
 #define SCORE_MW_COM_IMPL_PROXY_EVENT_BASE_H
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 #include "score/mw/com/impl/e2e/e2e_summary.h"
+#endif
 #include "score/mw/com/impl/enable_reference_to_moveable_from_this.h"
 #include "score/mw/com/impl/event_receive_handler.h"
 #include "score/mw/com/impl/flag_owner.h"
@@ -173,6 +175,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
         return binding_ != nullptr;
     }
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
     /**
      * \brief Completes the E2E result of a sample delivered by this event's binding.
      * \details The binding only provides data_integrity/sequence on the sample. This adds the binding-independent
@@ -188,6 +191,7 @@ class ProxyEventBase : public EnableReferenceToMoveableFromThis<ProxyEventBase>
         result.summary = e2e::ComputeSummary(result.data_integrity, result.sequence, result.historical_health);
         sample.SetE2EResult(result);
     }
+#endif
 
   protected:
     void InjectMock(IProxyEventBase& proxy_event_base_mock)

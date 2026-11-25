@@ -12,12 +12,14 @@
 # *******************************************************************************
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//score/mw/com/flags:flags.bzl", "E2E_ENABLED_ONLY")
 
 cc_library(
     name = "e2e_result",
     srcs = ["e2e_result.cpp"],
     hdrs = ["e2e_result.h"],
     tags = ["FFI"],
+    target_compatible_with = E2E_ENABLED_ONLY,
     visibility = ["//score/mw/com:__subpackages__"],
 )
 
@@ -26,6 +28,7 @@ cc_library(
     srcs = ["e2e_health_tracker.cpp"],
     hdrs = ["e2e_health_tracker.h"],
     tags = ["FFI"],
+    target_compatible_with = E2E_ENABLED_ONLY,
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
         ":e2e_result",
@@ -38,6 +41,7 @@ cc_library(
     srcs = ["e2e_summary.cpp"],
     hdrs = ["e2e_summary.h"],
     tags = ["FFI"],
+    target_compatible_with = E2E_ENABLED_ONLY,
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
         ":e2e_health_tracker",
@@ -50,6 +54,7 @@ cc_library(
     srcs = ["e2e_profile_stub.cpp"],
     hdrs = ["e2e_profile_stub.h"],
     tags = ["FFI"],
+    target_compatible_with = E2E_ENABLED_ONLY,
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
         ":e2e_result",

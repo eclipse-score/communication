@@ -204,6 +204,7 @@ auto ParseStrictPermissions(fbs::PermissionChecks permission_checks) -> bool
     }
 }
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 auto ParseE2EProfile(fbs::E2EProfile profile) -> E2EProfile
 {
     switch (profile)
@@ -217,6 +218,7 @@ auto ParseE2EProfile(fbs::E2EProfile profile) -> E2EProfile
                                      // returns
     }
 }
+#endif
 
 auto ParseAllowedUser(const ::flatbuffers::Vector<std::uint32_t>* qm_ids,
                       const ::flatbuffers::Vector<std::uint32_t>* b_ids)
@@ -600,6 +602,7 @@ auto ParseServiceInstances(const fbs::Configuration& configuration, TracingConfi
     return service_instance_deployments;
 }
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 auto ParseE2EEventTypeDeployment(const fbs::ServiceTypeEvent& event) -> std::optional<E2EEventTypeDeployment>
 {
     const auto* e2e = event.e2e();
@@ -611,6 +614,7 @@ auto ParseE2EEventTypeDeployment(const fbs::ServiceTypeEvent& event) -> std::opt
                                   RequireValue(e2e->dataId(), "e2e.dataId"),
                                   RequireValue(e2e->maxDeltaCounter(), "e2e.maxDeltaCounter")};
 }
+#endif
 
 template <typename BindingServiceTypeDeployment>
 void ParseEventTypeDeployments(const fbs::ServiceTypeBinding& binding, BindingServiceTypeDeployment& service)
@@ -626,11 +630,22 @@ void ParseEventTypeDeployments(const fbs::ServiceTypeBinding& binding, BindingSe
         auto event_name = CopyString(event->eventName(), "eventName");
         const auto event_id = NarrowOrFatal<typename BindingServiceTypeDeployment::EventIdMapping::mapped_type>(
             RequireValue(event->eventId(), "eventId"), "eventId");
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
         const auto e2e_event_deployment = ParseE2EEventTypeDeployment(*event);
         if (e2e_event_deployment.has_value())
         {
             EmplaceOrFatal(service.e2e_events_, event_name, e2e_event_deployment.value(), "An E2E event deployment");
         }
+#else
+        if (event->e2e() != nullptr)
+        {
+            score::mw::log::LogFatal("lola")
+                << "E2E configuration of event" << event_name
+                << "found, but E2E support is disabled. Enable it with "
+                   "--config=e2e (//score/mw/com/flags:experimental_enable_e2e_protection).";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+#endif
         EmplaceOrFatal(service.events_, std::move(event_name), event_id, "An event");
     }
 }

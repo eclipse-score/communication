@@ -14,6 +14,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "unit")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
+load("//score/mw/com/flags:flags.bzl", "E2E_ENABLED_ONLY", "if_e2e_enabled")
 
 unit(
     name = "errors",
@@ -193,6 +194,7 @@ cc_library(
         ":generic_proxy_event_binding",
         ":proxy_base",
         ":proxy_event_base",
+        "//score/mw/com/flags:e2e_feature",
         "//score/mw/com/impl/tracing:proxy_event_tracing",
         "@score_baselibs//score/mw/log",
     ],
@@ -213,6 +215,7 @@ cc_library(
         ":proxy_event_base",
         ":proxy_event_binding",
         ":runtime",
+        "//score/mw/com/flags:e2e_feature",
         "//score/mw/com/impl/mocking:i_proxy_event",
         "//score/mw/com/impl/plumbing:event",
         "//score/mw/com/impl/tracing:proxy_event_tracing",
@@ -545,12 +548,12 @@ cc_library(
         ":proxy_binding",
         ":proxy_event_binding",
         ":sample_reference_tracker",
-        "//score/mw/com/impl/e2e:e2e_summary",
+        "//score/mw/com/flags:e2e_feature",
         "//score/mw/com/impl/mocking:i_proxy_event",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing:proxy_event_tracing_data",
         "@score_baselibs//score/language/safecpp/scoped_function:scope",
-    ],
+    ] + if_e2e_enabled(["//score/mw/com/impl/e2e:e2e_summary"]),
 )
 
 cc_library(
@@ -682,13 +685,13 @@ cc_library(
         ":scoped_event_receive_handler",
         ":subscription_state",
         ":subscription_state_change_handler",
+        "//score/mw/com/flags:e2e_feature",
         "//score/mw/com/impl/configuration",
-        "//score/mw/com/impl/e2e:e2e_result",
         "//score/mw/com/impl/plumbing:sample_ptr",
         "//score/mw/com/impl/tracing:i_tracing_runtime",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/result",
-    ],
+    ] + if_e2e_enabled(["//score/mw/com/impl/e2e:e2e_result"]),
 )
 
 cc_library(
@@ -1382,6 +1385,7 @@ cc_unit_test(
 cc_unit_test(
     name = "proxy_event_e2e_attach_test",
     srcs = ["proxy_event_e2e_attach_test.cpp"],
+    target_compatible_with = E2E_ENABLED_ONLY,
     deps = [
         ":generic_proxy_event",
         ":proxy_event",
@@ -1609,9 +1613,9 @@ cc_unit_test(
     deps = [
         ":proxy_event_binding",
         ":sample_reference_tracker",
-        "//score/mw/com/impl/e2e:e2e_result",
+        "//score/mw/com/flags:e2e_feature",
         "//score/mw/com/impl/plumbing:sample_ptr",
-    ],
+    ] + if_e2e_enabled(["//score/mw/com/impl/e2e:e2e_result"]),
 )
 
 cc_unit_test(

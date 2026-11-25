@@ -44,10 +44,12 @@ constexpr auto kServiceIdKey = "serviceId";
 constexpr auto kEventsKey = "events";
 constexpr auto kFieldsKey = "fields";
 constexpr auto kMethodsKey = "methods";
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 constexpr auto kE2EEventsKey = "e2eEvents";
 constexpr auto kProfileKey = "profile";
 constexpr auto kDataIdKey = "dataId";
 constexpr auto kMaxDeltaCounterKey = "maxDeltaCounter";
+#endif
 
 template <typename ServiceElementMappingType>
 json::Object ConvertServiceElementIdMapToJson(const ServiceElementMappingType& input_map) noexcept
@@ -89,6 +91,7 @@ auto ConvertJsonToServiceElementIdMap(const json::Object& json_object, const std
     return service_element_map;
 }
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 inline json::Object ConvertE2EEventMapToJson(
     const std::unordered_map<std::string, E2EEventTypeDeployment>& e2e_events) noexcept
 {
@@ -133,6 +136,7 @@ inline auto ConvertJsonToE2EEventMap(const json::Object& json_object)
     }
     return e2e_events;
 }
+#endif
 
 template <typename ServiceIdType>
 std::string ToHashStringImpl(const ServiceIdType service_id, const std::size_t hash_string_size) noexcept
@@ -159,13 +163,19 @@ BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdTy
     BindingServiceTypeDeployment(const ServiceIdType service_id,
                                  EventIdMapping events,
                                  FieldIdMapping fields,
-                                 MethodIdMapping methods,
-                                 E2EEventMapping e2e_events) noexcept
+                                 MethodIdMapping methods
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+                                 ,
+                                 E2EEventMapping e2e_events
+#endif
+                                 ) noexcept
     : service_id_{service_id},
       events_{std::move(events)},
       fields_{std::move(fields)},
       methods_{std::move(methods)},
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
       e2e_events_{std::move(e2e_events)},
+#endif
       hash_string_{detail::ToHashStringImpl(service_id_, hashStringSize)}
 {
 }
@@ -182,8 +192,12 @@ BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdTy
               GetValueFromJson<ServiceIdType>(json_object, detail::kServiceIdKey),
               detail::ConvertJsonToServiceElementIdMap<EventIdType>(json_object, detail::kEventsKey),
               detail::ConvertJsonToServiceElementIdMap<FieldIdType>(json_object, detail::kFieldsKey),
-              detail::ConvertJsonToServiceElementIdMap<MethodIdType>(json_object, detail::kMethodsKey),
-              detail::ConvertJsonToE2EEventMap(json_object))
+              detail::ConvertJsonToServiceElementIdMap<MethodIdType>(json_object, detail::kMethodsKey)
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+                  ,
+              detail::ConvertJsonToE2EEventMap(json_object)
+#endif
+          )
 {
     const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, detail::kSerializationVersionKey);
     if (serialization_version != serializationVersion)
@@ -208,7 +222,9 @@ BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdTy
     json_object[detail::kEventsKey] = detail::ConvertServiceElementIdMapToJson(events_);
     json_object[detail::kFieldsKey] = detail::ConvertServiceElementIdMapToJson(fields_);
     json_object[detail::kMethodsKey] = detail::ConvertServiceElementIdMapToJson(methods_);
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
     json_object[detail::kE2EEventsKey] = detail::ConvertE2EEventMapToJson(e2e_events_);
+#endif
 
     return json_object;
 }
@@ -236,7 +252,11 @@ bool operator==(
         rhs) noexcept
 {
     return (safe_math::CmpEqual(lhs.service_id_, rhs.service_id_) && (lhs.events_ == rhs.events_) &&
-            (lhs.fields_ == rhs.fields_) && (lhs.methods_ == rhs.methods_) && (lhs.e2e_events_ == rhs.e2e_events_));
+            (lhs.fields_ == rhs.fields_) && (lhs.methods_ == rhs.methods_)
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+            && (lhs.e2e_events_ == rhs.e2e_events_)
+#endif
+    );
 }
 
 template <ServiceElementType service_element_type,
