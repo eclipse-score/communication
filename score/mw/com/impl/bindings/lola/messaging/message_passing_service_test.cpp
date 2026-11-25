@@ -12,6 +12,7 @@
  ********************************************************************************/
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service.h"
 
+#include "score/concurrency/notification.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_instance_factory_mock.h"
 #include "score/mw/com/impl/bindings/lola/messaging/message_passing_service_instance_mock.h"
 #include "score/mw/com/impl/com_error.h"
@@ -25,7 +26,6 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
-#include <thread>
 
 namespace score::mw::com::impl::lola::test
 {
@@ -642,24 +642,31 @@ TEST_F(MessagePassingServiceQMDelegationTest, UnregisterOnServiceMethodUnsubscri
     }  // guard destroyed here — triggers unregister
 }
 
-class InstanceMockSettingFlagOnDestruction final : public MessagePassingServiceInstanceMock
+class InstanceMockNotifyingOnDestruction final : public MessagePassingServiceInstanceMock
 {
   public:
-    explicit InstanceMockSettingFlagOnDestruction(std::atomic<bool>& destroyed) : destroyed_{destroyed} {}
-    ~InstanceMockSettingFlagOnDestruction() override
+    InstanceMockNotifyingOnDestruction(std::atomic<bool>& destroyed, score::concurrency::Notification& notification)
+        : destroyed_{destroyed}, notification_{notification}
+    {
+    }
+    ~InstanceMockNotifyingOnDestruction() override
     {
         destroyed_.store(true);
+        notification_.notify();
     }
 
   private:
     std::atomic<bool>& destroyed_;
+    score::concurrency::Notification& notification_;
 };
 
 TEST_F(MessagePassingServiceTest, LocalEventTaskIsFinishedBeforeInstanceIsDestroyed)
 {
-    // Given a service whose instance posts a long running task to the executor, which is only left on stop request
+    // Given a service whose instance posts a long running task to the executor, which is left on stop request or on
+    // destruction of the instance
     std::atomic<bool> instance_destroyed{false};
-    std::atomic<bool> task_started{false};
+    score::concurrency::Notification instance_destroyed_notification{};
+    score::concurrency::Notification task_started{};
     std::atomic<bool> task_finished{false};
     std::atomic<bool> instance_destroyed_when_task_finished{false};
 
@@ -670,23 +677,16 @@ TEST_F(MessagePassingServiceTest, LocalEventTaskIsFinishedBeforeInstanceIsDestro
                            score::message_passing::IClientFactory&,
                            score::concurrency::Executor& executor) -> std::unique_ptr<IMessagePassingServiceInstance> {
             executor.Post([&](const score::cpp::stop_token& token) noexcept {
-                task_started.store(true);
-                while (!token.stop_requested() && !instance_destroyed.load())
-                {
-                    std::this_thread::sleep_for(std::chrono::milliseconds{1});
-                }
+                task_started.notify();
+                instance_destroyed_notification.waitWithAbort(token);
                 instance_destroyed_when_task_finished.store(instance_destroyed.load());
                 task_finished.store(true);
             });
-            return std::make_unique<InstanceMockSettingFlagOnDestruction>(instance_destroyed);
+            return std::make_unique<InstanceMockNotifyingOnDestruction>(instance_destroyed,
+                                                                        instance_destroyed_notification);
         });
     auto unit = std::make_unique<MessagePassingService>(asil_qm_cfg_, std::nullopt, std::move(factory_));
-    const auto start_deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
-    while (!task_started.load() && std::chrono::steady_clock::now() < start_deadline)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds{1});
-    }
-    ASSERT_TRUE(task_started.load());
+    ASSERT_TRUE(task_started.waitForWithAbort(std::chrono::seconds{10}, {})) << "task did not start within 10 s";
 
     // When destroying the service
     unit.reset();
