@@ -15,7 +15,7 @@
 Notification Handler
 ^^^^^^^^^^^^^^^^^^^^
 
-``NotificationHandler`` moves SOME/IP notifications between UDP, received and sent through the io-sock transport, and
+``NotificationHandler`` moves SOME/IP notifications between UDP, received and sent through the platform transport, and
 LoLa. It implements ``IRoutingCommandHandler``, is only called on the data path thread and needs no locking. Commands
 of the TX direction are rejected until it is supported.
 
@@ -39,8 +39,8 @@ its LoLa service instance; it is active while the LoLa service instance is offer
 service ID, local UDP port and sender endpoint match an active receive path and whose event is locally subscribed:
 
 - It allocates a sample of the LoLa event, sets payload length, session ID, interface version and message type, and
-  copies the payload from the io-sock packet directly into the sample. This is the only payload copy of the receive
-  path.
+  copies the payload from the packet storage into the sample. QNX reads the mbuf chain directly; Linux receives into a
+  userspace buffer first.
 - Every dropped message is logged. A non-notification message, a missing receive path and an unknown or not locally
   subscribed event are logged as warning. A payload larger than ``kMaxPayloadSize``, no free LoLa sample slot and a
   failed payload copy or LoLa send are logged as error; they only happen in a misconfigured or faulty system, e.g. with

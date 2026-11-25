@@ -1,0 +1,40 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml udp_transport_receive_sequence
+
+participant NetworkStack
+participant QnxTransport
+participant RoutingModule
+participant UdpPacketReader
+
+NetworkStack -> QnxTransport : receive_upcall()
+note right of QnxTransport : marks the socket pending and wakes the kernel thread
+
+loop kernel thread
+    QnxTransport -> RoutingModule : someip_routing_poll()
+    loop each pending socket, at most 32 datagrams
+        QnxTransport -> NetworkStack : soreceive(MSG_DONTWAIT)
+        NetworkStack --> QnxTransport : mbuf chain and sender
+        QnxTransport -> RoutingModule : someip_routing_datagram(port, sender, packet, size)
+        RoutingModule -> UdpPacketReader : Copy(offset, destination)
+        UdpPacketReader -> QnxTransport : someip_transport_copy_packet(packet, offset, size, destination)
+        QnxTransport --> UdpPacketReader
+        UdpPacketReader --> RoutingModule : true
+        RoutingModule --> QnxTransport
+        QnxTransport -> NetworkStack : m_freem(packet)
+    end
+    note right of QnxTransport : waits for the next wakeup, at most 1 s
+end
+
+@enduml

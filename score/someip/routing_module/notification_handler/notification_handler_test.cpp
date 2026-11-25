@@ -12,8 +12,8 @@
  ********************************************************************************/
 #include "score/someip/routing_module/notification_handler/notification_handler.h"
 
-#include "score/someip/routing_module/iosock_transport/iosock_transport.h"
 #include "score/someip/routing_module/lola_mapping/lola_mapping.h"
+#include "score/someip/routing_module/udp_transport/udp_transport.h"
 
 #include "score/filesystem/path.h"
 #include "score/mw/com/runtime.h"
@@ -52,8 +52,8 @@ FakeUdpTransport& UdpTransport()
 
 }  // namespace
 
-/// Test doubles of the io-sock module; a received packet is a std::vector<std::uint8_t> here.
-extern "C" int someip_iosock_open_udp_socket(const unsigned short port)
+/// Test doubles of the platform transport; a received packet is a std::vector<std::uint8_t> here.
+extern "C" int someip_transport_open_udp_socket(const unsigned short port)
 {
     if (UdpTransport().open_error != 0)
     {
@@ -63,10 +63,10 @@ extern "C" int someip_iosock_open_udp_socket(const unsigned short port)
     return 0;
 }
 
-extern "C" void someip_iosock_copy_packet(const void* const packet,
-                                          const unsigned int offset,
-                                          const unsigned int size,
-                                          void* const destination)
+extern "C" void someip_transport_copy_packet(const void* const packet,
+                                             const unsigned int offset,
+                                             const unsigned int size,
+                                             void* const destination)
 {
     ++UdpTransport().packet_copies;
     const auto& bytes = *static_cast<const std::vector<std::uint8_t>*>(packet);
@@ -198,9 +198,9 @@ std::vector<std::uint8_t> Payload(const std::size_t size, const std::uint8_t fir
     return payload;
 }
 
-IoSockPacketReader Reader(const std::vector<std::uint8_t>& datagram)
+UdpPacketReader Reader(const std::vector<std::uint8_t>& datagram)
 {
-    return IoSockPacketReader{&datagram, static_cast<unsigned int>(datagram.size())};
+    return UdpPacketReader{&datagram, static_cast<unsigned int>(datagram.size())};
 }
 
 /// LoLa consumer of one event of a remote service instance; keeps received samples until they are released.

@@ -13,14 +13,14 @@
 
 @startuml someip_datagram_parser_sequence
 
-participant IoSockModule
+participant UdpTransport
 participant NotificationHandler
 participant SomeipDatagramParser as DatagramParser
-participant IoSockPacketReader as PacketReader
+participant UdpPacketReader as PacketReader
 participant SomeipMessageHeaderParser as HeaderParser
 participant GenericSkeletonEvent as LolaEvent
 
-IoSockModule -> NotificationHandler : OnUdpDatagram(udp_local_port, udp_sender, datagram)
+UdpTransport -> NotificationHandler : OnUdpDatagram(udp_local_port, udp_sender, datagram)
 activate NotificationHandler
 loop until the datagram is exhausted or malformed
     NotificationHandler -> DatagramParser : NextMessage(datagram)
@@ -32,8 +32,8 @@ loop until the datagram is exhausted or malformed
         DatagramParser --> NotificationHandler : kInvalidHeaderSize
     else complete header remains
         DatagramParser -> PacketReader : Copy(offset, 16-byte stack header)
-        PacketReader -> IoSockModule : someip_iosock_copy_packet(packet, offset, 16, header)
-        IoSockModule --> PacketReader : m_copydata completes
+        PacketReader -> UdpTransport : someip_transport_copy_packet(packet, offset, 16, header)
+        UdpTransport --> PacketReader : copy completes
         alt packet read fails
             DatagramParser --> NotificationHandler : kPacketReadFailed
         else header copied to stack storage
@@ -54,8 +54,8 @@ loop until the datagram is exhausted or malformed
             note right of NotificationHandler : drop, log error
         else EventSample slot allocated
             NotificationHandler -> PacketReader : Copy(payload offset, EventSample payload)
-            PacketReader -> IoSockModule : someip_iosock_copy_packet(packet, offset, size, payload)
-            IoSockModule --> PacketReader : m_copydata completes
+            PacketReader -> UdpTransport : someip_transport_copy_packet(packet, offset, size, payload)
+            UdpTransport --> PacketReader : copy completes
             NotificationHandler -> LolaEvent : Send(EventSample)
             note right of NotificationHandler : a failed copy or send drops, log error
         end

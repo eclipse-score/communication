@@ -12,8 +12,8 @@
  ********************************************************************************/
 #include "score/someip/routing_module/notification_handler/notification_handler.h"
 
-#include "score/someip/routing_module/iosock_transport/iosock_transport.h"
 #include "score/someip/routing_module/lola_mapping/lola_mapping.h"
+#include "score/someip/routing_module/udp_transport/udp_transport.h"
 
 #include "score/mw/log/logging.h"
 
@@ -71,7 +71,7 @@ CommandResult NotificationHandler::AddRemoteService(const routing_control_protoc
             << score::mw::log::LogHex16{command.service} << "instance" << score::mw::log::LogHex16{command.instance};
         return CommandResult::kRejected;
     }
-    const int udp_open_error = someip_iosock_open_udp_socket(command.local_port);
+    const int udp_open_error = someip_transport_open_udp_socket(command.local_port);
     if (udp_open_error != 0)
     {
         score::mw::log::LogError(kLogContext)
@@ -174,7 +174,7 @@ void NotificationHandler::RemoveAll() noexcept
 
 void NotificationHandler::OnUdpDatagram(const std::uint16_t udp_local_port,
                                         const Endpoint& udp_sender,
-                                        const IoSockPacketReader& datagram) noexcept
+                                        const UdpPacketReader& datagram) noexcept
 {
     SomeipDatagramParser parser{};
     auto message = parser.NextMessage(datagram);
@@ -296,7 +296,7 @@ NotificationHandler::RemoteEvent* NotificationHandler::FindLolaOfferedEvent(cons
 void NotificationHandler::ForwardToLola(const std::uint16_t udp_local_port,
                                         const Endpoint& udp_sender,
                                         const SomeipMessageFrame& notification,
-                                        const IoSockPacketReader& datagram) noexcept
+                                        const UdpPacketReader& datagram) noexcept
 {
     const SomeipMessageHeader& header = notification.header;
     const auto receive_path = FindReceivePath(header.service_id, udp_local_port, udp_sender);
@@ -344,12 +344,11 @@ void NotificationHandler::ForwardToLola(const std::uint16_t udp_local_port,
     event_sample->session = header.session_id;
     event_sample->interface_version = header.interface_version;
     event_sample->message_type = header.message_type;
-    // The only payload copy of the receive path: from the io-sock packet directly into the LoLa sample slot.
     if (!datagram.Copy(notification.payload_offset,
                        score::cpp::span<std::uint8_t>{event_sample->payload.data(), header.payload_size}))
     {
         LogDroppedNotification(score::mw::log::LogError(kLogContext),
-                               "copying the payload from the io-sock packet failed",
+                               "copying the payload from the UDP packet failed",
                                header,
                                someip_instance);
         return;

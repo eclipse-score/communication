@@ -32,8 +32,11 @@ dependable_element(
     target_compatible_with = ["@platforms//os:linux"],
     tests = [],
     visibility = ["//visibility:public"],
+    # TODO: Revisit dependencies when the other libraries' certified scopes are complete.
     deps = [
+        "//score/memory/shared/dependability:dependable_element_memory_shared",
         "//score/message_passing/dependability:dependable_element_message_passing",
+        "//score/mw/com/dependability:mw_com",
         "//third_party/score_baselibs:concurrency",
         "//third_party/score_baselibs:filesystem",
         "//third_party/score_baselibs:json",
