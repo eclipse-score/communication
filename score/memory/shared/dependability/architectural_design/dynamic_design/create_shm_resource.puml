@@ -4,7 +4,8 @@
 autonumber
 
 actor "User" as Process
-participant "factory_resources" as factory_resources
+participant SharedMemoryFactory as factory
+participant SharedMemoryResource as resource
 participant OS
 participant LockFile
 participant ShmObject
@@ -12,50 +13,56 @@ participant ShmObject
 
 activate Process
 
-Process -> factory_resources : SharedMemoryFactory::Create(path, initializer, reservedSize, permissions, preferTypedMemory)
-activate factory_resources
-factory_resources -> factory_resources : Check if path already opened in process
+Process -> factory : SharedMemoryFactory::Create(path, initializer, reservedSize, permissions, preferTypedMemory)
+activate factory
+factory -> factory : Check if path already opened in process
 
 alt path already opened in process
-    factory_resources -> Process : Return nullptr
+    factory -> Process : Return nullptr
 else path not opened in process
-    factory_resources -> OS : Create LockFile
+    create resource
+    factory -> resource : Create(path, initializer, reservedSize, permissions, preferTypedMemory)
+    activate resource
+    resource -> OS : Create LockFile
     activate OS
     create LockFile
     OS -> LockFile : Create
     alt LockFile creation failed
-        OS --> factory_resources : return : failure
+        OS --> resource : return : failure
         deactivate OS
-        factory_resources -> Process : Return nullptr
+        factory <-- resource : return : failure
+        factory -> Process : Return nullptr
     else LockFile creation succeeded
-        OS --> factory_resources : return : success
+        OS --> resource : return : success
         activate LockFile
         deactivate OS
-        factory_resources -> OS : Create ShmObject (shm_open))
+        resource -> OS : Create ShmObject (shm_open))
         activate OS
         create ShmObject
         OS -> ShmObject : Create
-        OS --> factory_resources : return : file descriptor ShmObject
+        OS --> resource : return : file descriptor ShmObject
         deactivate OS
 
-        factory_resources -> ShmObject : Apply permissions (fchmod/ACL)
+        resource -> ShmObject : Apply permissions (fchmod/ACL)
         activate ShmObject
-        factory_resources <-- ShmObject : return : success
+        resource <-- ShmObject : return : success
         deactivate ShmObject
-        factory_resources -> ShmObject : ftruncate(fd, reservedSize)
+        resource -> ShmObject : ftruncate(fd, reservedSize)
         activate ShmObject
-        ShmObject --> factory_resources : return : success
+        ShmObject --> resource : return : success
         deactivate ShmObject
 
-        factory_resources -> ShmObject : mmap(fd, reservedSize, PROT_READ | PROT_WRITE, MAP_SHARED)
+        resource -> ShmObject : mmap(fd, reservedSize, PROT_READ | PROT_WRITE, MAP_SHARED)
         activate ShmObject
-        ShmObject --> factory_resources : return : baseAddress
+        ShmObject --> resource : return : baseAddress
         deactivate ShmObject
-        factory_resources -> Process : Call initializer
-        factory_resources <-- Process : return
-        Process <-- factory_resources : return : SharedMemoryResource
+        resource -> Process : Call initializer
+        resource <-- Process : return
+        factory <-- resource : return : success
         destroy LockFile
-        deactivate factory_resources
+        deactivate resource
+        Process <-- factory : return : SharedMemoryResource
+        deactivate factory
     end
 end
 

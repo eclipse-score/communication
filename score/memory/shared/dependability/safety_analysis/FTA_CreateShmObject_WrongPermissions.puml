@@ -1,15 +1,56 @@
 @startuml
 'https://plantuml.com/sequence-diagram
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
 
-autonumber
+' *******************************************************************************
+' Guidewords for FTA:
+  `LossOfFunction`
+  '`PartialFunction`
+  '`Corrupted`
+  '`UnintendedFunction`
+  '`TooEarly`
+  '`TooLate`
+  '`Wrong`
+  '`DelayedFunction`
+  '`ExceedingFunction`
+  '`ArbitraryExecution`
 
-== Initialization ==
+@startuml
 
-Alice -> Bob: Authentication Request
-Bob --> Alice: Authentication Response
+!include fta_metamodel.puml
 
-== Repetition ==
+$FailureMode("shm-object created with wrong permissions", "Memory.CreateAppliesWrongPermissions")
+' Guideword -> Corruption
+' FailureEffect: Another process can access the data within shm and corrupt it!
 
-Alice -> Bob: Another authentication Request
-Alice <-- Bob: another authentication Response
+$OrGate("Gate1", "Memory.CreateAppliesWrongPermissions")
+
+' -> this can only happen, when the creator crashes between creating and applying permissions
+' but since we have our Lockfile still exist, no one can access -> No issue -> NO FTA!
+' we can also not follow, that maybe a user called RemoveStaleArtefacts() because it would have removed the shm-object as well.
+
+$IntermediateEvent("Permissions have not been applied correctly", "Memory.CrashedBeforeApplyPerm", "Gate1")
+$RootCause("shm-object already exists with wrong permissions", "Memory.ShmObjectAlreadyExists", "Gate1")
+
+$OrGate("Gate2", "Memory.CrashedBeforeApplyPerm")
+
+$RootCause("Creating process crashed before applying permissions", "Memory.ProcessCrashedBetweenCreationAndPermissions", "Gate2")
+$RootCause("Creator did not apply correct permissions", "Memory.CreatorDidNotSetPermissions", "Gate2")
+
+@enduml
+
+
+
+
 @enduml

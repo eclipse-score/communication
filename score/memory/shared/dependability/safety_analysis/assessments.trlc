@@ -1,0 +1,47 @@
+/********************************************************************************
+ * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License Version 2.0 which is available at
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ ********************************************************************************/
+package MemoryShared
+
+import ScoreReq
+import mw_com_fta
+
+ScoreReq.RootCauseAssessment SafeOperatingSystem {
+    root_causes = [
+        MemoryShared.ShmObjectCreateMmapReturnedWrongAddress,
+        MemoryShared.ShmObjectCreateAPIBroken,
+        MemoryShared.ShmObjectCreateFtruncateFailed,
+        MemoryShared.CreateShmObjectWrongOwnerUID,
+        MemoryShared.ShmObjectCreateLockFileFailure
+    ]
+    measures    = [ASR_QnxAsilBQualifiedImplementation]
+    safety      = ScoreReq.Asil.B
+    rationale   = "We checked QNX8 safety manual for the following calls: shm_open(), mmap(), ftruncate(), open() "
+    version     = 1
+}
+
+ScoreReq.RootCauseAssessment ProcessCrashedBetweenCreationAndPermissions {
+    root_causes = [MemoryShared.ProcessCrashedBetweenCreationAndPermissions]
+    measures    = [AccessToSharedMemoryObjectsAlwaysViaLibrary, OpenHoldsCreationLock]
+    safety      = ScoreReq.Asil.B
+    rationale   = """The AoU 'AccessToSharedMemoryObjectsAlwaysViaLibrary' and the component req. OpenHoldsCreationLock
+    ensure,that no process will access the shared memory object with unset permissions."""
+    version     = 1
+}
+
+ScoreReq.RootCauseAssessment SharedMemoryResourcePointsToAddressReturnedFromMmap {
+    root_causes = [MemoryShared.ShmObjectCreateMappedAddressNotUsed, MemoryShared.ShmObjectCreateNotMappedAtAll]
+    measures    = [SharedMemoryResourceUsesMemMappedAddress]
+    safety      = ScoreReq.Asil.B
+    rationale   = "Component req. assures, that a SharedMemoryResource always points to the address returned by mmap()"
+    version     = 1
+}
