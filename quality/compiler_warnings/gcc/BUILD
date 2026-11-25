@@ -16,16 +16,6 @@
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
 
-cc_feature(
-    name = "default_flags",
-    args = [
-        "//quality/compiler_warnings:default_compile_args",
-        "//quality/compiler_warnings:default_link_args",
-    ],
-    feature_name = "score_communication_gcc_default_flags",
-    visibility = ["//visibility:public"],
-)
-
 cc_args(
     name = "minimal_warnings_args_for_all_compile_actions",
     actions = [
