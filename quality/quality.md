@@ -379,7 +379,7 @@ bazel run //:buildifier.check -- //... -//third_party/...
 # Gating test (also part of `bazel test //...`)
 bazel test //:buildifier_test
 
-# Print the findings as SARIF (used by CI for Code Scanning)
+# Print the findings as SARIF (used by CI for Code Scanning, buildifier's native --format=sarif)
 bazel run //tools/lint:buildifier_sarif
 ```
 
@@ -387,6 +387,9 @@ bazel run //tools/lint:buildifier_sarif
 > include BUILD files), so there is no `--config=buildifier` and no hold-the-line. Only
 > `//pkg`, `//pkg:target` and `//pkg/...` patterns and their `-` exclusions are supported.
 > Formatting is additionally checked by the formatter below.
+>
+> `//tools/lint:buildifier_sarif` always exits 0 (buildifier does so for `--format=sarif`); CI fails the job
+> through `//:buildifier_test`.
 
 ### C++ and Bazel Files Formatter
 

@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@buildifier_prebuilt//:rules.bzl", "buildifier")
-load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//bazel/rules:expand_template.bzl", "expand_template")
 load(":linters.bzl", "BUILDIFIER_EXCLUDE_PATTERNS")
@@ -69,21 +69,13 @@ sh_binary(
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )
 
+# Prints buildifier's findings as a SARIF document (always exits 0).
 buildifier(
-    name = "buildifier_json",
+    name = "buildifier_sarif",
     exclude_patterns = BUILDIFIER_EXCLUDE_PATTERNS,
-    format = "json",
+    format = "sarif",
     lint_mode = "warn",
     mode = "check",
-    tags = ["manual"],
-)
-
-py_binary(
-    name = "buildifier_sarif",
-    srcs = ["buildifier_to_sarif.py"],
-    args = ["$(rootpath :buildifier_json)"],
-    data = [":buildifier_json"],
-    main = "buildifier_to_sarif.py",
     tags = ["manual"],
 )
 
@@ -99,13 +91,4 @@ py_test(
         "buildifier_files_test.py",
     ],
     main = "buildifier_files_test.py",
-)
-
-py_test(
-    name = "buildifier_to_sarif_test",
-    srcs = [
-        "buildifier_to_sarif.py",
-        "buildifier_to_sarif_test.py",
-    ],
-    main = "buildifier_to_sarif_test.py",
 )
