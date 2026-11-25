@@ -4,6 +4,8 @@
 //quality/compiler_warnings/gcc:default_flags
 //quality/compiler_warnings/gcc:minimal_warnings
 //quality/compiler_warnings/gcc:misra_warnings
+//quality/compiler_warnings/qcc:dynamic_loading
+//quality/compiler_warnings:dynamic_loading
 //quality/compiler_warnings:fortify_source
 //quality/compiler_warnings:optimize_code
 //quality/compiler_warnings:treat_warnings_as_errors

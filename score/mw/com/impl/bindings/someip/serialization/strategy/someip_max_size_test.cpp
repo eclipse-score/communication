@@ -20,9 +20,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace score
-{
-namespace serialization
+namespace score::mw::com::impl::someip::serialization
 {
 namespace
 {
@@ -50,5 +48,4 @@ TEST_F(SomeIpStrategyFixture, GetMaxSizeBoundsTheSerializedSize)
 }
 
 }  // namespace
-}  // namespace serialization
-}  // namespace score
+}  // namespace score::mw::com::impl::someip::serialization

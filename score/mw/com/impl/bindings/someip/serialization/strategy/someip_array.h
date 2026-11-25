@@ -27,9 +27,7 @@
 #include <limits>
 #include <utility>
 
-namespace score
-{
-namespace serialization
+namespace score::mw::com::impl::someip::serialization
 {
 namespace someip_detail
 {
@@ -38,7 +36,7 @@ namespace someip_detail
 /// including padding between them.
 template <typename Visitor, typename Container, typename Range>
 void SerializeArray(Visitor& visitor,
-                    SerializeIterator<Container> iterator,
+                    score::serialization::SerializeIterator<Container> iterator,
                     const Range& value,
                     const ElementLayout& layout,
                     const bool align_following)
@@ -70,7 +68,7 @@ void SerializeArray(Visitor& visitor,
 /// @brief Reads elements until the byte length from the length field is consumed; at most `capacity` elements.
 template <typename Element, typename Visitor, typename Container, typename Append>
 Result<void> DeSerializeArray(Visitor& visitor,
-                              DeSerializeIterator<Container>& iterator,
+                              score::serialization::DeSerializeIterator<Container>& iterator,
                               const ElementLayout& layout,
                               const bool align_following,
                               const std::size_t capacity,
@@ -79,14 +77,14 @@ Result<void> DeSerializeArray(Visitor& visitor,
     const std::uint64_t byte_length = ReadLengthField(iterator, layout);
     if (iterator.HasError())
     {
-        return MakeUnexpected(SerializationError::kOutOfBoundsWrite);
+        return MakeUnexpected(score::serialization::SerializationError::kOutOfBoundsWrite);
     }
     const std::size_t data_begin = iterator.GetResult().value();
     const std::size_t remaining = iterator.End().GetResult().value() - data_begin;
     // Guard against manipulated input declaring more bytes than remain.
     if (byte_length > static_cast<std::uint64_t>(remaining))
     {
-        return MakeUnexpected(SerializationError::kOutOfBoundsWrite);
+        return MakeUnexpected(score::serialization::SerializationError::kOutOfBoundsWrite);
     }
     const std::size_t data_end = data_begin + static_cast<std::size_t>(byte_length);
 
@@ -96,7 +94,7 @@ Result<void> DeSerializeArray(Visitor& visitor,
     {
         if (count >= capacity)
         {
-            return MakeUnexpected(SerializationError::kDeserializedCountExceedsCapacity);
+            return MakeUnexpected(score::serialization::SerializationError::kDeserializedCountExceedsCapacity);
         }
         Element element{};
         // The element count is not on the wire, so the last element is unknown up front.
@@ -105,13 +103,13 @@ Result<void> DeSerializeArray(Visitor& visitor,
         visitor.PopField();
         if (iterator.HasError())
         {
-            return MakeUnexpected(SerializationError::kOutOfBoundsWrite);
+            return MakeUnexpected(score::serialization::SerializationError::kOutOfBoundsWrite);
         }
         const std::size_t next_position = iterator.GetResult().value();
         // An element must make progress and must not cross the declared array end.
         if ((next_position <= position) || (next_position > data_end))
         {
-            return MakeUnexpected(SerializationError::kOutOfBoundsWrite);
+            return MakeUnexpected(score::serialization::SerializationError::kOutOfBoundsWrite);
         }
         append(std::move(element));
         position = next_position;
@@ -128,8 +126,8 @@ Result<void> DeSerializeArray(Visitor& visitor,
 /// field width is sizeof(LengthType).
 template <typename Visitor, typename Container, typename UnderlyingType, typename LengthType>
 void SerializeLengthPrefixedVector(Visitor& visitor,
-                                   SerializeIterator<Container> iterator,
-                                   const LengthPrefixedVector<UnderlyingType, LengthType>& value,
+                                   score::serialization::SerializeIterator<Container> iterator,
+                                   const score::serialization::LengthPrefixedVector<UnderlyingType, LengthType>& value,
                                    const ElementLayout& layout,
                                    const bool align_following)
 {
@@ -139,11 +137,12 @@ void SerializeLengthPrefixedVector(Visitor& visitor,
 }
 
 template <typename Visitor, typename Container, typename UnderlyingType, typename LengthType>
-Result<void> DeSerializeLengthPrefixedVector(Visitor& visitor,
-                                             DeSerializeIterator<Container>& iterator,
-                                             LengthPrefixedVector<UnderlyingType, LengthType>& value,
-                                             const ElementLayout& layout,
-                                             const bool align_following)
+Result<void> DeSerializeLengthPrefixedVector(
+    Visitor& visitor,
+    score::serialization::DeSerializeIterator<Container>& iterator,
+    score::serialization::LengthPrefixedVector<UnderlyingType, LengthType>& value,
+    const ElementLayout& layout,
+    const bool align_following)
 {
     ElementLayout length_layout{layout};
     length_layout.length_field_bytes = static_cast<std::uint8_t>(sizeof(LengthType));
@@ -161,7 +160,7 @@ Result<void> DeSerializeLengthPrefixedVector(Visitor& visitor,
 /// N makes a finite GetMaxSize possible.
 template <typename Visitor, typename Container, typename T, std::size_t N>
 void SerializeStaticVector(Visitor& visitor,
-                           SerializeIterator<Container> iterator,
+                           score::serialization::SerializeIterator<Container> iterator,
                            const score::cpp::static_vector<T, N>& value,
                            const ElementLayout& layout,
                            const bool align_following)
@@ -171,7 +170,7 @@ void SerializeStaticVector(Visitor& visitor,
 
 template <typename Visitor, typename Container, typename T, std::size_t N>
 Result<void> DeSerializeStaticVector(Visitor& visitor,
-                                     DeSerializeIterator<Container>& iterator,
+                                     score::serialization::DeSerializeIterator<Container>& iterator,
                                      score::cpp::static_vector<T, N>& value,
                                      const ElementLayout& layout,
                                      const bool align_following)
@@ -182,7 +181,6 @@ Result<void> DeSerializeStaticVector(Visitor& visitor,
 }
 
 }  // namespace someip_detail
-}  // namespace serialization
-}  // namespace score
+}  // namespace score::mw::com::impl::someip::serialization
 
 #endif  // SCORE_SERIALIZATION_STRATEGIES_SOMEIP_ARRAY_H

@@ -4986,7 +4986,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "B8q0vqoyCF73c604BGTN8TCFKF0Ep76GQiW3O313m10=",
-        "usagesDigest": "TSs4a7FtoFhqO9Tnj1cK0UIorb/I8B6zTdm21pqz5vY=",
+        "usagesDigest": "v6xil0LiXzy9Qx/Gy/aOH87OfJnGxiUQyXYF8eWh7S8=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_tools,rules_cc rules_cc+",
           "REPO_MAPPING:score_bazel_cpp_toolchains+,bazel_tools bazel_tools",
@@ -5077,7 +5077,8 @@
                 "@@//quality/compiler_warnings:optimize_code",
                 "@@//quality/compiler_warnings:treat_warnings_as_errors",
                 "@@//quality/compiler_warnings/gcc:misra_warnings",
-                "@@//quality/compiler_warnings/gcc:minimal_warnings"
+                "@@//quality/compiler_warnings/gcc:minimal_warnings",
+                "@@//quality/compiler_warnings:dynamic_loading"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",
@@ -5109,7 +5110,8 @@
                 "@@//quality/compiler_warnings:optimize_code",
                 "@@//quality/compiler_warnings:treat_warnings_as_errors",
                 "@@//quality/compiler_warnings/gcc:misra_warnings",
-                "@@//quality/compiler_warnings/gcc:minimal_warnings"
+                "@@//quality/compiler_warnings/gcc:minimal_warnings",
+                "@@//quality/compiler_warnings:dynamic_loading"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",
@@ -5141,7 +5143,8 @@
                 "@@//quality/compiler_warnings:optimize_code",
                 "@@//quality/compiler_warnings:treat_warnings_as_errors",
                 "@@//quality/compiler_warnings/gcc:misra_warnings",
-                "@@//quality/compiler_warnings/gcc:minimal_warnings"
+                "@@//quality/compiler_warnings/gcc:minimal_warnings",
+                "@@//quality/compiler_warnings/qcc:dynamic_loading"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",
@@ -5173,7 +5176,8 @@
                 "@@//quality/compiler_warnings:optimize_code",
                 "@@//quality/compiler_warnings:treat_warnings_as_errors",
                 "@@//quality/compiler_warnings/gcc:misra_warnings",
-                "@@//quality/compiler_warnings/gcc:minimal_warnings"
+                "@@//quality/compiler_warnings/gcc:minimal_warnings",
+                "@@//quality/compiler_warnings/qcc:dynamic_loading"
               ],
               "extra_link_flags": [],
               "license_info_variable": "",

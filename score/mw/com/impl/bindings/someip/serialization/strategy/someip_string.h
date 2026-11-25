@@ -27,9 +27,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace score
-{
-namespace serialization
+namespace score::mw::com::impl::someip::serialization
 {
 namespace someip_detail
 {
@@ -44,7 +42,7 @@ constexpr std::uint8_t kStringTerminator{0x00U};
 /// is not the last element (align_following), aligning the data that follows to the element's alignment_bits. The
 /// length-field width comes from the element's layout; characters are written verbatim (the string is assumed UTF-8).
 template <typename Container>
-void SerializeString(SerializeIterator<Container> iterator,
+void SerializeString(score::serialization::SerializeIterator<Container> iterator,
                      const score::cpp::pmr::string& value,
                      const ElementLayout& layout,
                      const bool align_following)
@@ -69,7 +67,7 @@ void SerializeString(SerializeIterator<Container> iterator,
 
 template <typename Visitor, typename Container>
 Result<void> DeSerializeString(Visitor& visitor,
-                               DeSerializeIterator<Container>& iterator,
+                               score::serialization::DeSerializeIterator<Container>& iterator,
                                score::cpp::pmr::string& value,
                                const ElementLayout& layout,
                                const bool align_following)
@@ -77,14 +75,14 @@ Result<void> DeSerializeString(Visitor& visitor,
     const std::uint64_t length = ReadLengthField(iterator, layout);
     if (iterator.HasError())
     {
-        return MakeUnexpected(SerializationError::kOutOfBoundsWrite);
+        return MakeUnexpected(score::serialization::SerializationError::kOutOfBoundsWrite);
     }
 
     // Guard against manipulated input declaring more payload bytes than remain, before reserving memory for them.
     const std::size_t remaining = iterator.End().GetResult().value() - iterator.GetResult().value();
     if (length > static_cast<std::uint64_t>(remaining))
     {
-        return MakeUnexpected(SerializationError::kOutOfBoundsWrite);
+        return MakeUnexpected(score::serialization::SerializationError::kOutOfBoundsWrite);
     }
 
     std::vector<std::uint8_t> bytes{};
@@ -120,7 +118,6 @@ Result<void> DeSerializeString(Visitor& visitor,
 }
 
 }  // namespace someip_detail
-}  // namespace serialization
-}  // namespace score
+}  // namespace score::mw::com::impl::someip::serialization
 
 #endif  // SCORE_SERIALIZATION_STRATEGIES_SOMEIP_STRING_H

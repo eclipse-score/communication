@@ -20,12 +20,13 @@
 #include <cstdint>
 #include <vector>
 
-namespace score
-{
-namespace serialization
+namespace score::mw::com::impl::someip::serialization
 {
 namespace
 {
+
+using score::serialization::DeSerializeIterator;
+using score::serialization::SerializeInto;
 
 using Buffer = std::vector<std::uint8_t>;
 
@@ -166,5 +167,4 @@ TEST(SomeIpScalar, BoolAtEndOfInputLatchesError)
 }
 
 }  // namespace
-}  // namespace serialization
-}  // namespace score
+}  // namespace score::mw::com::impl::someip::serialization

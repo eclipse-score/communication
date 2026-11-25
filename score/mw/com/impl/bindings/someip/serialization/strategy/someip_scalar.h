@@ -20,9 +20,7 @@
 
 #include <score/utility.hpp>
 
-namespace score
-{
-namespace serialization
+namespace score::mw::com::impl::someip::serialization
 {
 namespace someip_detail
 {
@@ -30,26 +28,30 @@ namespace someip_detail
 /// @brief Fixed-width integers (signed/unsigned), enums, and floating point in the element's byte order (defaulting to
 /// big-endian). SOME/IP scalars are packed, so no alignment padding is emitted.
 template <typename Container, typename T>
-void SerializeScalar(SerializeIterator<Container> iterator, const T& value, const ElementLayout& layout)
+void SerializeScalar(score::serialization::SerializeIterator<Container> iterator,
+                     const T& value,
+                     const ElementLayout& layout)
 {
     WriteScalar(iterator, value, ReverseFor(layout.byte_order));
 }
 
 template <typename Container, typename T>
-void DeSerializeScalar(DeSerializeIterator<Container>& iterator, T& value, const ElementLayout& layout)
+void DeSerializeScalar(score::serialization::DeSerializeIterator<Container>& iterator,
+                       T& value,
+                       const ElementLayout& layout)
 {
     ReadScalar(iterator, value, ReverseFor(layout.byte_order));
 }
 
 /// @brief Boolean: a single packed byte, FALSE = 0x00, TRUE = 0x01.
 template <typename Container>
-void SerializeBool(SerializeIterator<Container> iterator, const bool value)
+void SerializeBool(score::serialization::SerializeIterator<Container> iterator, const bool value)
 {
     iterator = value ? kBoolTrue : kBoolFalse;
 }
 
 template <typename Container>
-void DeSerializeBool(DeSerializeIterator<Container>& iterator, bool& value)
+void DeSerializeBool(score::serialization::DeSerializeIterator<Container>& iterator, bool& value)
 {
     if (iterator.HasError())
     {
@@ -57,7 +59,7 @@ void DeSerializeBool(DeSerializeIterator<Container>& iterator, bool& value)
     }
     if (iterator == iterator.End())
     {
-        iterator.SetError(SerializationError::kOutOfBoundsWrite);  // truncated input
+        iterator.SetError(score::serialization::SerializationError::kOutOfBoundsWrite);  // truncated input
         return;
     }
     value = (*iterator != kBoolFalse);  // SOME/IP: any non-zero byte decodes to TRUE
@@ -65,7 +67,6 @@ void DeSerializeBool(DeSerializeIterator<Container>& iterator, bool& value)
 }
 
 }  // namespace someip_detail
-}  // namespace serialization
-}  // namespace score
+}  // namespace score::mw::com::impl::someip::serialization
 
 #endif  // SCORE_SERIALIZATION_STRATEGIES_SOMEIP_SCALAR_H
