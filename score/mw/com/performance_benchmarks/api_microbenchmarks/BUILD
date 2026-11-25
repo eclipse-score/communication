@@ -70,7 +70,7 @@ cc_binary(
         "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:config_qm_high_frequency_send_large_data",
         "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json",
     ],
-    env = {"MW_LOG_CONFIG_FILE": "$(location //score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json)"},
+    env = {"MW_LOG_CONFIG_FILE": "$(rootpath //score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json)"},
     tags = ["benchmark"],
     deps = [
         ":lola_interface",
@@ -90,7 +90,7 @@ cc_binary(
         "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:config_qm_high_frequency_send_large_data",
         "//score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json",
     ],
-    env = {"MW_LOG_CONFIG_FILE": "$(location //score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json)"},
+    env = {"MW_LOG_CONFIG_FILE": "$(rootpath //score/mw/com/performance_benchmarks/api_microbenchmarks/config:logging_json)"},
     tags = ["benchmark"],
     deps = [
         ":lola_interface",

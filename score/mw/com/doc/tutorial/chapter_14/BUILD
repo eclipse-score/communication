@@ -34,7 +34,7 @@ cc_binary(
     data = [
         ":logging.json",
     ],
-    env = {"MW_LOG_CONFIG_FILE": "$(location logging.json)"},
+    env = {"MW_LOG_CONFIG_FILE": "$(rootpath logging.json)"},
     features = COMPILER_WARNING_FEATURES,
     deps = [
         ":gateway_application_runner",

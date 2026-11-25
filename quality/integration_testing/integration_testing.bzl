@@ -115,13 +115,13 @@ def integration_test(name, srcs, filesystem, **kwargs):
         select({
             "//conditions:default": [
                 "--log-cli-level=DEBUG",
-                "--docker-image-bootstrap=$(location {})".format(image_loader),
+                "--docker-image-bootstrap=$(rootpath {})".format(image_loader),
                 "--docker-image={}".format(repo_tag),
             ],
             "@platforms//os:qnx": [
                 "--log-cli-level=DEBUG",
-                "--qemu-config=$(location {})".format(qemu_config),
-                "--qemu-image=$(location {})".format(qemu_image),
+                "--qemu-config=$(rootpath {})".format(qemu_config),
+                "--qemu-image=$(rootpath {})".format(qemu_image),
             ],
         }),
     )
@@ -218,9 +218,9 @@ def dual_qemu_integration_test(
         "args",
         [
             "--log-cli-level=DEBUG",
-            "--dual-qemu-config=$(location {})".format(dual_config),
-            "--qemu-image-a=$(location {})".format(qemu_image_a),
-            "--qemu-image-b=$(location {})".format(qemu_image_b),
+            "--dual-qemu-config=$(rootpath {})".format(dual_config),
+            "--qemu-image-a=$(rootpath {})".format(qemu_image_a),
+            "--qemu-image-b=$(rootpath {})".format(qemu_image_b),
         ],
     )
 

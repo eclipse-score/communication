@@ -111,14 +111,14 @@ cc_binary(
         "lola_benchmarking_service.cpp",
     ],
     args = [
-        "$(location :make_configs)/service_benchmark_config.json",
-        "$(location :make_configs)/service_mw_com_config.json",
+        "$(rootpath :make_configs)/service_benchmark_config.json",
+        "$(rootpath :make_configs)/service_mw_com_config.json",
     ],
     data = [
         ":logging.json",
         ":make_configs",
     ],
-    env = {"MW_LOG_CONFIG_FILE": "$(location logging.json)"},
+    env = {"MW_LOG_CONFIG_FILE": "$(rootpath logging.json)"},
     features = [
         "aborts_upon_exception",
     ],
@@ -140,14 +140,14 @@ cc_binary(
         "lola_benchmarking_client.cpp",
     ],
     args = [
-        "$(location :make_configs)/client_benchmark_config.json",
-        "$(location :make_configs)/client_mw_com_config.json",
+        "$(rootpath :make_configs)/client_benchmark_config.json",
+        "$(rootpath :make_configs)/client_mw_com_config.json",
     ],
     data = [
         ":logging.json",
         ":make_configs",
     ],
-    env = {"MW_LOG_CONFIG_FILE": "$(location logging.json)"},
+    env = {"MW_LOG_CONFIG_FILE": "$(rootpath logging.json)"},
     features = [
         "aborts_upon_exception",
     ],
@@ -167,7 +167,7 @@ py_binary(
     name = "perf_run",
     srcs = ["perf_run.py"],
     args = [
-        "$(location logging.json)",
+        "$(rootpath logging.json)",
         "gen_config",
     ],
     data = [
@@ -176,7 +176,7 @@ py_binary(
         ":lola_benchmarking_service",
         ":make_configs",
     ],
-    env = {"MW_LOG_CONFIG_FILE": "$(location logging.json)"},
+    env = {"MW_LOG_CONFIG_FILE": "$(rootpath logging.json)"},
     target_compatible_with = ["@platforms//os:linux"],
 )
 
