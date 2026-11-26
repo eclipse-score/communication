@@ -117,7 +117,8 @@ inline auto ConvertJsonToE2EEventMap(const json::Object& json_object)
     const auto e2e_events_result = e2e_events_it->second.As<json::Object>();
     SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(e2e_events_result.has_value(), "Invalid serialized E2E events");
     std::unordered_map<std::string, E2EEventTypeDeployment> e2e_events{};
-    for (const auto& e2e_event : e2e_events_result.value().get())
+    const auto& e2e_events_json = e2e_events_result.value().get();
+    for (const auto& e2e_event : e2e_events_json)
     {
         const auto event_result = e2e_event.second.As<json::Object>();
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_result.has_value(), "Invalid serialized E2E event");
