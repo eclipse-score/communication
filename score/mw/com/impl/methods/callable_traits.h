@@ -54,7 +54,6 @@ using get_tuple_tail_t = typename get_tuple_tail<T>::type;
 ///
 /// e.g. for a callable of type `int(const double&, int, const std::string), `get_callable_args_types<int(const
 /// double&, int, const std::string)>::type` will be `std::tuple<const double&, int, const std::string>`.
-/// Full implementation is in callable_traits_impl.h.
 template <typename T>
 struct get_callable_args_types : public get_callable_args_types<decltype(&remove_cvref_t<T>::operator())>
 {
@@ -64,16 +63,59 @@ struct get_callable_args_types : public get_callable_args_types<decltype(&remove
 ///
 /// e.g. for a callable of type `int(const double&, int, const std::string), `get_callable_return_type<int(const
 /// double&, int, const std::string)>::type` will be `int`.
-/// Full implementation is in callable_traits_impl.h.
 template <typename T>
 struct get_callable_return_type : public get_callable_return_type<decltype(&remove_cvref_t<T>::operator())>
 {
 };
 
-}  // namespace score::mw::com::impl
+template <typename C, typename Ret, typename... InArgs>
+struct get_callable_args_types<Ret (C::*)(InArgs...) const noexcept>
+{
+    using type = std::tuple<InArgs...>;
+};
 
-// To avoid keeping the large number of struct specializations for different callable types in the header file, we put
-// them in a separate implementation header file.
-#include "score/mw/com/impl/methods/callable_traits_impl.h"
+template <typename C, typename Ret, typename... InArgs>
+struct get_callable_args_types<Ret (C::*)(InArgs...) const>
+{
+    using type = std::tuple<InArgs...>;
+};
+
+template <typename C, typename Ret, typename... InArgs>
+struct get_callable_args_types<Ret (C::*)(InArgs...) noexcept>
+{
+    using type = std::tuple<InArgs...>;
+};
+
+template <typename C, typename Ret, typename... InArgs>
+struct get_callable_args_types<Ret (C::*)(InArgs...)>
+{
+    using type = std::tuple<InArgs...>;
+};
+
+template <typename C, typename Ret, typename... Args>
+struct get_callable_return_type<Ret (C::*)(Args...) const>
+{
+    using type = Ret;
+};
+
+template <typename C, typename Ret, typename... Args>
+struct get_callable_return_type<Ret (C::*)(Args...) const noexcept>
+{
+    using type = Ret;
+};
+
+template <typename C, typename Ret, typename... Args>
+struct get_callable_return_type<Ret (C::*)(Args...)>
+{
+    using type = Ret;
+};
+
+template <typename C, typename Ret, typename... Args>
+struct get_callable_return_type<Ret (C::*)(Args...) noexcept>
+{
+    using type = Ret;
+};
+
+}  // namespace score::mw::com::impl
 
 #endif  // SCORE_MW_COM_IMPL_METHODS_METHOD_CALLABLE_TRAITS_H
