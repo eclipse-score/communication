@@ -55,7 +55,7 @@ inline UnixDomainSocketAddress::UnixDomainSocketAddress(const std::string_view p
     addr_ = sockaddr_un{};
     addr_.sun_family = static_cast<sa_family_t>(AF_UNIX);
     const size_t len = std::min(sizeof(addr_.sun_path) - 1U - (isAbstract ? 1U : 0U), path.size());
-    std::copy_n(path.data(), len, addr_.sun_path + (isAbstract ? 1 : 0));
+    static_cast<void>(std::copy_n(path.data(), len, addr_.sun_path + (isAbstract ? 1 : 0)));
 }
 
 }  // namespace score::message_passing::detail
