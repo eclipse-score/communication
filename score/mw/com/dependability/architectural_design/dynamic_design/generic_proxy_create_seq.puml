@@ -1,0 +1,104 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml generic_proxy_create_seq
+title "Generic Proxy Creation Sequence"
+hide footbox
+
+actor "ExternalEndpoint" as Process
+participant "mw_com::binding_independent::generic_proxy_and_service_elements" as generic_proxy_and_service_elements
+participant "mw_com::mw_com_binding_factories" as mw_com_binding_factories
+participant "mw_com::lola_binding::proxy_and_service_elements" as lola_proxy_and_service_elements
+participant "mw_com::lola_binding::event_data_control" as event_data_control
+participant "memory::shared::memory_shared" as memory_shared
+participant "mw_com::binding_independent::service_discovery" as service_discovery
+
+activate Process
+
+' Service Discovery
+Process -> service_discovery: FindService(InstanceSpecifier)
+activate service_discovery
+
+Process <-- service_discovery: return: ServiceHandleContainer<HandleType>
+deactivate service_discovery
+
+' Create Generic Proxy
+Process -> generic_proxy_and_service_elements: CreateGenericProxy(HandleType)
+activate generic_proxy_and_service_elements
+
+generic_proxy_and_service_elements -> mw_com_binding_factories: CreateGenericProxyBinding(HandleType, ProxyBinding&)
+activate mw_com_binding_factories
+
+' Create Lola Proxy
+mw_com_binding_factories -> lola_proxy_and_service_elements: CreateLolaProxy()
+activate lola_proxy_and_service_elements
+
+mw_com_binding_factories <-- lola_proxy_and_service_elements: return: unique_ptr<lola::Proxy>
+deactivate lola_proxy_and_service_elements
+
+mw_com_binding_factories --> generic_proxy_and_service_elements: return: unique_ptr<ProxyBinding>
+deactivate mw_com_binding_factories
+
+' Retrieve event names from configuration and populate event map
+generic_proxy_and_service_elements -> generic_proxy_and_service_elements: GetEventNameList(InstanceIdentifier)
+note right of generic_proxy_and_service_elements: Retrieve event names from configuration
+
+
+' Check if events are provided by the service
+loop for all event names retrieved from configuration
+
+generic_proxy_and_service_elements -> lola_proxy_and_service_elements: IsEventProvided(event_name)
+activate lola_proxy_and_service_elements
+
+lola_proxy_and_service_elements -> event_data_control: CheckEventExistsInServiceDataControl(event_name)
+activate event_data_control
+
+event_data_control --> lola_proxy_and_service_elements: return: bool (event exists)
+deactivate event_data_control
+
+lola_proxy_and_service_elements --> generic_proxy_and_service_elements: return: bool
+deactivate lola_proxy_and_service_elements
+
+end
+
+' Create event bindings directly in the internal map
+loop for all event which are provided in shared memory
+
+generic_proxy_and_service_elements -> mw_com_binding_factories: CreateGenericProxyEventBinding(HandleType, ProxyBinding&)
+activate mw_com_binding_factories
+
+' Create Lola ProxyEvent binding
+mw_com_binding_factories -> lola_proxy_and_service_elements: CreateLolaProxyEvent()
+activate lola_proxy_and_service_elements
+
+mw_com_binding_factories <-- lola_proxy_and_service_elements: return: unique_ptr<lola::ProxyEvent>
+deactivate lola_proxy_and_service_elements
+
+mw_com_binding_factories --> generic_proxy_and_service_elements: return: unique_ptr<ProxyEventBinding>
+deactivate mw_com_binding_factories
+
+generic_proxy_and_service_elements -> generic_proxy_and_service_elements: emplace(event_name, GenericProxyEvent)
+note right of generic_proxy_and_service_elements: Store in internal events map
+
+end
+
+' Validate event bindings
+generic_proxy_and_service_elements -> generic_proxy_and_service_elements: Validate event bindings
+note right of generic_proxy_and_service_elements: Verify all event bindings created successfully
+
+generic_proxy_and_service_elements --> Process: return: GenericProxy instance
+deactivate generic_proxy_and_service_elements
+
+deactivate Process
+
+@enduml
