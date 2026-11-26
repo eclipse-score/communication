@@ -17,7 +17,7 @@ namespace score::mw::com::impl::someip
 
 void SlotAllocationControl::Reset(const std::size_t number_of_slots)
 {
-    slot_in_use_.assign(number_of_slots, false);
+    slot_in_use_.assign(number_of_slots, std::uint8_t{0U});
 }
 
 void SlotAllocationControl::Clear() noexcept
@@ -29,9 +29,9 @@ std::optional<SlotIndexType> SlotAllocationControl::AllocateSlot() noexcept
 {
     for (std::size_t slot_index = 0U; slot_index < slot_in_use_.size(); ++slot_index)
     {
-        if (!static_cast<bool>(slot_in_use_[slot_index]))
+        if (slot_in_use_[slot_index] == 0U)
         {
-            slot_in_use_[slot_index] = true;
+            slot_in_use_[slot_index] = 1U;
             return static_cast<SlotIndexType>(slot_index);
         }
     }
@@ -44,7 +44,7 @@ void SlotAllocationControl::DiscardSlot(const SlotIndexType slot_index) noexcept
     {
         return;
     }
-    slot_in_use_[slot_index] = false;
+    slot_in_use_[slot_index] = 0U;
 }
 
 std::size_t SlotAllocationControl::GetNumberOfSlots() const noexcept

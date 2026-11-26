@@ -16,6 +16,7 @@
 #include "score/mw/com/impl/bindings/someip/event_data_storage.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <vector>
 
@@ -49,7 +50,7 @@ class SlotAllocationControl final
     std::size_t GetNumberOfSlots() const noexcept;
 
   private:
-    std::vector<bool> slot_in_use_{};
+    std::vector<std::uint8_t> slot_in_use_{};
 };
 
 }  // namespace score::mw::com::impl::someip
