@@ -28,7 +28,8 @@ ClientSendQueue::ClientSendQueue(ClientConnectionLifetime& lifetime,
       pool_{},
       queue_{},
       waiting_for_reply_{},
-      reply_slot_owner_{nullptr}
+      reply_slot_owner_{kNoReplySlot},
+      last_reply_slot_id_{kNoReplySlot}
 {
     for (auto& command : storage_)
     {
@@ -78,17 +79,17 @@ ClientSendQueue::SendResult ClientSendQueue::Send(Message message) noexcept
         return {};
     }
 
-    const ReplySlotToken marker{};
+    const ReplySlotId marker = ++last_reply_slot_id_;
     if (config_.fully_ordered)
     {
         waiting_for_reply_ = ReplyCallback{};
-        reply_slot_owner_ = &marker;
+        reply_slot_owner_ = marker;
     }
     const auto result = SendTransport(operation, score::cpp::to_underlying(ClientToServer::SEND), message);
-    if (reply_slot_owner_ == &marker)
+    if (reply_slot_owner_ == marker)
     {
         waiting_for_reply_.reset();
-        reply_slot_owner_ = nullptr;
+        reply_slot_owner_ = kNoReplySlot;
         ArmIfNeeded();
     }
     return result;
@@ -106,7 +107,6 @@ ClientSendQueue::ReplyResult ClientSendQueue::SendWaitReply(Message message, Rep
     }
 
     ReplyResult result{};
-    const ReplySlotToken marker{};
     NonAllocatingFuture future(lifetime_.Mutex(), reply_condition_, result);
     ReplyCallback callback = [&reply, &future](ReplyResult message_expected) {
         if (!message_expected.has_value())
@@ -143,13 +143,14 @@ ClientSendQueue::ReplyResult ClientSendQueue::SendWaitReply(Message message, Rep
     }
     else
     {
+        const ReplySlotId marker = ++last_reply_slot_id_;
         waiting_for_reply_ = std::move(callback);
-        reply_slot_owner_ = &marker;
+        reply_slot_owner_ = marker;
         const auto expected = SendTransport(operation, score::cpp::to_underlying(ClientToServer::REQUEST), message);
-        if (!expected.has_value() && (reply_slot_owner_ == &marker))
+        if (!expected.has_value() && (reply_slot_owner_ == marker))
         {
             waiting_for_reply_.reset();
-            reply_slot_owner_ = nullptr;
+            reply_slot_owner_ = kNoReplySlot;
             ArmIfNeeded();
             return score::cpp::make_unexpected(expected.error());
         }
@@ -181,14 +182,14 @@ ClientSendQueue::SendResult ClientSendQueue::SendWithCallback(Message message, R
         return {};
     }
 
-    const ReplySlotToken marker{};
+    const ReplySlotId marker = ++last_reply_slot_id_;
     waiting_for_reply_ = std::move(callback);
-    reply_slot_owner_ = &marker;
+    reply_slot_owner_ = marker;
     const auto expected = SendTransport(operation, score::cpp::to_underlying(ClientToServer::REQUEST), message);
-    const bool owns_reply = reply_slot_owner_ == &marker;
+    const bool owns_reply = reply_slot_owner_ == marker;
     if (owns_reply)
     {
-        reply_slot_owner_ = nullptr;
+        reply_slot_owner_ = kNoReplySlot;
         if (!expected.has_value())
         {
             waiting_for_reply_.reset();
@@ -211,7 +212,7 @@ bool ClientSendQueue::HandleReply(Message message) noexcept
     }
     auto callback = std::move(*waiting_for_reply_);
     waiting_for_reply_.reset();
-    reply_slot_owner_ = nullptr;
+    reply_slot_owner_ = kNoReplySlot;
     DrainUnderLock(lock);
     lock.unlock();
     callback(message);
@@ -245,24 +246,24 @@ void ClientSendQueue::DrainUnderLock(std::unique_lock<std::mutex>& lock) noexcep
     {
         SendCommand& command = queue_.front();
         queue_.pop_front();
-        const ReplySlotToken marker{};
+        const ReplySlotId marker = ++last_reply_slot_id_;
         auto callback = std::move(command.callback);
         if (!callback.empty())
         {
             waiting_for_reply_ = std::move(callback);
-            reply_slot_owner_ = &marker;
+            reply_slot_owner_ = marker;
             const auto expected =
                 SendTransport(operation, score::cpp::to_underlying(ClientToServer::REQUEST), command.message);
             pool_.push_front(command);
             if (expected.has_value())
             {
-                if (reply_slot_owner_ == &marker)
+                if (reply_slot_owner_ == marker)
                 {
-                    reply_slot_owner_ = nullptr;
+                    reply_slot_owner_ = kNoReplySlot;
                 }
                 break;
             }
-            if (reply_slot_owner_ != &marker)
+            if (reply_slot_owner_ != marker)
             {
                 continue;
             }
@@ -273,23 +274,23 @@ void ClientSendQueue::DrainUnderLock(std::unique_lock<std::mutex>& lock) noexcep
                 callback(score::cpp::make_unexpected(expected.error()));
             }
             lock.lock();
-            if (reply_slot_owner_ == &marker)
+            if (reply_slot_owner_ == marker)
             {
                 waiting_for_reply_.reset();
-                reply_slot_owner_ = nullptr;
+                reply_slot_owner_ = kNoReplySlot;
             }
         }
         else
         {
             waiting_for_reply_ = ReplyCallback{};
-            reply_slot_owner_ = &marker;
+            reply_slot_owner_ = marker;
             score::cpp::ignore =
                 SendTransport(operation, score::cpp::to_underlying(ClientToServer::SEND), command.message);
             pool_.push_front(command);
-            if (reply_slot_owner_ == &marker)
+            if (reply_slot_owner_ == marker)
             {
                 waiting_for_reply_.reset();
-                reply_slot_owner_ = nullptr;
+                reply_slot_owner_ = kNoReplySlot;
             }
         }
     }
@@ -311,7 +312,7 @@ void ClientSendQueue::CancelPending() noexcept
     {
         auto callback = std::move(*waiting_for_reply_);
         waiting_for_reply_.reset();
-        reply_slot_owner_ = nullptr;
+        reply_slot_owner_ = kNoReplySlot;
         lock.unlock();
         if (!callback.empty())
         {
