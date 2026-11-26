@@ -42,10 +42,12 @@
 #include <algorithm>
 #include <array>
 #include <cerrno>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <exception>
 #include <functional>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <mutex>
@@ -881,8 +883,8 @@ Result<void> MessagePassingServiceInstance::CallServiceMethodRemotely(
 
 // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
 // called implicitly".
-// This is a false positive: .at() could throw if the index is outside of the range of the container but the function
-// CopyNodeIdentifiers will only return a value which is in range of the array. Otherwise CopyNodeIdentifiers will break
+// This is a false positive: CopyNodeIdentifiers will only return a value which is in range of the array. Otherwise
+// CopyNodeIdentifiers will break
 // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
 void MessagePassingServiceInstance::NotifyEventRemote(const ElementFqId event_id) noexcept
 {
@@ -918,7 +920,7 @@ void MessagePassingServiceInstance::NotifyEventRemote(const ElementFqId event_id
             // not be implicitly converted to a different underlying type"
             // False positive, nodeIdentifiersTmp is an array of `pid_t`.
             // coverity[autosar_cpp14_m5_0_3_violation]
-            const pid_t node_identifier = nodeIdentifiersTmp.at(i);
+            const pid_t node_identifier = *std::next(nodeIdentifiersTmp.cbegin(), static_cast<std::ptrdiff_t>(i));
             // Suppress "AUTOSAR C++14 A18-5-8" rule finding. This rule states: "Objects that do not outlive a function
             // shall have automatic storage duration". The object is a shared_ptr which is allocated in the heap.
             // coverity[autosar_cpp14_a18_5_8_violation]
