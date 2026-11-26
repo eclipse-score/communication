@@ -33,9 +33,9 @@ class SkeletonMethodFacade : public SkeletonMethodBinding
         : SkeletonMethodBinding(), skeleton_method_{skeleton_method} {};
     ~SkeletonMethodFacade() override = default;
 
-    Result<void> RegisterHandler(TypeErasedHandler&& cb) override
+    Result<void> RegisterHandler(TypeErasedHandler&& callback) override
     {
-        return skeleton_method_.RegisterHandler(std::move(cb));
+        return skeleton_method_.RegisterHandler(std::move(callback));
     }
 
   private:
