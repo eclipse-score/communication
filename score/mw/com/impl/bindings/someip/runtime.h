@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_RUNTIME_H
 #define SCORE_MW_COM_IMPL_BINDINGS_SOMEIP_RUNTIME_H
 
+#include "score/message_passing/client_factory.h"
 #include "score/mw/com/impl/binding_type.h"
 #include "score/mw/com/impl/bindings/someip/service_discovery_client.h"
 #include "score/mw/com/impl/i_binding_runtime.h"
@@ -24,7 +25,7 @@ namespace score::mw::com::impl::someip
 class Runtime final : public IBindingRuntime
 {
   public:
-    Runtime() = default;
+    Runtime() : service_discovery_client_{client_factory_} {}
     ~Runtime() override = default;
 
     Runtime(const Runtime&) = delete;
@@ -50,7 +51,8 @@ class Runtime final : public IBindingRuntime
     }
 
   private:
-    ServiceDiscoveryClient service_discovery_client_{};
+    score::message_passing::ClientFactory client_factory_{};
+    ServiceDiscoveryClient service_discovery_client_;
 };
 
 }  // namespace score::mw::com::impl::someip

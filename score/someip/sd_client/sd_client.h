@@ -15,7 +15,7 @@
 
 #include "score/someip/sd_client/sd_protocol.h"
 
-#include "score/message_passing/client_factory.h"
+#include "score/message_passing/i_client_factory.h"
 
 #include <chrono>
 #include <condition_variable>
@@ -24,8 +24,21 @@
 #include <mutex>
 #include <optional>
 
+namespace score::mw::com::impl::someip
+{
+class ServiceDiscoveryClient;
+}
+
 namespace score::someip_sd
 {
+
+struct ServiceDetails
+{
+    std::uint16_t service;
+    std::uint16_t instance;
+    std::uint8_t major;
+    std::uint32_t minor;
+};
 
 /// Application side of the opcode protocol towards the SD daemon.
 class SdClient final
@@ -34,9 +47,10 @@ class SdClient final
     using AvailabilityHandler = std::function<void(std::uint16_t service, std::uint16_t instance, bool available)>;
     using SubscriptionStateHandler =
         std::function<void(std::uint16_t service, std::uint16_t instance, std::uint16_t eventgroup, bool acknowledged)>;
-
-    /// Handlers are called on the message_passing thread.
-    SdClient(AvailabilityHandler availability_handler, SubscriptionStateHandler subscription_state_handler);
+    /// Handlers are called on connection callback threads. The owner and handlers must outlive all callbacks.
+    SdClient(score::message_passing::IClientFactory& client_factory,
+             AvailabilityHandler availability_handler,
+             SubscriptionStateHandler subscription_state_handler);
     ~SdClient();
 
     SdClient(const SdClient&) = delete;
@@ -44,10 +58,12 @@ class SdClient final
     SdClient(SdClient&&) = delete;
     SdClient& operator=(SdClient&&) = delete;
 
-    /// Connects to the daemon and registers; returns the assigned client id.
+    /// Bounds connection and registration waits. Failed attempts stop and release the connection before returning.
+    /// A live registered connection returns its existing client id.
     std::optional<std::uint16_t> Connect(std::chrono::milliseconds timeout);
 
     bool RequestService(std::uint16_t service, std::uint16_t instance, std::uint8_t major, std::uint32_t minor);
+    bool RequestService(const ServiceDetails& details);
     bool ReleaseService(std::uint16_t service, std::uint16_t instance);
     bool Subscribe(std::uint16_t service, std::uint16_t instance, std::uint16_t eventgroup, std::uint8_t major);
     bool Unsubscribe(std::uint16_t service, std::uint16_t instance, std::uint16_t eventgroup);
@@ -56,18 +72,36 @@ class SdClient final
     bool StopOfferService(std::uint16_t service, std::uint16_t instance);
 
   private:
+    using ConnectionLostHandler = std::function<void()>;
+
+    SdClient(score::message_passing::IClientFactory& client_factory,
+             AvailabilityHandler availability_handler,
+             SubscriptionStateHandler subscription_state_handler,
+             ConnectionLostHandler connection_lost_handler);
+
+    friend class score::mw::com::impl::someip::ServiceDiscoveryClient;
+
     bool Send(const protocol::Message& message);
     void OnNotify(score::cpp::span<const std::uint8_t> data);
+    void StopAndResetConnection();
 
     AvailabilityHandler availability_handler_;
     SubscriptionStateHandler subscription_state_handler_;
+    ConnectionLostHandler connection_lost_handler_;
 
-    score::message_passing::ClientFactory client_factory_;
+    score::message_passing::IClientFactory& client_factory_;
     score::cpp::pmr::unique_ptr<score::message_passing::IClientConnection> connection_;
 
+    std::mutex lifecycle_mutex_;
+    std::mutex connection_mutex_;
     std::mutex state_mutex_;
     std::condition_variable state_condition_;
-    score::message_passing::IClientConnection::State state_{score::message_passing::IClientConnection::State::kStarting};
+    bool intentional_shutdown_{false};
+    bool session_was_ready_{false};
+    bool session_loss_pending_{false};
+    score::message_passing::IClientConnection::State state_{
+        score::message_passing::IClientConnection::State::kStarting};
+    std::optional<std::uint16_t> client_id_;
 };
 
 }  // namespace score::someip_sd

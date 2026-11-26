@@ -87,6 +87,7 @@ cc_library(
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl:__subpackages__",
+        "//score/someip/sd_client:__pkg__",
     ],
     deps = [
         "@score_baselibs//score/containers:intrusivelist",

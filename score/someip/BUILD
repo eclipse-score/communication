@@ -18,11 +18,11 @@ unit(
     design_name = "RouterControlProtocol",
     maturity = "development",
     scope = [],
+    test_specs = [],
     tests = [],
     unit_design = [],
     visibility = ["//score/someip/dependability:__subpackages__"],
     implementation = [],
-    test_specs = [],
 )
 
 unit(
@@ -30,9 +30,9 @@ unit(
     design_name = "SDControlProtocol",
     maturity = "development",
     scope = [],
+    test_specs = [],
     tests = [],
     unit_design = [],
     visibility = ["//score/someip/dependability:__subpackages__"],
     implementation = [],
-    test_specs = [],
 )
