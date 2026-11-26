@@ -152,10 +152,11 @@ class ClientConnectionLifetime final
         return std::unique_lock<std::mutex>{mutex_};
     }
 
-    std::mutex& Mutex() noexcept
+    std::mutex& Mutex() & noexcept
     {
         return mutex_;
     }
+    std::mutex&& Mutex() && = delete;
 
     const std::atomic<State>& state_;
     std::atomic<StopReason>& stop_reason_;
