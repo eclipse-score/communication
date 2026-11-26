@@ -25,7 +25,7 @@ class TypeErasedSamplePtrsGuard
 {
   public:
     explicit TypeErasedSamplePtrsGuard(const impl::tracing::ServiceElementTracingData service_element_tracing_data);
-    ~TypeErasedSamplePtrsGuard() noexcept(false);
+    ~TypeErasedSamplePtrsGuard() noexcept;
 
     TypeErasedSamplePtrsGuard(const TypeErasedSamplePtrsGuard&) = delete;
     TypeErasedSamplePtrsGuard& operator=(const TypeErasedSamplePtrsGuard&) = delete;

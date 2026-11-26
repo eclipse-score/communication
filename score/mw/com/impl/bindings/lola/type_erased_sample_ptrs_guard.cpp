@@ -25,7 +25,7 @@ TypeErasedSamplePtrsGuard::TypeErasedSamplePtrsGuard(
 {
 }
 
-TypeErasedSamplePtrsGuard::~TypeErasedSamplePtrsGuard() noexcept(false)
+TypeErasedSamplePtrsGuard::~TypeErasedSamplePtrsGuard() noexcept
 {
     const auto* const tracing_runtime = impl::Runtime::getInstance().GetTracingRuntime();
     if (tracing_runtime != nullptr)
