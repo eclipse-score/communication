@@ -18,6 +18,7 @@ architectural_design(
         "dynamic_design/proxy_create_seq.puml",
         "dynamic_design/event_subscription.puml",
         "dynamic_design/event_send_and_receive_data.puml",
+        "dynamic_design/method_setup.puml",
         "dynamic_design/proxy_subdiagrams/lola_proxy_creation.puml",
         "dynamic_design/proxy_subdiagrams/lola_proxy_event_creation.puml",
         "dynamic_design/skeleton_create_seq.puml",

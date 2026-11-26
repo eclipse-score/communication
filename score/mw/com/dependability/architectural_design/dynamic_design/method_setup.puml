@@ -1,0 +1,169 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml method_setup
+title "Skeleton and Proxy Method Setup Sequence"
+hide footbox
+
+actor "ExternalEndpoint" as Process
+participant "mw_com::binding_independent::skeleton_and_service_elements" as skeleton_and_service_elements
+participant "mw_com::lola_binding::skeleton_and_service_elements" as lola_skeleton_and_service_elements
+participant "memory::shared::memory_shared" as memory_shared
+participant "mw_com::lola_binding::message_passing_service" as message_passing_service
+participant "mw_com::lola_binding::proxy_and_service_elements" as lola_proxy_and_service_elements
+participant "mw_com::binding_independent::proxy_and_service_elements" as proxy_and_service_elements
+participant "filesystem" as filesystem
+
+activate Process
+
+' Start message passing thread
+Process -> message_passing_service: Construct
+activate message_passing_service
+
+message_passing_service -> message_passing_service: Start message reception thread
+note right of message_passing_service: We currently have no official way of representing a thread. \nFor now, this is represented by the lifetime of the \nMessage Passing Service.
+
+== Create Skeleton ==
+
+' Create Skeleton and binding
+Process -> skeleton_and_service_elements: Create(InstanceSpecifier)
+activate skeleton_and_service_elements
+
+skeleton_and_service_elements --> Process: return: SkeletonWrapperClass<Interface>
+deactivate skeleton_and_service_elements
+
+== Perform required setup before offering service ==
+' Register method handlers
+loop for all methods
+
+Process -> skeleton_and_service_elements: RegisterMethodHandler(method_handler)
+activate skeleton_and_service_elements
+
+skeleton_and_service_elements -> lola_skeleton_and_service_elements: RegisterMethodHandler(method_handler)
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements --> skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+skeleton_and_service_elements --> Process
+deactivate skeleton_and_service_elements
+
+end
+
+== OfferService ==
+
+' Offer service
+Process -> skeleton_and_service_elements: OfferService
+activate skeleton_and_service_elements
+
+skeleton_and_service_elements -> lola_skeleton_and_service_elements: OfferSkeleton()
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements -> message_passing_service: RegisterQmOnServiceMethodSubscribedHandler()
+activate message_passing_service
+
+lola_skeleton_and_service_elements <-- message_passing_service
+deactivate message_passing_service
+
+alt Process is AsilB
+
+lola_skeleton_and_service_elements -> message_passing_service: RegisterAsilBOnServiceMethodSubscribedHandler()
+activate message_passing_service
+
+lola_skeleton_and_service_elements <-- message_passing_service
+deactivate message_passing_service
+
+end
+
+lola_skeleton_and_service_elements --> skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+skeleton_and_service_elements -> lola_skeleton_and_service_elements: VerifyAllMethodHandlersRegistered()
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements --> skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+skeleton_and_service_elements --> Process
+deactivate skeleton_and_service_elements
+
+== Find service and create proxy ==
+
+' Service Discovery
+Process -> proxy_and_service_elements: FindService(InstanceSpecifier)
+activate proxy_and_service_elements
+
+Process <-- proxy_and_service_elements: return: ServiceHandleContainer<HandleType>
+deactivate proxy_and_service_elements
+
+' Create Proxy and binding
+Process -> proxy_and_service_elements: CreateProxy(HandleType)
+activate proxy_and_service_elements
+
+' Setup methods
+proxy_and_service_elements -> lola_proxy_and_service_elements: SetupMethodsInShm()
+activate lola_proxy_and_service_elements
+
+lola_proxy_and_service_elements --> filesystem: Exists(method_shm_path)
+activate filesystem
+
+filesystem --> lola_proxy_and_service_elements: return: bool
+deactivate filesystem
+
+alt Method SHM exists - In restart context
+
+lola_proxy_and_service_elements -> memory_shared: RemoveStaleArtefacts()
+activate memory_shared
+
+memory_shared --> lola_proxy_and_service_elements
+deactivate memory_shared
+
+end
+
+lola_proxy_and_service_elements -> memory_shared: CreateShm(method_shm_path)
+activate memory_shared
+
+memory_shared -> lola_proxy_and_service_elements: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+lola_proxy_and_service_elements -> message_passing_service: SubscribeServiceMethod()
+activate message_passing_service
+
+message_passing_service -> lola_skeleton_and_service_elements: OnServiceMethodSubscribed(ProxyInstanceIdentifier)
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements -> memory_shared: OpenShm(method_shm_path)
+activate memory_shared
+
+memory_shared --> lola_skeleton_and_service_elements: std::shared_ptr<ManagedMemoryResource>
+deactivate memory_shared
+
+lola_skeleton_and_service_elements -> message_passing_service: RegisterMethodCallHandler()
+
+message_passing_service --> lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements --> message_passing_service
+deactivate lola_skeleton_and_service_elements
+
+message_passing_service --> lola_proxy_and_service_elements
+deactivate message_passing_service
+
+lola_proxy_and_service_elements --> proxy_and_service_elements
+deactivate lola_proxy_and_service_elements
+
+proxy_and_service_elements --> Process: return: Result<Proxy>
+deactivate proxy_and_service_elements
+
+deactivate Process
+
+@enduml
