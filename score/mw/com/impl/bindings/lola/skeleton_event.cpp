@@ -174,8 +174,11 @@ Result<void> SkeletonEvent::PrepareOffer(const std::optional<InitializeSampleCal
     score::cpp::ignore =
         event_data_control_composite_.emplace(registration_result.event_control_qm.data_control, asil_b_control);
 
-    const bool tracing_globally_enabled = ((impl::Runtime::getInstance().GetTracingRuntime() != nullptr) &&
-                                           (impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled()));
+    bool tracing_globally_enabled{false};
+    if (impl::Runtime::getInstance().GetTracingRuntime() != nullptr)
+    {
+        tracing_globally_enabled = impl::Runtime::getInstance().GetTracingRuntime()->IsTracingEnabled();
+    }
     if (!tracing_globally_enabled)
     {
         DisableAllTracePoints(tracing_data_);
