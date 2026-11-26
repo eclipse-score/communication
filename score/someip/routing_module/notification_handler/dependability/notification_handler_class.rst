@@ -29,9 +29,8 @@ its LoLa service instance; it is active while the LoLa service instance is offer
   the LoLa service instance cannot be created (e.g. it is missing in ``mw_com_config.json``) or offered, or another
   active instance of the service uses the same UDP route. A SOME/IP notification carries no instance ID, so its UDP
   route has to identify one instance. Opened UDP ports stay open.
-- ``RemoveRemoteService()`` stops the LoLa offer and removes the local subscriptions of the instance. Its LoLa
-  skeleton is kept and offered again by a later ``AddRemoteService()``. ``RemoveAll()`` does this for every remote
-  service.
+- ``RemoveRemoteService()`` stops the LoLa offer and removes the instance and its local subscriptions. A later
+  ``AddRemoteService()`` creates a new LoLa skeleton. ``RemoveAll()`` removes every remote service in the same way.
 - ``AddLocalSubscription()`` and ``RemoveLocalSubscription()`` switch the forwarding of one SOME/IP event of an active
   receive path; repeating them changes nothing. Subscriptions of unknown instances or events are rejected.
 
@@ -39,13 +38,12 @@ its LoLa service instance; it is active while the LoLa service instance is offer
 service ID, local UDP port and sender endpoint match an active receive path and whose event is locally subscribed:
 
 - It allocates a sample of the LoLa event, sets payload length, session ID, interface version and message type, and
-  copies the payload from the packet storage into the sample. QNX reads the mbuf chain directly; Linux receives into a
-  userspace buffer first.
-- Every dropped message is logged. A non-notification message, a missing receive path and an unknown or not locally
-  subscribed event are logged as warning. A payload larger than ``kMaxPayloadSize``, no free LoLa sample slot and a
-  failed payload copy or LoLa send are logged as error; they only happen in a misconfigured or faulty system, e.g. with
-  too few LoLa sample slots.
-- A malformed message stops parsing; the rest of the datagram is dropped and a warning is logged.
+  copies the payload from the packet storage into the sample. QNX reads the mbuf chain directly; Linux peeks the UDP
+  socket's receive queue directly into the sample.
+- Drop diagnostics are limited to one message per reason per second; the next message reports the number suppressed
+  since the previous one. Non-notification messages, missing receive paths, unknown or unsubscribed events and
+  malformed framing are warnings. Oversized payloads, unavailable LoLa sample slots, and failed copies or sends are
+  errors. A malformed message stops parsing and the rest of the datagram is dropped.
 
 Destroying an offered LoLa skeleton does not stop its LoLa offer, so ``NotificationHandler`` stops all LoLa offers on
 destruction.

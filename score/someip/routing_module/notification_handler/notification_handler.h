@@ -15,14 +15,18 @@
 
 #include "score/someip/routing_module/notification_handler/someip_datagram_parser.h"
 #include "score/someip/routing_module/routing_manager/i_routing_command_handler.h"
+#include "score/someip/routing_module/udp_transport/log.h"
 #include "score/someip/routing_module/udp_transport/udp_packet_reader.h"
 
 #include "score/mw/com/types.h"
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
+#include <string_view>
 #include <utility>
 
 namespace score::someip::routing_module
@@ -60,6 +64,20 @@ class NotificationHandler final : public IRoutingCommandHandler
                        const UdpPacketReader& datagram) noexcept;
 
   private:
+    enum class DropReason : std::size_t
+    {
+        kNonNotification,
+        kMalformed,
+        kNoReceivePath,
+        kUnknownEvent,
+        kNotSubscribed,
+        kOversizedPayload,
+        kNoSample,
+        kCopyFailed,
+        kSendFailed,
+        kCount,
+    };
+
     /// A SOME/IP event of a remote service and the LoLa event its notifications are forwarded to.
     struct RemoteEvent
     {
@@ -67,8 +85,7 @@ class NotificationHandler final : public IRoutingCommandHandler
         bool local_subscription;
     };
 
-    /// Receive path of a remote service; it is active while the LoLa skeleton is offered. Kept when the remote service
-    /// is removed, so that a later LoLa offer reuses the skeleton.
+    /// Receive path of a remote service; it is active while the LoLa skeleton is offered.
     struct RemoteService
     {
         std::uint16_t udp_local_port;
@@ -93,8 +110,14 @@ class NotificationHandler final : public IRoutingCommandHandler
                        const UdpPacketReader& datagram) noexcept;
     static void StopReceivePath(RemoteService& remote_service) noexcept;
     void StopAllReceivePaths() noexcept;
+    std::optional<std::uint64_t> ShouldLogDrop(DropReason reason) noexcept;
+    void LogDroppedNotification(DropReason reason,
+                                std::string_view description,
+                                const SomeipMessageHeader& header,
+                                std::uint16_t someip_instance) noexcept;
 
     RemoteServices remote_services_;
+    std::array<someip_log_limiter, static_cast<std::size_t>(DropReason::kCount)> drop_log_limiters_{};
 };
 
 }  // namespace score::someip::routing_module

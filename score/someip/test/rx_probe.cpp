@@ -71,6 +71,12 @@ void SendCommand(score::message_passing::IClientConnection& connection, const pr
 class Subscriber
 {
   public:
+    Subscriber() = default;
+    Subscriber(const Subscriber&) = delete;
+    Subscriber& operator=(const Subscriber&) = delete;
+    Subscriber(Subscriber&&) = delete;
+    Subscriber& operator=(Subscriber&&) = delete;
+
     ~Subscriber()
     {
         if (event_ != nullptr)
@@ -198,12 +204,10 @@ void SendDatagram(const int socket, const std::uint16_t port, const std::vector<
     destination.sin_family = AF_INET;
     destination.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     destination.sin_port = htons(port);
-    Require(::sendto(socket,
-                     bytes.data(),
-                     bytes.size(),
-                     0,
-                     reinterpret_cast<const sockaddr*>(&destination),
-                     sizeof(destination)) == static_cast<ssize_t>(bytes.size()),
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): POSIX socket APIs take sockaddr for IPv4 sockets.
+    const auto* const destination_address = reinterpret_cast<const sockaddr*>(&destination);
+    Require(::sendto(socket, bytes.data(), bytes.size(), 0, destination_address, sizeof(destination)) ==
+                static_cast<ssize_t>(bytes.size()),
             "sending UDP notification failed");
 }
 
@@ -215,8 +219,9 @@ int OpenSender(const std::uint16_t port)
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     address.sin_port = htons(port);
-    Require(::bind(socket, reinterpret_cast<const sockaddr*>(&address), sizeof(address)) == 0,
-            "binding UDP socket failed");
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): POSIX socket APIs take sockaddr for IPv4 sockets.
+    const auto* const socket_address = reinterpret_cast<const sockaddr*>(&address);
+    Require(::bind(socket, socket_address, sizeof(address)) == 0, "binding UDP socket failed");
     return socket;
 }
 
@@ -238,6 +243,7 @@ void WaitForOffer(const std::string_view instance, const bool offered)
     throw std::runtime_error{"LoLa offer did not reach expected state"};
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity): Keep each CLI scenario's flow visible in this test probe.
 void Run(const std::string_view scenario)
 {
     com::runtime::InitializeRuntime(
@@ -424,6 +430,7 @@ int main(const int argc, char* argv[])
 {
     try
     {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic): argv is the C entry-point argument array.
         const std::string_view scenario = (argc > 1) ? argv[1] : "basic";
         Require((scenario == "basic") || (scenario == "wrong-event") || (scenario == "wrong-service") ||
                     (scenario == "wrong-type") || (scenario == "wrong-sender") || (scenario == "wrong-port") ||

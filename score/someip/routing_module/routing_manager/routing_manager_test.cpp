@@ -198,6 +198,20 @@ TEST_F(RoutingManagerTest, StartsRoutingCommandServer)
     EXPECT_TRUE(manager_.Start().has_value());
 }
 
+TEST_F(RoutingManagerTest, StartFailsWhenServerCreationFails)
+{
+    Trace("RoutingModule.CR_RoutingModule_ControlInterface",
+          "a routing command server factory that cannot create a server",
+          "the routing manager is started",
+          "starting fails with an out-of-memory error");
+    EXPECT_CALL(server_factory_, Create(_, _)).WillOnce(Return(nullptr));
+
+    const auto result = manager_.Start();
+
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error().GetOsDependentErrorCode(), ENOMEM);
+}
+
 TEST_F(RoutingManagerTest, StartFailsWhenListeningFails)
 {
     Trace("RoutingModule.CR_RoutingModule_ControlInterface",
@@ -369,6 +383,7 @@ TEST_F(RoutingManagerTest, RejectsSecondClientWhileTheDaemonIsConnected)
     StartAndConnectDaemon();
 
     const auto second = connect_(other_client_);
+    other_user_data_ = std::uintptr_t{2U};
     disconnect_(other_client_);
 
     ASSERT_FALSE(second.has_value());

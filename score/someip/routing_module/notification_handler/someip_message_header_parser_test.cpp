@@ -303,6 +303,23 @@ TEST(SomeipDatagramParserTest, RejectsTruncatedDataAfterCompleteMessages)
     EXPECT_EQ(malformed.error(), SomeipHeaderParseError::kInvalidHeaderSize);
 }
 
+TEST(SomeipDatagramParserTest, RejectsUnsupportedHeaderAfterPacketRead)
+{
+    Trace("RoutingModule.CR_RoutingModule_InvalidFraming",
+          "a complete SOME/IP header with an unsupported protocol version",
+          "the datagram parser reads and parses the header",
+          "iteration reports the parser's unsupported-version error");
+    const Header header = MakeHeader(kSomeipMinimumLength, 2U);
+    const std::vector<std::uint8_t> datagram{header.begin(), header.end()};
+    SegmentedPacketReader packet{datagram};
+    SomeipDatagramParser parser{};
+
+    const auto message = parser.NextMessage(packet);
+
+    ASSERT_FALSE(message.has_value());
+    EXPECT_EQ(message.error(), SomeipHeaderParseError::kUnsupportedProtocolVersion);
+}
+
 TEST(SomeipDatagramParserTest, ReportsPacketReadFailure)
 {
     Trace("RoutingModule.CR_RoutingModule_InvalidFraming",

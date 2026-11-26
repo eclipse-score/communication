@@ -149,6 +149,13 @@ cc_binary(
 cc_unit_test(
     name = "linux_transport_test",
     srcs = ["linux/transport_test.cpp"],
+    linkopts = [
+        "-Wl,--wrap=getsockopt",
+        "-Wl,--wrap=poll",
+        "-Wl,--wrap=recv",
+        "-Wl,--wrap=recvfrom",
+    ],
+    linkstatic = True,
     target_compatible_with = ["@platforms//os:linux"],
     deps = [
         ":linux_transport",

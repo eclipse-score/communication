@@ -84,6 +84,7 @@ RX_SCENARIOS = [
     ("removed_subscription_test", "test_removed_subscription_stops_delivery"),
     ("removed_remote_service_test", "test_removed_remote_service_stops_delivery"),
     ("controller_disconnect_test", "test_controller_disconnect_removes_routing_state"),
+    ("controller_reconnect_test", "test_service_removal_then_controller_reconnect"),
 ]
 
 [
@@ -95,7 +96,7 @@ RX_SCENARIOS = [
             "-k",
             test_case,
         ],
-        data = ["qnx_rx_test.py"],
+        data = ["rx_scenarios.py"],
         filesystem = ":linux_rx_test_app",
         target_compatible_with = ["@platforms//os:linux"],
     )
@@ -116,6 +117,7 @@ test_suite(
             "-k",
             test_case,
         ],
+        data = ["rx_scenarios.py"],
         filesystem = ":qnx_rx_test_app",
         tags = ["exclusive"],
         target_compatible_with = ["@platforms//os:qnx"],

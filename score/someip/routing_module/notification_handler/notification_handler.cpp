@@ -35,16 +35,6 @@ bool SameEndpoint(const Endpoint& lhs, const Endpoint& rhs) noexcept
     return (lhs.address == rhs.address) && (lhs.port == rhs.port);
 }
 
-void LogDroppedNotification(score::mw::log::LogStream log,
-                            const std::string_view reason,
-                            const SomeipMessageHeader& header,
-                            const std::uint16_t someip_instance) noexcept
-{
-    log << "Notification of service" << score::mw::log::LogHex16{header.service_id} << "instance"
-        << score::mw::log::LogHex16{someip_instance} << "event" << score::mw::log::LogHex16{header.method_or_event_id}
-        << "with" << header.payload_size << "payload bytes dropped," << reason;
-}
-
 }  // namespace
 
 NotificationHandler::NotificationHandler() noexcept = default;
@@ -53,6 +43,35 @@ NotificationHandler::~NotificationHandler() noexcept
 {
     // Destroying an offered LoLa skeleton does not stop its LoLa offer.
     StopAllReceivePaths();
+}
+
+std::optional<std::uint64_t> NotificationHandler::ShouldLogDrop(const DropReason reason) noexcept
+{
+    std::uint64_t suppressed{0U};
+    if (someip_log_limiter_check(&drop_log_limiters_.at(static_cast<std::size_t>(reason)), &suppressed) == 0)
+    {
+        return std::nullopt;
+    }
+    return suppressed;
+}
+
+void NotificationHandler::LogDroppedNotification(const DropReason reason,
+                                                 const std::string_view description,
+                                                 const SomeipMessageHeader& header,
+                                                 const std::uint16_t someip_instance) noexcept
+{
+    const auto suppressed = ShouldLogDrop(reason);
+    if (!suppressed.has_value())
+    {
+        return;
+    }
+    auto log = ((reason == DropReason::kUnknownEvent) || (reason == DropReason::kNotSubscribed))
+                   ? score::mw::log::LogWarn(kLogContext)
+                   : score::mw::log::LogError(kLogContext);
+    log << "Notification of service" << score::mw::log::LogHex16{header.service_id} << "instance"
+        << score::mw::log::LogHex16{someip_instance} << "event" << score::mw::log::LogHex16{header.method_or_event_id}
+        << "with" << header.payload_size << "payload bytes dropped," << description << "suppressed"
+        << suppressed.value();
 }
 
 CommandResult NotificationHandler::AddRemoteService(const routing_control_protocol::Message& command) noexcept
@@ -115,6 +134,7 @@ CommandResult NotificationHandler::RemoveRemoteService(const ServiceInstance ser
         return CommandResult::kRejected;
     }
     StopReceivePath(entry->second);
+    remote_services_.erase(entry);
     return CommandResult::kApplied;
 }
 
@@ -170,6 +190,7 @@ CommandResult NotificationHandler::RemoveRemoteSubscription(const ServiceInstanc
 void NotificationHandler::RemoveAll() noexcept
 {
     StopAllReceivePaths();
+    remote_services_.clear();
 }
 
 void NotificationHandler::OnUdpDatagram(const std::uint16_t udp_local_port,
@@ -187,20 +208,27 @@ void NotificationHandler::OnUdpDatagram(const std::uint16_t udp_local_port,
         }
         else
         {
-            score::mw::log::LogWarn(kLogContext)
-                << "SOME/IP message of service" << score::mw::log::LogHex16{frame.header.service_id} << "method"
-                << score::mw::log::LogHex16{frame.header.method_or_event_id} << "with message type"
-                << score::mw::log::LogHex8{frame.header.message_type}
-                << "dropped, only notifications are routed; UDP port" << udp_local_port << "sender"
-                << udp_sender.address[0U] << udp_sender.address[1U] << udp_sender.address[2U] << udp_sender.address[3U]
-                << "port" << udp_sender.port;
+            if (const auto suppressed = ShouldLogDrop(DropReason::kNonNotification); suppressed.has_value())
+            {
+                score::mw::log::LogWarn(kLogContext)
+                    << "SOME/IP message of service" << score::mw::log::LogHex16{frame.header.service_id} << "method"
+                    << score::mw::log::LogHex16{frame.header.method_or_event_id} << "with message type"
+                    << score::mw::log::LogHex8{frame.header.message_type}
+                    << "dropped, only notifications are routed; UDP port" << udp_local_port << "sender"
+                    << udp_sender.address[0U] << udp_sender.address[1U] << udp_sender.address[2U]
+                    << udp_sender.address[3U] << "port" << udp_sender.port << "suppressed" << suppressed.value();
+            }
         }
         message = parser.NextMessage(datagram);
     }
     if (!message.has_value())
     {
-        score::mw::log::LogWarn(kLogContext) << "Rest of a malformed SOME/IP datagram on UDP port" << udp_local_port
-                                             << "dropped, parse error" << static_cast<std::uint32_t>(message.error());
+        if (const auto suppressed = ShouldLogDrop(DropReason::kMalformed); suppressed.has_value())
+        {
+            score::mw::log::LogWarn(kLogContext)
+                << "Rest of a malformed SOME/IP datagram on UDP port" << udp_local_port << "dropped, parse error"
+                << static_cast<std::uint32_t>(message.error()) << "suppressed" << suppressed.value();
+        }
     }
 }
 
@@ -302,11 +330,15 @@ void NotificationHandler::ForwardToLola(const std::uint16_t udp_local_port,
     const auto receive_path = FindReceivePath(header.service_id, udp_local_port, udp_sender);
     if (receive_path == remote_services_.end())
     {
-        score::mw::log::LogWarn(kLogContext)
-            << "Notification of service" << score::mw::log::LogHex16{header.service_id} << "event"
-            << score::mw::log::LogHex16{header.method_or_event_id} << "dropped, no active receive path for UDP port"
-            << udp_local_port << "and sender" << udp_sender.address[0U] << udp_sender.address[1U]
-            << udp_sender.address[2U] << udp_sender.address[3U] << "port" << udp_sender.port;
+        if (const auto suppressed = ShouldLogDrop(DropReason::kNoReceivePath); suppressed.has_value())
+        {
+            score::mw::log::LogWarn(kLogContext)
+                << "Notification of service" << score::mw::log::LogHex16{header.service_id} << "event"
+                << score::mw::log::LogHex16{header.method_or_event_id} << "dropped, no active receive path for UDP port"
+                << udp_local_port << "and sender" << udp_sender.address[0U] << udp_sender.address[1U]
+                << udp_sender.address[2U] << udp_sender.address[3U] << "port" << udp_sender.port << "suppressed"
+                << suppressed.value();
+        }
         return;
     }
     const std::uint16_t someip_instance = receive_path->first.second;
@@ -315,28 +347,26 @@ void NotificationHandler::ForwardToLola(const std::uint16_t udp_local_port,
     if (remote_event == remote_service.someip_events.end())
     {
         LogDroppedNotification(
-            score::mw::log::LogWarn(kLogContext), "event unknown to the remote service", header, someip_instance);
+            DropReason::kUnknownEvent, "event unknown to the remote service", header, someip_instance);
         return;
     }
     if (!remote_event->second.local_subscription)
     {
-        LogDroppedNotification(
-            score::mw::log::LogWarn(kLogContext), "event not locally subscribed", header, someip_instance);
+        LogDroppedNotification(DropReason::kNotSubscribed, "event not locally subscribed", header, someip_instance);
         return;
     }
     // The drops below only happen in a misconfigured or faulty system.
     if (header.payload_size > kMaxPayloadSize)
     {
         LogDroppedNotification(
-            score::mw::log::LogError(kLogContext), "payload exceeds the LoLa sample", header, someip_instance);
+            DropReason::kOversizedPayload, "payload exceeds the LoLa sample", header, someip_instance);
         return;
     }
     score::mw::com::GenericSkeletonEvent& lola_event = *remote_event->second.lola_event;
     auto lola_sample = lola_event.Allocate();
     if (!lola_sample.has_value())
     {
-        LogDroppedNotification(
-            score::mw::log::LogError(kLogContext), "no free LoLa sample slot", header, someip_instance);
+        LogDroppedNotification(DropReason::kNoSample, "no free LoLa sample slot", header, someip_instance);
         return;
     }
     auto* const event_sample = static_cast<EventSample*>(lola_sample.value().Get());
@@ -347,16 +377,13 @@ void NotificationHandler::ForwardToLola(const std::uint16_t udp_local_port,
     if (!datagram.Copy(notification.payload_offset,
                        score::cpp::span<std::uint8_t>{event_sample->payload.data(), header.payload_size}))
     {
-        LogDroppedNotification(score::mw::log::LogError(kLogContext),
-                               "copying the payload from the UDP packet failed",
-                               header,
-                               someip_instance);
+        LogDroppedNotification(
+            DropReason::kCopyFailed, "copying the payload from the UDP packet failed", header, someip_instance);
         return;
     }
     if (!lola_event.Send(std::move(lola_sample).value()).has_value())
     {
-        LogDroppedNotification(
-            score::mw::log::LogError(kLogContext), "sending the LoLa sample failed", header, someip_instance);
+        LogDroppedNotification(DropReason::kSendFailed, "sending the LoLa sample failed", header, someip_instance);
     }
 }
 

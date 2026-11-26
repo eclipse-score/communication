@@ -78,6 +78,7 @@ cc_unit_test(
     srcs = ["routing_bridge_test.cpp"],
     deps = [
         ":routing_bridge",
+        ":routing_bridge_entry",
         ":routing_log_adapter",
         "//score/message_passing:mock",
         "//score/mw/com",

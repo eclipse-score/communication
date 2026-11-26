@@ -29,18 +29,23 @@ struct FakeMbufChain
 {
     std::vector<std::vector<std::uint8_t>> segments;
     mutable std::size_t copy_calls{0U};
+    bool fail_copy{false};
 };
 
 }  // namespace
 
 /// Test double of the platform packet copy.
-extern "C" void someip_transport_copy_packet(const void* const packet,
-                                             const unsigned int offset,
-                                             const unsigned int size,
-                                             void* const destination)
+extern "C" int someip_transport_copy_packet(const void* const packet,
+                                            const unsigned int offset,
+                                            const unsigned int size,
+                                            void* const destination)
 {
     const auto& chain = *static_cast<const FakeMbufChain*>(packet);
     ++chain.copy_calls;
+    if (chain.fail_copy)
+    {
+        return 1;
+    }
     const score::cpp::span<std::uint8_t> output{static_cast<std::uint8_t*>(destination), size};
     std::size_t skip{offset};
     std::size_t copied{0U};
@@ -58,6 +63,7 @@ extern "C" void someip_transport_copy_packet(const void* const packet,
         copied += count;
         skip = 0U;
     }
+    return 0;
 }
 
 namespace score::someip::routing_module
@@ -93,9 +99,9 @@ void Trace(const char* const requirements, const char* const given, const char* 
 TEST(UdpPacketReaderTest, CopiesARangeAcrossSegmentBoundaries)
 {
     Trace("RoutingModule.CR_RoutingModule_DirectReceiveCopy,RoutingModule.CR_RoutingModule_PayloadPreservation",
-          "a received 20-byte packet stored in 8-byte mbuf segments",
+          "a fake 20-byte packet stored in 8-byte segments",
           "12 bytes starting inside the first segment are copied into a destination",
-          "the destination holds exactly those packet bytes, copied by one transport copy");
+          "the destination holds exactly those packet bytes, copied by one fake transport copy");
     const FakeMbufChain chain = MakeChain(8U);
     const UdpPacketReader reader{&chain, kPacketSize};
     std::array<std::uint8_t, 12U> destination{};
@@ -108,6 +114,21 @@ TEST(UdpPacketReaderTest, CopiesARangeAcrossSegmentBoundaries)
     {
         EXPECT_EQ(destination.at(index), 0xA0U + 6U + index);
     }
+}
+
+TEST(UdpPacketReaderTest, ReportsTransportCopyFailure)
+{
+    Trace("RoutingModule.CR_RoutingModule_DirectReceiveCopy",
+          "a fake 20-byte packet stored in 8-byte segments",
+          "the transport copy fails",
+          "the reader reports the failure");
+    FakeMbufChain chain = MakeChain(8U);
+    chain.fail_copy = true;
+    const UdpPacketReader reader{&chain, kPacketSize};
+    std::array<std::uint8_t, 4U> destination{};
+
+    EXPECT_FALSE(reader.Copy(0U, destination));
+    EXPECT_EQ(chain.copy_calls, 1U);
 }
 
 TEST(UdpPacketReaderTest, AcceptsRangesEndingAtThePacketEnd)

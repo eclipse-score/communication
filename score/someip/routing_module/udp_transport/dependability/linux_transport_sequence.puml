@@ -20,8 +20,11 @@ participant UdpSocket
 
 DataPath -> LinuxUdpTransport : someip_linux_transport_poll(timeout)
 LinuxUdpTransport -> RoutingBridge : someip_routing_poll()
-LinuxUdpTransport -> UdpSocket : poll() and recvfrom()
+LinuxUdpTransport -> UdpSocket : poll() and peek datagram length and sender
 LinuxUdpTransport -> RoutingBridge : someip_routing_datagram(port, sender, packet, size)
 RoutingBridge -> LinuxUdpTransport : someip_transport_copy_packet(packet, offset, size, destination)
+LinuxUdpTransport -> UdpSocket : SO_PEEK_OFF and recv(MSG_PEEK)
+RoutingBridge --> LinuxUdpTransport
+LinuxUdpTransport -> UdpSocket : consume datagram
 
 @enduml

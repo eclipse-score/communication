@@ -22,8 +22,8 @@ extern "C" {
 /* Opens a UDP socket on the port for all local IPv4 addresses; an open port succeeds. Returns 0 or an errno. */
 int someip_transport_open_udp_socket(unsigned short port);
 
-/* Copies size bytes at offset of a received packet into destination; the range must lie within the packet. */
-void someip_transport_copy_packet(const void* packet, unsigned int offset, unsigned int size, void* destination);
+/* Copies a packet range into destination; returns 0 or an error. The range must lie within the packet. */
+int someip_transport_copy_packet(const void* packet, unsigned int offset, unsigned int size, void* destination);
 
 /* Wakes the data-path thread; callable from any thread. */
 void someip_transport_wakeup(void);

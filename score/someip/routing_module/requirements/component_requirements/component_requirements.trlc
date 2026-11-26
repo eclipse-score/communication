@@ -110,6 +110,14 @@ ScoreReq.CompReq CR_RoutingModule_ControlQueueOverflow {
     version = 1
 }
 
+ScoreReq.CompReq CR_RoutingModule_ErrorLogRate {
+    description = "The routing module shall log recurring errors as aggregated occurrences at a configurable maximum frequency per error condition."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    note = "An aggregated message reports the occurrences suppressed since the previous message. The requirement covers error conditions reported by the routing module at warning or error severity, not messages emitted by dependencies."
+    version = 1
+}
+
 ScoreReq.CompReq CR_RoutingModule_SingleController {
     description = "The routing module shall accept at most one controller connection at a time and reject further connection attempts."
     safety = ScoreReq.Asil.QM

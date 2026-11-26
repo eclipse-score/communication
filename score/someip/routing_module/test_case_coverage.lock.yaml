@@ -62,6 +62,10 @@ requirements:
         given: a routing command server that cannot listen
         when: the routing manager is started
         then: starting fails with the server's error
+      - uid: //score/someip/routing_module/RoutingManagerTest:StartFailsWhenServerCreationFails
+        given: a routing command server factory that cannot create a server
+        when: the routing manager is started
+        then: starting fails with an out-of-memory error
       - uid: //score/someip/routing_module/RoutingManagerTest:StartsRoutingCommandServer
         given: a routing manager
         when: it is started
@@ -138,14 +142,22 @@ requirements:
     version: '1'
     description: The routing module shall copy each accepted RX payload directly from network packet storage into its allocated LoLa sample.
     test_cases:
+      - uid: //score/someip/routing_module/NotificationHandlerReceiveTest:DropsNotificationWhenPayloadCopyFails
+        given: a subscribed event and a fake UDP packet whose payload read fails
+        when: a notification is received, then a later payload read succeeds
+        then: the failed payload is not published and the later notification is delivered unchanged
       - uid: //score/someip/routing_module/NotificationHandlerReceiveTest:ForwardsTheNotificationMetadataAndPayloadIntoLola
-        given: a locally subscribed SOME/IP event of a remote service offered in LoLa
+        given: a locally subscribed SOME/IP event of a remote service offered in LoLa and a fake UDP packet
         when: a UDP datagram with a notification of the event is received
-        then: a LoLa sample carries payload length, session ID, interface version, message type and the unchanged payload, copied once from the received packet
+        then: a LoLa sample carries payload length, session ID, interface version, message type and the unchanged payload, copied once from the fake packet
       - uid: //score/someip/routing_module/UdpPacketReaderTest:CopiesARangeAcrossSegmentBoundaries
-        given: a received 20-byte packet stored in 8-byte mbuf segments
+        given: a fake 20-byte packet stored in 8-byte segments
         when: 12 bytes starting inside the first segment are copied into a destination
-        then: the destination holds exactly those packet bytes, copied by one transport copy
+        then: the destination holds exactly those packet bytes, copied by one fake transport copy
+      - uid: //score/someip/routing_module/UdpPacketReaderTest:ReportsTransportCopyFailure
+        given: a fake 20-byte packet stored in 8-byte segments
+        when: the transport copy fails
+        then: the reader reports the failure
   - id: RoutingModule.CR_RoutingModule_EmptyPayload
     version: '1'
     description: The routing module shall accept empty notification payloads in both RX and TX directions.
@@ -166,6 +178,18 @@ requirements:
         given: a received 20-byte packet stored in 8-byte mbuf segments
         when: the last four bytes and an empty range at the packet end are copied
         then: both copies succeed and the last four packet bytes are copied
+  - id: RoutingModule.CR_RoutingModule_ErrorLogRate
+    version: '1'
+    description: The routing module shall log recurring errors as aggregated occurrences at a configurable maximum frequency per error condition.
+    test_cases:
+      - uid: //score/someip/routing_module/NotificationHandlerReceiveTest:LimitsEachDropReasonIndependently
+        given: a subscribed event and fixed per-reason RX drop log limiters
+        when: bursts of notifications with different drop reasons are received
+        then: one warning or error is logged per reason and no sample is forwarded
+      - uid: //score/someip/routing_module/RoutingLogLimiterTest:SuppressionCountSaturatesAndClockRollbackStaysSuppressed
+        given: an initialized routing log limiter with a one-second interval
+        when: repeated events arrive inside the interval, including after the clock moves backwards
+        then: logging remains suppressed, the suppression count saturates, and the next interval reports it
   - id: RoutingModule.CR_RoutingModule_FieldCacheRelease
     version: '1'
     description: The routing module shall release its cached field values when their local service is removed.
@@ -186,6 +210,14 @@ requirements:
         given: remote services with UDP port 0, without a configured LoLa service instance, or whose local UDP port cannot be opened
         when: the controller adds them
         then: each command is rejected and no LoLa service instance is offered
+      - uid: //score/someip/routing_module/NotificationHandlerTest:RejectsRemoteServiceWhenItsLolaInstanceIsAlreadyOffered
+        given: the configured LoLa service instance is already offered by another skeleton
+        when: the controller adds a remote service for that instance
+        then: the routing command is rejected and no routing service is offered
+      - uid: //score/someip/routing_module/NotificationHandlerTest:RejectsUnsupportedTransmitCommands
+        given: a routing module whose transmit commands are not supported
+        when: the controller requests local service and remote subscription changes
+        then: each unsupported command is rejected
       - uid: //score/someip/routing_module/RoutingManagerTest:DiscardsInvalidCommandAndKeepsTheConnection
         given: a connected SD daemon
         when: it sends a malformed routing command followed by a valid one
@@ -202,6 +234,10 @@ requirements:
         given: a subscribed event with an active Linux UDP receive route
         when: a notification with an invalid SOME/IP length arrives
         then: it is dropped and a later matching notification is delivered
+      - uid: //score/someip/routing_module/NotificationHandlerReceiveTest:DropsFailedHeaderReadAndInvalidHeader
+        given: a locally subscribed event and a fake UDP packet
+        when: the header copy fails or a complete header has an invalid protocol version
+        then: neither notification is forwarded
       - uid: //score/someip/routing_module/NotificationHandlerReceiveTest:DropsOversizedPayloadsAndTheRestOfMalformedDatagrams
         given: a locally subscribed SOME/IP event of a remote service offered in LoLa
         when: a datagram with a 1401-byte notification followed by a valid one, and a datagram with a valid notification followed by a truncated SOME/IP header are received
@@ -210,6 +246,10 @@ requirements:
         given: a complete notification followed by fewer than 16 trailing bytes
         when: the datagram is iterated
         then: the notification is returned first, then iteration reports an invalid-header-size error
+      - uid: //score/someip/routing_module/SomeipDatagramParserTest:RejectsUnsupportedHeaderAfterPacketRead
+        given: a complete SOME/IP header with an unsupported protocol version
+        when: the datagram parser reads and parses the header
+        then: iteration reports the parser's unsupported-version error
       - uid: //score/someip/routing_module/SomeipDatagramParserTest:ReportsPacketReadFailure
         given: a packet reader that cannot copy a SOME/IP header
         when: the datagram is iterated
@@ -271,9 +311,9 @@ requirements:
         when: their LoLa instance specifier and event name are formed
         then: the IDs appear as four-digit lowercase hexadecimal numbers
       - uid: //score/someip/routing_module/NotificationHandlerReceiveTest:ForwardsTheNotificationMetadataAndPayloadIntoLola
-        given: a locally subscribed SOME/IP event of a remote service offered in LoLa
+        given: a locally subscribed SOME/IP event of a remote service offered in LoLa and a fake UDP packet
         when: a UDP datagram with a notification of the event is received
-        then: a LoLa sample carries payload length, session ID, interface version, message type and the unchanged payload, copied once from the received packet
+        then: a LoLa sample carries payload length, session ID, interface version, message type and the unchanged payload, copied once from the fake packet
       - uid: //score/someip/routing_module/NotificationHandlerTest:OffersARemoteServiceAsLolaServiceInstance
         given: a remote service instance whose LoLa service instance is configured
         when: the controller adds the remote service
@@ -339,13 +379,13 @@ requirements:
         when: a matching SOME/IP notification arrives over loopback UDP
         then: the routing bridge publishes the original payload and metadata into LoLa
       - uid: //score/someip/routing_module/NotificationHandlerReceiveTest:ForwardsTheNotificationMetadataAndPayloadIntoLola
-        given: a locally subscribed SOME/IP event of a remote service offered in LoLa
+        given: a locally subscribed SOME/IP event of a remote service offered in LoLa and a fake UDP packet
         when: a UDP datagram with a notification of the event is received
-        then: a LoLa sample carries payload length, session ID, interface version, message type and the unchanged payload, copied once from the received packet
+        then: a LoLa sample carries payload length, session ID, interface version, message type and the unchanged payload, copied once from the fake packet
       - uid: //score/someip/routing_module/UdpPacketReaderTest:CopiesARangeAcrossSegmentBoundaries
-        given: a received 20-byte packet stored in 8-byte mbuf segments
+        given: a fake 20-byte packet stored in 8-byte segments
         when: 12 bytes starting inside the first segment are copied into a destination
-        then: the destination holds exactly those packet bytes, copied by one transport copy
+        then: the destination holds exactly those packet bytes, copied by one fake transport copy
   - id: RoutingModule.CR_RoutingModule_ReceiveMetadata
     version: '1'
     description: The routing module shall preserve received notification length, session ID, interface version, and message type in its LoLa sample metadata.
@@ -355,9 +395,9 @@ requirements:
         when: a matching SOME/IP notification arrives over loopback UDP
         then: the routing bridge publishes the original payload and metadata into LoLa
       - uid: //score/someip/routing_module/NotificationHandlerReceiveTest:ForwardsTheNotificationMetadataAndPayloadIntoLola
-        given: a locally subscribed SOME/IP event of a remote service offered in LoLa
+        given: a locally subscribed SOME/IP event of a remote service offered in LoLa and a fake UDP packet
         when: a UDP datagram with a notification of the event is received
-        then: a LoLa sample carries payload length, session ID, interface version, message type and the unchanged payload, copied once from the received packet
+        then: a LoLa sample carries payload length, session ID, interface version, message type and the unchanged payload, copied once from the fake packet
       - uid: //score/someip/routing_module/SomeipMessageHeaderParserTest:ParsesHeaderFieldsAndPayloadSize
         given: a complete SOME/IP notification header with a four-byte payload
         when: the header is parsed
@@ -386,6 +426,10 @@ requirements:
         given: a locally subscribed SOME/IP event of a remote service offered in LoLa
         when: notifications arrive on another local UDP port, from another IPv4 address or UDP port, for another service, for an event the remote service does not have or a not subscribed event, after the local subscription is removed, and after the remote service is removed
         then: none of them is forwarded into LoLa, while a matching notification is
+      - uid: //score/someip/routing_module/NotificationHandlerReceiveTest:SelectsTheMatchingReceivePathAmongServiceInstances
+        given: two LoLa-offered instances of one SOME/IP service with distinct UDP receive routes
+        when: a notification arrives on the second instance's local port and sender endpoint
+        then: only the second instance receives the notification
   - id: RoutingModule.CR_RoutingModule_ReceiveSlotExhaustion
     version: '1'
     description: The routing module shall drop a received notification when no LoLa sample slot is available.

@@ -21,8 +21,14 @@ The Linux UDP transport provides the same packet, socket-opening and wakeup C in
 datagrams to the routing bridge. ``linux_routing_module`` runs the bridge and transport in a standalone process and
 stops them on SIGINT or SIGTERM.
 
-Each datagram is received into a temporary buffer. The packet reader copies selected bytes from that buffer into the
-LoLa sample. This Linux path does not provide the QNX mbuf-to-LoLa direct-copy property.
+The transport requires UDP support for ``SO_PEEK_OFF`` and fails initialization if it is unavailable. It peeks the
+datagram length and sender, then leaves the datagram in the socket receive queue while the packet reader uses
+``SO_PEEK_OFF`` and ``MSG_PEEK`` to copy headers and selected payloads directly into their destinations. The transport
+consumes the datagram after the routing callback returns.
+
+Short datagrams are dropped and logged at most once per second, with the number suppressed reported by the next log.
+Recoverable UDP socket errors are logged and the affected socket is retried after 100 ms; other sockets and wakeups
+remain active. Invalid descriptors and unrecoverable poll or socket errors stop the process.
 
 .. uml:: linux_transport_sequence.puml
    :align: center

@@ -34,13 +34,14 @@ implemented in ``qnx/module.c`` and ``qnx/transport.c`` respectively.
 - The kernel thread calls ``someip_routing_poll()``, drains each pending socket with non-blocking ``soreceive()``,
   at most 32 datagrams per socket and wakeup, and then waits for the next wakeup, at most 1 s.
 - Each datagram holding at least a SOME/IP header is passed as mbuf chain to ``someip_routing_datagram()`` and freed
-  when the call returns. Truncated and short datagrams are logged and dropped.
+  when the call returns. Truncated and short datagrams are dropped and logged at most once per reason per second;
+  the next log reports the number suppressed.
 - ``someip_transport_wakeup()`` wakes the kernel thread from any thread through a POSIX semaphore. Wakeups while the
   thread is awake coalesce.
 - C transport messages use mw::log through the routing bridge, with messages limited to 255 bytes.
 
 On QNX, ``Copy()`` uses ``m_copydata()`` to copy directly from the mbuf chain into the destination, e.g. a LoLa sample
-slot. It returns false without reading if the range does not lie within the packet.
+slot. It returns false if the range does not lie within the packet or the transport reports a read failure.
 
 .. uml:: udp_transport_class.puml
    :align: center

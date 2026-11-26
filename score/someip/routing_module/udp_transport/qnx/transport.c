@@ -82,6 +82,8 @@ struct event_socket
 
 /* Only accessed by the kernel thread; sockets are never closed. */
 static struct event_socket* sockets;
+static someip_log_limiter short_datagram_limiter;
+static someip_log_limiter truncated_datagram_limiter;
 
 static int receive_upcall(struct socket* so __unused, void* arg, int waitflag __unused)
 {
@@ -149,9 +151,10 @@ int someip_transport_open_udp_socket(unsigned short port)
     return 0;
 }
 
-void someip_transport_copy_packet(const void* packet, unsigned int offset, unsigned int size, void* destination)
+int someip_transport_copy_packet(const void* packet, unsigned int offset, unsigned int size, void* destination)
 {
     m_copydata((const struct mbuf*)packet, (int)offset, (int)size, (char*)destination);
+    return 0;
 }
 
 /* Returns 1 if the budget was used up before the receive buffer was empty, 0 otherwise. */
@@ -178,11 +181,25 @@ static int drain_socket(struct event_socket* entry)
         }
         else if ((ret == 0) && ((flags & MSG_TRUNC) != 0))
         {
-            someip_log(SOMEIP_LOG_WARNING, "truncated datagram on port %u", entry->port);
+            uint64_t suppressed = 0U;
+            if (someip_log_limiter_check(&truncated_datagram_limiter, &suppressed))
+            {
+                someip_log(SOMEIP_LOG_WARNING,
+                           "truncated datagram on port %u (suppressed %llu)",
+                           entry->port,
+                           (unsigned long long)suppressed);
+            }
         }
         else if ((ret == 0) && (length < SOMEIP_HEADER_SIZE))
         {
-            someip_log(SOMEIP_LOG_WARNING, "short datagram on port %u", entry->port);
+            uint64_t suppressed = 0U;
+            if (someip_log_limiter_check(&short_datagram_limiter, &suppressed))
+            {
+                someip_log(SOMEIP_LOG_WARNING,
+                           "short datagram on port %u (suppressed %llu)",
+                           entry->port,
+                           (unsigned long long)suppressed);
+            }
         }
         if (packet != NULL)
         {

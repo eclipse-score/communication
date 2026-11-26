@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cerrno>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -59,13 +60,14 @@ extern "C" int someip_transport_open_udp_socket(const unsigned short /*port*/)
     return 0;
 }
 
-extern "C" void someip_transport_copy_packet(const void* const packet,
-                                             const unsigned int offset,
-                                             const unsigned int size,
-                                             void* const destination)
+extern "C" int someip_transport_copy_packet(const void* const packet,
+                                            const unsigned int offset,
+                                            const unsigned int size,
+                                            void* const destination)
 {
     const auto& bytes = *static_cast<const std::vector<std::uint8_t>*>(packet);
     std::copy_n(bytes.cbegin() + static_cast<std::ptrdiff_t>(offset), size, static_cast<std::uint8_t*>(destination));
+    return 0;
 }
 
 extern "C" void someip_transport_wakeup(void)
@@ -327,6 +329,14 @@ TEST(ModuleConfigDirectoryTest, IsTheEtcDirectoryNextToTheModuleDirectory)
     EXPECT_EQ(ModuleConfigDirectory("mods-someip-routing.so"), "./../etc");
 }
 
+TEST(RoutingBridgeEntryTest, RejectsStartupWhenLoLaConfigurationIsMissing)
+{
+    const int error = someip_routing_start();
+    someip_routing_stop();
+
+    EXPECT_EQ(error, ENOENT);
+}
+
 TEST(RoutingLoggingTest, FormatsAndMapsCLogSeveritiesToMwLog)
 {
     ::testing::StrictMock<score::mw::log::RecorderMock> recorder{};
@@ -351,6 +361,32 @@ TEST(RoutingLoggingTest, FormatsAndMapsCLogSeveritiesToMwLog)
     EXPECT_CALL(recorder, StopRecord(handle)).Times(1);
     someip_log(SOMEIP_LOG_ERROR, "%s", long_message.c_str());
     score::mw::log::SetLogRecorder(nullptr);
+}
+
+TEST(RoutingLoggingTest, ReturnsTheCurrentThreadId)
+{
+    const int thread_id = someip_thread_id();
+
+    EXPECT_EQ(someip_thread_id(), thread_id);
+}
+
+TEST(RoutingLogLimiterTest, SuppressionCountSaturatesAndClockRollbackStaysSuppressed)
+{
+    Trace("RoutingModule.CR_RoutingModule_ErrorLogRate",
+          "an initialized routing log limiter with a one-second interval",
+          "repeated events arrive inside the interval, including after the clock moves backwards",
+          "logging remains suppressed, the suppression count saturates, and the next interval reports it");
+    someip_log_limiter limiter{};
+    std::uint64_t suppressed{0U};
+
+    ASSERT_TRUE(someip_log_limiter_at(&limiter, 1000000000U, &suppressed));
+    EXPECT_FALSE(someip_log_limiter_at(&limiter, 1000000001U, &suppressed));
+    limiter.suppressed = UINT64_MAX;
+    EXPECT_FALSE(someip_log_limiter_at(&limiter, 1000000002U, &suppressed));
+    EXPECT_TRUE(someip_log_limiter_at(&limiter, 2000000000U, &suppressed));
+    EXPECT_EQ(suppressed, UINT64_MAX);
+    EXPECT_FALSE(someip_log_limiter_at(&limiter, 1999999999U, &suppressed));
+    EXPECT_EQ(limiter.suppressed, 1U);
 }
 
 }  // namespace

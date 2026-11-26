@@ -20,6 +20,7 @@ architectural_design(
     public_api = [],
     static = [
         "static_design/overall.puml",
+        "static_design/routing_module_deployment.rst",
     ],
     visibility = ["//score/someip/dependability:__subpackages__"],
 )

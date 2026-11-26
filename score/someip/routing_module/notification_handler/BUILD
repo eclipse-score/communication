@@ -46,6 +46,7 @@ cc_library(
         "//score/someip/routing_control_protocol",
         "//score/someip/routing_module/lola_mapping",
         "//score/someip/routing_module/routing_manager:i_routing_command_handler",
+        "//score/someip/routing_module/udp_transport:log",
         "//score/someip/routing_module/udp_transport:udp_packet_reader",
         "//score/someip/routing_module/udp_transport:udp_transport_api",
         "@score_baselibs//score/language/futurecpp",
@@ -63,6 +64,7 @@ cc_unit_test(
         "//score/someip/routing_module/udp_transport:udp_packet_reader",
         "//score/someip/routing_module/udp_transport:udp_transport_api",
         "@score_baselibs//score/filesystem",
+        "@score_baselibs//score/mw/log:recorder_mock",
     ],
 )
 

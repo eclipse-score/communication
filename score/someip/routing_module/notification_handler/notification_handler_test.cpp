@@ -18,6 +18,8 @@
 #include "score/filesystem/path.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
+#include "score/mw/log/logging.h"
+#include "score/mw/log/recorder_mock.h"
 
 #include <gtest/gtest.h>
 
@@ -42,6 +44,7 @@ struct FakeUdpTransport
     std::vector<unsigned short> opened_ports;
     int open_error{0};
     std::size_t packet_copies{0U};
+    std::size_t fail_packet_copy{0U};
 };
 
 FakeUdpTransport& UdpTransport()
@@ -51,6 +54,8 @@ FakeUdpTransport& UdpTransport()
 }
 
 }  // namespace
+
+extern "C" void someip_routing_log(someip_log_severity, const char*) {}
 
 /// Test doubles of the platform transport; a received packet is a std::vector<std::uint8_t> here.
 extern "C" int someip_transport_open_udp_socket(const unsigned short port)
@@ -63,14 +68,19 @@ extern "C" int someip_transport_open_udp_socket(const unsigned short port)
     return 0;
 }
 
-extern "C" void someip_transport_copy_packet(const void* const packet,
-                                             const unsigned int offset,
-                                             const unsigned int size,
-                                             void* const destination)
+extern "C" int someip_transport_copy_packet(const void* const packet,
+                                            const unsigned int offset,
+                                            const unsigned int size,
+                                            void* const destination)
 {
     ++UdpTransport().packet_copies;
+    if (UdpTransport().packet_copies == UdpTransport().fail_packet_copy)
+    {
+        return EIO;
+    }
     const auto& bytes = *static_cast<const std::vector<std::uint8_t>*>(packet);
     std::copy_n(bytes.cbegin() + static_cast<std::ptrdiff_t>(offset), size, static_cast<std::uint8_t*>(destination));
+    return 0;
 }
 
 namespace score::someip::routing_module
@@ -385,6 +395,33 @@ TEST_F(NotificationHandlerTest, RejectsInvalidRemoteServices)
     EXPECT_EQ(handler_.RemoveRemoteService(Instance(kConfiguredInstance)), CommandResult::kRejected);
 }
 
+TEST_F(NotificationHandlerTest, RejectsRemoteServiceWhenItsLolaInstanceIsAlreadyOffered)
+{
+    Trace("RoutingModule.CR_RoutingModule_InvalidControl",
+          "the configured LoLa service instance is already offered by another skeleton",
+          "the controller adds a remote service for that instance",
+          "the routing command is rejected and no routing service is offered");
+    const auto specifier =
+        score::mw::com::InstanceSpecifier::Create(LolaInstanceSpecifier(Service(), kConfiguredInstance));
+    ASSERT_TRUE(specifier.has_value());
+    const std::string first_event_name = LolaEventName(kEvent);
+    const std::string second_event_name = LolaEventName(kOtherEvent);
+    const std::array<score::mw::com::EventInfo, 2U> events{{
+        {first_event_name, score::mw::com::DataTypeMetaInfo{sizeof(EventSample), alignof(EventSample)}},
+        {second_event_name, score::mw::com::DataTypeMetaInfo{sizeof(EventSample), alignof(EventSample)}},
+    }};
+    score::mw::com::GenericSkeletonServiceElementInfo elements{};
+    elements.events = score::cpp::span<const score::mw::com::EventInfo>{events.data(), events.size()};
+    auto competing_skeleton = score::mw::com::GenericSkeleton::Create(specifier.value(), elements);
+    ASSERT_TRUE(competing_skeleton.has_value());
+    ASSERT_TRUE(competing_skeleton->OfferService().has_value());
+
+    EXPECT_EQ(handler_.AddRemoteService(RemoteService(kConfiguredInstance)), CommandResult::kRejected);
+    EXPECT_EQ(FindLolaOffers(kConfiguredInstance), 1U);
+
+    competing_skeleton->StopOfferService();
+}
+
 TEST_F(NotificationHandlerTest, AcceptsLocalSubscriptionsOnlyForEventsOfLolaOfferedServices)
 {
     Trace(
@@ -401,9 +438,24 @@ TEST_F(NotificationHandlerTest, AcceptsLocalSubscriptionsOnlyForEventsOfLolaOffe
     EXPECT_EQ(handler_.RemoveLocalSubscription(Instance(kConfiguredInstance), kEvent), CommandResult::kApplied);
     EXPECT_EQ(handler_.AddLocalSubscription(Instance(kConfiguredInstance), 0x8003U), CommandResult::kRejected);
     EXPECT_EQ(handler_.AddLocalSubscription(Instance(kOtherConfiguredInstance), kEvent), CommandResult::kRejected);
+    EXPECT_EQ(handler_.RemoveLocalSubscription(Instance(kOtherConfiguredInstance), kEvent), CommandResult::kRejected);
 
     ASSERT_EQ(handler_.RemoveRemoteService(Instance(kConfiguredInstance)), CommandResult::kApplied);
     EXPECT_EQ(handler_.AddLocalSubscription(Instance(kConfiguredInstance), kEvent), CommandResult::kRejected);
+}
+
+TEST_F(NotificationHandlerTest, RejectsUnsupportedTransmitCommands)
+{
+    Trace("RoutingModule.CR_RoutingModule_InvalidControl",
+          "a routing module whose transmit commands are not supported",
+          "the controller requests local service and remote subscription changes",
+          "each unsupported command is rejected");
+    EXPECT_EQ(handler_.AddLocalService(RemoteService(kConfiguredInstance)), CommandResult::kRejected);
+    EXPECT_EQ(handler_.RemoveLocalService(Instance(kConfiguredInstance)), CommandResult::kRejected);
+    EXPECT_EQ(handler_.AddRemoteSubscription(Instance(kConfiguredInstance), kEvent, kUdpSender),
+              CommandResult::kRejected);
+    EXPECT_EQ(handler_.RemoveRemoteSubscription(Instance(kConfiguredInstance), kEvent, kUdpSender),
+              CommandResult::kRejected);
 }
 
 class NotificationHandlerReceiveTest : public NotificationHandlerTest
@@ -430,10 +482,10 @@ TEST_F(NotificationHandlerReceiveTest, ForwardsTheNotificationMetadataAndPayload
     Trace(
         "RoutingModule.CR_RoutingModule_ReceiveMetadata,RoutingModule.CR_RoutingModule_PayloadPreservation,"
         "RoutingModule.CR_RoutingModule_DirectReceiveCopy,RoutingModule.CR_RoutingModule_LolaMapping",
-        "a locally subscribed SOME/IP event of a remote service offered in LoLa",
+        "a locally subscribed SOME/IP event of a remote service offered in LoLa and a fake UDP packet",
         "a UDP datagram with a notification of the event is received",
         "a LoLa sample carries payload length, session ID, interface version, message type and the unchanged "
-        "payload, copied once from the received packet");
+        "payload, copied once from the fake packet");
     const std::vector<std::uint8_t> datagram = Datagram(Notification{Service(), kEvent, Payload(5U), 0x0042U, 0x07U});
 
     handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(datagram));
@@ -447,6 +499,62 @@ TEST_F(NotificationHandlerReceiveTest, ForwardsTheNotificationMetadataAndPayload
     EXPECT_EQ(PayloadOf(samples.front()), Payload(5U));
     // One header copy by the parser and one payload copy into the LoLa sample.
     EXPECT_EQ(UdpTransport().packet_copies, 2U);
+}
+
+TEST_F(NotificationHandlerReceiveTest, SelectsTheMatchingReceivePathAmongServiceInstances)
+{
+    Trace("RoutingModule.CR_RoutingModule_ReceiveRouteMatch",
+          "two LoLa-offered instances of one SOME/IP service with distinct UDP receive routes",
+          "a notification arrives on the second instance's local port and sender endpoint",
+          "only the second instance receives the notification");
+    constexpr std::uint16_t second_local_port = kUdpLocalPort + 1U;
+    constexpr std::uint16_t second_remote_port = kUdpRemotePort + 1U;
+    ASSERT_EQ(handler_.AddRemoteService(RemoteService(kOtherConfiguredInstance, second_local_port, second_remote_port)),
+              CommandResult::kApplied);
+    ASSERT_EQ(handler_.AddLocalSubscription(Instance(kOtherConfiguredInstance), kEvent), CommandResult::kApplied);
+    LolaSubscriber second_subscriber{kOtherConfiguredInstance, kEvent};
+    const auto datagram = Datagram(Notification{Service(), kEvent, Payload(2U)});
+
+    handler_.OnUdpDatagram(second_local_port, Endpoint{kUdpSender.address, second_remote_port}, Reader(datagram));
+
+    const auto samples = second_subscriber.Receive();
+    ASSERT_EQ(samples.size(), 1U);
+    EXPECT_EQ(PayloadOf(samples.front()), Payload(2U));
+    EXPECT_TRUE(subscriber_->Receive().empty());
+}
+
+TEST_F(NotificationHandlerReceiveTest, DropsFailedHeaderReadAndInvalidHeader)
+{
+    Trace("RoutingModule.CR_RoutingModule_InvalidFraming",
+          "a locally subscribed event and a fake UDP packet",
+          "the header copy fails or a complete header has an invalid protocol version",
+          "neither notification is forwarded");
+    const auto datagram = Datagram(Notification{Service(), kEvent, Payload(3U)});
+    UdpTransport().fail_packet_copy = 1U;
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(datagram));
+
+    auto invalid_header = datagram;
+    invalid_header.at(12U) = 2U;
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(invalid_header));
+    EXPECT_TRUE(subscriber_->Receive().empty());
+}
+
+TEST_F(NotificationHandlerReceiveTest, DropsNotificationWhenPayloadCopyFails)
+{
+    Trace("RoutingModule.CR_RoutingModule_DirectReceiveCopy",
+          "a subscribed event and a fake UDP packet whose payload read fails",
+          "a notification is received, then a later payload read succeeds",
+          "the failed payload is not published and the later notification is delivered unchanged");
+    const auto datagram = Datagram(Notification{Service(), kEvent, Payload(3U)});
+    UdpTransport().fail_packet_copy = 2U;
+
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(datagram));
+    EXPECT_TRUE(subscriber_->Receive().empty());
+
+    handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(datagram));
+    const auto samples = subscriber_->Receive();
+    ASSERT_EQ(samples.size(), 1U);
+    EXPECT_EQ(PayloadOf(samples.front()), Payload(3U));
 }
 
 TEST_F(NotificationHandlerReceiveTest, ForwardsConcatenatedEmptyAndMaximumSizeNotifications)
@@ -507,6 +615,41 @@ TEST_F(NotificationHandlerReceiveTest, ForwardsOnlyNotificationsMatchingAnActive
     ASSERT_EQ(handler_.AddLocalSubscription(Instance(kConfiguredInstance), kEvent), CommandResult::kApplied);
     ASSERT_EQ(handler_.RemoveRemoteService(Instance(kConfiguredInstance)), CommandResult::kApplied);
     handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(datagram));
+    EXPECT_TRUE(subscriber_->Receive().empty());
+}
+
+TEST_F(NotificationHandlerReceiveTest, LimitsEachDropReasonIndependently)
+{
+    Trace("RoutingModule.CR_RoutingModule_ErrorLogRate",
+          "a subscribed event and fixed per-reason RX drop log limiters",
+          "bursts of notifications with different drop reasons are received",
+          "one warning or error is logged per reason and no sample is forwarded");
+    ::testing::NiceMock<score::mw::log::RecorderMock> recorder{};
+    const score::mw::log::SlotHandle handle{42};
+    EXPECT_CALL(recorder, StartRecord("SRTM", score::mw::log::LogLevel::kWarn))
+        .Times(4)
+        .WillRepeatedly(::testing::Return(handle));
+    EXPECT_CALL(recorder, StartRecord("SRTM", score::mw::log::LogLevel::kError))
+        .Times(1)
+        .WillRepeatedly(::testing::Return(handle));
+    EXPECT_CALL(recorder, LogUint64(handle, 0U)).Times(7);
+    EXPECT_CALL(recorder, LogUint64(handle, kMaxPayloadSize + 1U)).Times(1);
+    score::mw::log::SetLogRecorder(&recorder);
+
+    const auto unmatched = Datagram(Notification{static_cast<std::uint16_t>(Service() + 1U), kEvent, {}});
+    const auto response = Datagram(Notification{Service(), kEvent, {}, 0x1234U, 0x03U, 0x80U});
+    const auto unknown_event = Datagram(Notification{Service(), kUnknownEvent, {}});
+    const auto unsubscribed = Datagram(Notification{Service(), kOtherEvent, {}});
+    const auto oversized = Datagram(Notification{Service(), kEvent, Payload(kMaxPayloadSize + 1U)});
+    for (unsigned int count = 0U; count < 10U; ++count)
+    {
+        handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(unmatched));
+        handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(response));
+        handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(unknown_event));
+        handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(unsubscribed));
+        handler_.OnUdpDatagram(kUdpLocalPort, kUdpSender, Reader(oversized));
+    }
+    score::mw::log::SetLogRecorder(nullptr);
     EXPECT_TRUE(subscriber_->Receive().empty());
 }
 

@@ -34,18 +34,17 @@ class UdpPacketReader final
         return size_;
     }
 
-    /// Returns false without reading if the range does not lie within the packet.
+    /// Returns false if the range is invalid or the transport cannot read it.
     [[nodiscard]] bool Copy(const std::size_t offset, const score::cpp::span<std::uint8_t> destination) const noexcept
     {
         if ((offset > size_) || (destination.size() > (size_ - offset)))
         {
             return false;
         }
-        someip_transport_copy_packet(packet_,
-                                     static_cast<unsigned int>(offset),
-                                     static_cast<unsigned int>(destination.size()),
-                                     destination.data());
-        return true;
+        return someip_transport_copy_packet(packet_,
+                                            static_cast<unsigned int>(offset),
+                                            static_cast<unsigned int>(destination.size()),
+                                            destination.data()) == 0;
     }
 
   private:

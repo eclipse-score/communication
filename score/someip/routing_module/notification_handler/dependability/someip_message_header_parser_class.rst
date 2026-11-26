@@ -25,7 +25,7 @@ For each message, the parser copies
 only the fixed 16-byte header into stack storage. ``NextMessage()`` returns the header metadata and payload offset of
 the next message of any message type; it does not copy or flatten the payload. ``NotificationHandler`` drops
 non-notification messages and copies the payload of a selected notification from the packet storage into its LoLa
-sample. QNX reads the mbuf chain directly; Linux reads a userspace receive buffer. When the datagram is exhausted the
+sample. QNX reads the mbuf chain directly; Linux peeks the UDP receive queue. When the datagram is exhausted the
 parser returns an empty optional; malformed framing or a packet-read failure returns an error and stops iteration.
 
 The length field is big endian and counts bytes after the length field. Thus the fixed eight-byte suffix (client ID, session ID, protocol version, interface version, message type, return code) is subtracted to obtain the payload size. An empty payload is valid.
