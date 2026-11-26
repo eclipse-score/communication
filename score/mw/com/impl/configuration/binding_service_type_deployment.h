@@ -14,14 +14,24 @@
 #define SCORE_MW_COM_IMPL_CONFIGURATION_BINDING_SERVICE_TYPE_DEPLOYMENT_H
 
 #include "score/mw/com/impl/binding_type.h"
+#include "score/mw/com/impl/configuration/configuration_common_resources.h"
 #include "score/mw/com/impl/configuration/e2e_event_type_deployment.h"
 #include "score/mw/com/impl/service_element_type.h"
 
 #include "score/json/json_parser.h"
+#include "score/language/safecpp/safe_math/safe_math.h"
+#include "score/mw/log/logging.h"
+
+#include <score/assert.hpp>
 
 #include <cstdint>
+#include <exception>
+#include <iomanip>
+#include <limits>
+#include <sstream>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 namespace score::mw::com::impl
 {
@@ -104,8 +114,264 @@ bool operator==(
     const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>&
         rhs) noexcept;
 
-}  // namespace score::mw::com::impl
+namespace detail
+{
 
-#include "score/mw/com/impl/configuration/binding_service_type_deployment_impl.h"
+constexpr auto kSerializationVersionKey = "serializationVersion";
+constexpr auto kServiceIdKey = "serviceId";
+constexpr auto kEventsKey = "events";
+constexpr auto kFieldsKey = "fields";
+constexpr auto kMethodsKey = "methods";
+constexpr auto kE2EEventsKey = "e2eEvents";
+constexpr auto kProfileKey = "profile";
+constexpr auto kDataIdKey = "dataId";
+constexpr auto kMaxDeltaCounterKey = "maxDeltaCounter";
+
+template <typename ServiceElementMappingType>
+json::Object ConvertServiceElementIdMapToJson(const ServiceElementMappingType& input_map) noexcept
+{
+    json::Object service_element_instance_mapping_object{};
+    for (auto it : input_map)
+    {
+        const auto insert_result = service_element_instance_mapping_object.insert(std::make_pair(it.first, it.second));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(insert_result.second, "Could not insert element in map");
+    }
+    return service_element_instance_mapping_object;
+}
+
+template <typename ServiceElementIdType>
+// Suppress "AUTOSAR C++14 A15-5-3" rule finding. This rule states: "The std::terminate() function shall not be called
+//                                                                   implicitly"
+// coverity reports that json.As<T>().value might throw due to std::bad_variant_access. Which will cause an implicit
+// terminate.
+// The .value() call will only throw if the  As<T> function didn't succeed in parsing the json. In this case termination
+// is the intended behaviour.
+// ToDo: implement a runtime validation check for json, after parsing when the first json object is created, s.t. we can
+// be sure json.As<T> call will return a value. See Ticket-177855.
+// coverity[autosar_cpp14_a15_5_3_violation]
+auto ConvertJsonToServiceElementIdMap(const json::Object& json_object, const std::string_view key)
+    -> std::unordered_map<std::string, ServiceElementIdType>
+{
+    const auto& service_element_json = GetValueFromJson<json::Object>(json_object, key);
+
+    std::unordered_map<std::string, ServiceElementIdType> service_element_map{};
+    for (auto& it : service_element_json)
+    {
+        const auto event_name_view{it.first.GetAsStringView()};
+        const std::string event_name{event_name_view.data(), event_name_view.size()};
+        auto event_instance_deployment_json = it.second.As<ServiceElementIdType>().value();
+        const auto insert_result =
+            service_element_map.insert(std::make_pair(event_name, std::move(event_instance_deployment_json)));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(insert_result.second, "Could not insert element in map");
+    }
+    return service_element_map;
+}
+
+inline json::Object ConvertE2EEventMapToJson(
+    const std::unordered_map<std::string, E2EEventTypeDeployment>& e2e_events) noexcept
+{
+    json::Object e2e_events_json{};
+    for (const auto& e2e_event : e2e_events)
+    {
+        json::Object event_json{};
+        event_json[kProfileKey] = json::Any{static_cast<std::uint8_t>(e2e_event.second.profile_)};
+        event_json[kDataIdKey] = json::Any{e2e_event.second.data_id_};
+        event_json[kMaxDeltaCounterKey] = json::Any{e2e_event.second.max_delta_counter_};
+        const auto insert_result = e2e_events_json.insert(std::make_pair(e2e_event.first, std::move(event_json)));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(insert_result.second, "Could not insert E2E event deployment");
+    }
+    return e2e_events_json;
+}
+
+inline auto ConvertJsonToE2EEventMap(const json::Object& json_object)
+    -> std::unordered_map<std::string, E2EEventTypeDeployment>
+{
+    const auto e2e_events_it = json_object.find(kE2EEventsKey);
+    if (e2e_events_it == json_object.cend())
+    {
+        return {};
+    }
+
+    const auto e2e_events_result = e2e_events_it->second.As<json::Object>();
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(e2e_events_result.has_value(), "Invalid serialized E2E events");
+    std::unordered_map<std::string, E2EEventTypeDeployment> e2e_events{};
+    for (const auto& e2e_event : e2e_events_result.value().get())
+    {
+        const auto event_result = e2e_event.second.As<json::Object>();
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(event_result.has_value(), "Invalid serialized E2E event");
+        const auto& event_json = event_result.value().get();
+        const auto profile = GetValueFromJson<std::uint8_t>(event_json, kProfileKey);
+        const auto data_id = GetValueFromJson<std::uint32_t>(event_json, kDataIdKey);
+        const auto max_delta_counter = GetValueFromJson<std::uint8_t>(event_json, kMaxDeltaCounterKey);
+        const auto event_name_view = e2e_event.first.GetAsStringView();
+        const std::string event_name{event_name_view.data(), event_name_view.size()};
+        const auto insert_result = e2e_events.insert(std::make_pair(
+            event_name, E2EEventTypeDeployment{static_cast<E2EProfile>(profile), data_id, max_delta_counter}));
+        SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(insert_result.second, "Could not insert E2E event deployment");
+    }
+    return e2e_events;
+}
+
+template <typename ServiceIdType>
+std::string ToHashStringImpl(const ServiceIdType service_id, const std::size_t hash_string_size) noexcept
+{
+    /// \todo When we can use C++17 features, use std::to_chars so that we can convert from an int to a hex string
+    /// with no dynamic allocations.
+    std::stringstream stream;
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(hash_string_size <= static_cast<std::size_t>(std::numeric_limits<int>::max()));
+    // Passing std::hex to std::stringstream object with the stream operator follows the idiomatic way that both
+    // features in conjunction were designed in the C++ standard.
+    // coverity[autosar_cpp14_m8_4_4_violation] See above
+    stream << std::setfill('0') << std::setw(static_cast<int>(hash_string_size)) << std::hex << service_id;
+    return stream.str();
+}
+
+}  // namespace detail
+
+template <typename EventIdType,
+          typename FieldIdType,
+          typename MethodIdType,
+          typename ServiceIdType,
+          BindingType binding_type>
+BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::
+    BindingServiceTypeDeployment(const ServiceIdType service_id,
+                                 EventIdMapping events,
+                                 FieldIdMapping fields,
+                                 MethodIdMapping methods,
+                                 E2EEventMapping e2e_events) noexcept
+    : service_id_{service_id},
+      events_{std::move(events)},
+      fields_{std::move(fields)},
+      methods_{std::move(methods)},
+      e2e_events_{std::move(e2e_events)},
+      hash_string_{detail::ToHashStringImpl(service_id_, hashStringSize)}
+{
+}
+
+template <typename EventIdType,
+          typename FieldIdType,
+          typename MethodIdType,
+          typename ServiceIdType,
+          BindingType binding_type>
+BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::
+    BindingServiceTypeDeployment(const score::json::Object& json_object)
+    : BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::
+          BindingServiceTypeDeployment(
+              GetValueFromJson<ServiceIdType>(json_object, detail::kServiceIdKey),
+              detail::ConvertJsonToServiceElementIdMap<EventIdType>(json_object, detail::kEventsKey),
+              detail::ConvertJsonToServiceElementIdMap<FieldIdType>(json_object, detail::kFieldsKey),
+              detail::ConvertJsonToServiceElementIdMap<MethodIdType>(json_object, detail::kMethodsKey),
+              detail::ConvertJsonToE2EEventMap(json_object))
+{
+    const auto serialization_version = GetValueFromJson<std::uint32_t>(json_object, detail::kSerializationVersionKey);
+    if (serialization_version != serializationVersion)
+    {
+        std::terminate();
+    }
+}
+
+template <typename EventIdType,
+          typename FieldIdType,
+          typename MethodIdType,
+          typename ServiceIdType,
+          BindingType binding_type>
+json::Object
+BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::Serialize()
+    const noexcept
+{
+    score::json::Object json_object{};
+    json_object[detail::kSerializationVersionKey] = json::Any{serializationVersion};
+    json_object[detail::kServiceIdKey] = score::json::Any{service_id_};
+
+    json_object[detail::kEventsKey] = detail::ConvertServiceElementIdMapToJson(events_);
+    json_object[detail::kFieldsKey] = detail::ConvertServiceElementIdMapToJson(fields_);
+    json_object[detail::kMethodsKey] = detail::ConvertServiceElementIdMapToJson(methods_);
+    json_object[detail::kE2EEventsKey] = detail::ConvertE2EEventMapToJson(e2e_events_);
+
+    return json_object;
+}
+
+template <typename EventIdType,
+          typename FieldIdType,
+          typename MethodIdType,
+          typename ServiceIdType,
+          BindingType binding_type>
+std::string_view
+BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>::ToHashString()
+    const noexcept
+{
+    return hash_string_;
+}
+
+template <typename EventIdType,
+          typename FieldIdType,
+          typename MethodIdType,
+          typename ServiceIdType,
+          BindingType binding_type>
+bool operator==(
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>& lhs,
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>&
+        rhs) noexcept
+{
+    return (safe_math::CmpEqual(lhs.service_id_, rhs.service_id_) && (lhs.events_ == rhs.events_) &&
+            (lhs.fields_ == rhs.fields_) && (lhs.methods_ == rhs.methods_) && (lhs.e2e_events_ == rhs.e2e_events_));
+}
+
+template <ServiceElementType service_element_type,
+          typename EventIdType,
+          typename FieldIdType,
+          typename MethodIdType,
+          typename ServiceIdType,
+          BindingType binding_type>
+auto GetServiceElementId(
+    const BindingServiceTypeDeployment<EventIdType, FieldIdType, MethodIdType, ServiceIdType, binding_type>&
+        binding_service_type_deployment,
+    const std::string& service_element_name)
+{
+    static_assert(service_element_type != ServiceElementType::INVALID);
+
+    const auto& service_element_type_deployments = [&binding_service_type_deployment]() -> const auto& {
+        if constexpr (service_element_type == ServiceElementType::EVENT)
+        {
+            return binding_service_type_deployment.events_;
+        }
+        else if constexpr (service_element_type == ServiceElementType::FIELD)
+        {
+            return binding_service_type_deployment.fields_;
+        }
+        else if constexpr (service_element_type == ServiceElementType::METHOD)
+        {
+            return binding_service_type_deployment.methods_;
+        }
+        // LCOV_EXCL_START: Defensive programming: This state service_element_type must be an EVENT, FIELD, or METHOD
+        // (we have a static_assert at the start of this function) so this branch can never be reached.
+        else
+        {
+            // Reachable in principle, but must not be reached in production: The else branch is compiled out for every
+            // valid service_element_type (static_assert at the start of the function). It can only be reached by an
+            // invalid template argument, which must not be used in production.
+            SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
+        }
+        // LCOV_EXCL_STOP
+    }();
+
+    const auto service_element_id_it = service_element_type_deployments.find(service_element_name);
+    // LCOV_EXCL_BR_START False positive: The tool is reporting that the true decision is never taken. We have tests in
+    // lola_service_instance_deployment_test.cpp (GettingEventIdThatDoesNotExistInDeploymentTerminates and
+    // GettingFieldIdThatDoesNotExistInDeploymentTerminates) which test the true branch of this condition. This is a bug
+    // with the tool to be fixed in (Ticket-219132). This suppression should be removed when the tool is fixed.
+    if (service_element_id_it == service_element_type_deployments.cend())
+    // LCOV_EXCL_BR_STOP
+    {
+        score::mw::log::LogFatal() << service_element_type << "name \"" << service_element_name
+                                   << "\" does not exist in BindingServiceTypeDeployment. Terminating.";
+        // Reachable in principle, but must not be reached in production: A service element name can be requested that
+        // is not part of the deployment. In production, callers only request elements taken from the deployment.
+        SCORE_LANGUAGE_FUTURECPP_UNREACHABLE();
+    }
+    return service_element_id_it->second;
+}
+
+}  // namespace score::mw::com::impl
 
 #endif  // SCORE_MW_COM_IMPL_CONFIGURATION_BINDING_SERVICE_TYPE_DEPLOYMENT_H

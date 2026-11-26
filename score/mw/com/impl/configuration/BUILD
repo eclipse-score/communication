@@ -660,10 +660,7 @@ cc_library(
 cc_library(
     name = "binding_service_type_deployment",
     srcs = ["binding_service_type_deployment.cpp"],
-    hdrs = [
-        "binding_service_type_deployment.h",
-        "binding_service_type_deployment_impl.h",
-    ],
+    hdrs = ["binding_service_type_deployment.h"],
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
