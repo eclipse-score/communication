@@ -142,11 +142,6 @@ void QnxDispatchServer::ServerConnection::RequestDisconnect() noexcept
     // TODO: implement as ionotify for zero-read (once this functionality is demanded)
 }
 
-// Suppress AUTOSAR C++14 A15-5-3 violation for variant access in ProcessInput
-// Rationale: std::get<HandlerPointerT>(user_data) is preceded by std::holds_alternative check,
-// guaranteeing the variant contains the correct type. No std::bad_variant_access can be thrown.
-// The exception handling rule is satisfied as no actual exception can occur in this context.
-// coverity[autosar_cpp14_a15_5_3_violation]
 bool QnxDispatchServer::ServerConnection::ProcessInput(const std::uint8_t code,
                                                        const score::cpp::span<const std::uint8_t> message) noexcept
 {
@@ -160,9 +155,9 @@ bool QnxDispatchServer::ServerConnection::ProcessInput(const std::uint8_t code,
         case static_cast<std::uint32_t>(score::cpp::to_underlying(ClientToServer::REQUEST)):
         {
             score::cpp::expected_blank<score::os::Error> response_result;
-            if (std::holds_alternative<HandlerPointerT>(user_data))
+            if (auto* const handler = std::get_if<HandlerPointerT>(&user_data); handler != nullptr)
             {
-                response_result = std::get<HandlerPointerT>(user_data)->OnMessageSentWithReply(*this, message);
+                response_result = (*handler)->OnMessageSentWithReply(*this, message);
             }
             else
             {
@@ -175,9 +170,9 @@ bool QnxDispatchServer::ServerConnection::ProcessInput(const std::uint8_t code,
         case static_cast<std::uint32_t>(score::cpp::to_underlying(ClientToServer::SEND)):
         {
             score::cpp::expected_blank<score::os::Error> send_result;
-            if (std::holds_alternative<HandlerPointerT>(user_data))
+            if (auto* const handler = std::get_if<HandlerPointerT>(&user_data); handler != nullptr)
             {
-                send_result = std::get<HandlerPointerT>(user_data)->OnMessageSent(*this, message);
+                send_result = (*handler)->OnMessageSent(*this, message);
             }
             else
             {
@@ -275,12 +270,6 @@ void QnxDispatchServer::ServerConnection::ProcessDisconnect() noexcept
     self_.reset();
 }
 
-// Suppress AUTOSAR C++14 A15-5-1, A15-5-3 violation for variant access in destructor
-// Rationale: std::get<HandlerPointerT>(user_data) is preceded by std::holds_alternative check,
-// guaranteeing the variant contains the correct type. No std::bad_variant_access can be thrown.
-// The exception handling rule is satisfied as no actual exception can occur in this context.
-// coverity[autosar_cpp14_a15_5_1_violation]
-// coverity[autosar_cpp14_a15_5_3_violation]
 QnxDispatchServer::ServerConnection::~ServerConnection() noexcept
 {
     auto& server = GetQnxDispatchServer();
@@ -288,9 +277,9 @@ QnxDispatchServer::ServerConnection::~ServerConnection() noexcept
     {
         auto& user_data = *user_data_;
         using HandlerPointerT = score::cpp::pmr::unique_ptr<IConnectionHandler>;
-        if (std::holds_alternative<HandlerPointerT>(user_data))
+        if (auto* const handler = std::get_if<HandlerPointerT>(&user_data); handler != nullptr)
         {
-            std::get<HandlerPointerT>(user_data)->OnDisconnect(*this);
+            (*handler)->OnDisconnect(*this);
         }
         else
         {
