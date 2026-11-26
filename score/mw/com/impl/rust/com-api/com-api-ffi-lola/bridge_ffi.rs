@@ -255,8 +255,8 @@ pub trait FFIBridge: Send + Sync + Clone + Debug + 'static + Unpin + Default {
 
     /// Find all service instances matching `instance_specifier`.
     ///
-    /// Returns `Err(())` when the search fails or yields no container.
-    fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ()>;
+    /// Returns `Err(ServiceNotFound)` when the search fails or yields no container.
+    fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ServiceNotFound>;
 
     /// Initialize the `mw::com` subsystem.
     ///
@@ -307,6 +307,10 @@ pub struct SkeletonBase {
 pub struct FindServiceHandle {
     dummy: [u8; 0],
 }
+
+/// Error returned by `FFIBridge::find_service` when no service container could be found.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ServiceNotFound;
 
 /// A type-safe wrapper around a `FatPtr` that has been verified to represent a valid
 /// find-service callback (`FnMut(HandleContainer, NativeFindServiceHandle)`).

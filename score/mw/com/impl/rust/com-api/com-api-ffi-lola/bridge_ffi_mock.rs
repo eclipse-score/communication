@@ -72,7 +72,8 @@
 
 use bridge_ffi_rs::{
     FatPtr, FindServiceCallable, FindServiceHandle, HandleContainer, HandleType, InstanceSpecifier,
-    NativeInstanceSpecifier, ProxyBase, ProxyEventBase, SkeletonBase, SkeletonEventBase, TypeOperationsManager,
+    NativeInstanceSpecifier, ProxyBase, ProxyEventBase, ServiceNotFound, SkeletonBase, SkeletonEventBase,
+    TypeOperationsManager,
 };
 use mockall::mock;
 
@@ -196,7 +197,7 @@ mock! {
             member_name: &str,
         ) -> Option<TypeOperationsManager>;
 
-        fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ()>;
+        fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ServiceNotFound>;
 
         fn initialize<'a>(&self, manifest_location: Option<&'a std::path::Path>);
 }
@@ -408,7 +409,7 @@ impl bridge_ffi_rs::FFIBridge for SharedMockBridge {
         unsafe { self.locked().get_type_ops_instance(interface_id, member_name) }
     }
 
-    fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ()> {
+    fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ServiceNotFound> {
         self.locked().find_service(instance_specifier)
     }
 
