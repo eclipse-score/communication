@@ -55,6 +55,14 @@ download_archive(
 
 bazel_dep(name = "score_tooling", version = "3.1.0")
 
+# TODO: Remove once a score_tooling release contains the friend/ADL operator
+# extraction of the api_surface tool (eclipse-score/tooling#606).
+git_override(
+    module_name = "score_tooling",
+    commit = "34787b74a886b9d1139be2aa673a276c65b66dcf",
+    remote = "https://github.com/eclipse-score/tooling.git",
+)
+
 # TRLC dependency for requirements traceability
 bazel_dep(name = "trlc", version = "3.1.2")
 
