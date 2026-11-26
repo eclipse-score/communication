@@ -111,6 +111,7 @@ unit(
     design_name = "RoutingBridge",
     maturity = "development",
     scope = ["//score/someip/routing_module/routing_bridge:__subpackages__"],
+    tags = ["local"],  # LoLa report actions need host-unique PIDs.
     test_specs = [],
     tests = [
         ":linux_bridge_test_linux",

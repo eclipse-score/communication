@@ -74,6 +74,7 @@ unit(
     design_name = "NotificationHandler",
     maturity = "development",
     scope = ["//score/someip/routing_module/notification_handler:__subpackages__"],
+    tags = ["local"],  # LoLa report actions need host-unique PIDs.
     test_specs = [],
     tests = [
         ":notification_handler_test_linux",
