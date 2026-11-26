@@ -107,6 +107,7 @@ cc_library(
     name = "linux_transport",
     srcs = ["linux/transport.c"],
     hdrs = ["linux/transport.h"],
+    local_defines = ["_GNU_SOURCE"],
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//score/someip/routing_module:__subpackages__"],
     deps = [

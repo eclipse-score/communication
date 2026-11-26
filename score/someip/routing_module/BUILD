@@ -33,3 +33,12 @@ component(
     tests = [],
     visibility = ["//score/someip/dependability:__pkg__"],
 )
+
+alias(
+    name = "platform_routing_module",
+    actual = select({
+        "@platforms//os:linux": "//score/someip/routing_module/udp_transport:linux_routing_module",
+        "@platforms//os:qnx": "//score/someip/routing_module/routing_bridge:mods_someip_routing",
+    }),
+    visibility = ["//visibility:public"],
+)

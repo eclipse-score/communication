@@ -39,39 +39,34 @@ cc_binary(
 )
 
 pkg_files(
-    name = "linux_logging_config",
-    srcs = ["linux_logging.json"],
-    renames = {"linux_logging.json": "logging.json"},
-    target_compatible_with = ["@platforms//os:linux"],
+    name = "logging_config",
+    srcs = select({
+        "@platforms//os:linux": ["linux_logging.json"],
+        "@platforms//os:qnx": ["qnx_logging.json"],
+    }),
+    renames = select({
+        "@platforms//os:linux": {
+            "linux_logging.json": "logging.json",
+        },
+        "@platforms//os:qnx": {
+            "qnx_logging.json": "logging.json",
+        },
+    }),
 )
 
 pkg_application(
-    name = "linux_rx_test_app",
+    name = "rx_test_app",
     app_name = "someip_routing",
     bin = [
         ":rx_probe",
-        "//score/someip/routing_module/udp_transport:linux_routing_module",
+        "//score/someip/routing_module:platform_routing_module",
     ],
     etc = ["mw_com_config.json"],
-    etc_deps = [":linux_logging_config"],
-    target_compatible_with = ["@platforms//os:linux"],
-)
-
-pkg_application(
-    name = "qnx_rx_test_app",
-    app_name = "someip_routing",
-    bin = [
-        ":rx_probe",
-        "//score/someip/routing_module/routing_bridge:mods_someip_routing",
-    ],
-    etc = [
-        "logging.json",
-        "mw_com_config.json",
-    ],
-    target_compatible_with = ["@platforms//os:qnx"],
+    etc_deps = [":logging_config"],
 )
 
 RX_SCENARIOS = [
+    ("startup_test", "test_startup"),
     ("basic_udp_notification_test", "test_basic_udp_notification"),
     ("unknown_event_test", "test_unknown_event_is_not_forwarded"),
     ("wrong_sender_port_test", "test_wrong_sender_port_is_not_forwarded"),
@@ -87,45 +82,37 @@ RX_SCENARIOS = [
     ("controller_reconnect_test", "test_service_removal_then_controller_reconnect"),
 ]
 
-[
-    integration_test(
-        name = "linux_" + name,
-        timeout = "moderate",
-        srcs = ["linux_rx_test.py"],
-        args = [
-            "-k",
-            test_case,
-        ],
-        data = ["rx_scenarios.py"],
-        filesystem = ":linux_rx_test_app",
-        target_compatible_with = ["@platforms//os:linux"],
-    )
-    for name, test_case in RX_SCENARIOS + [("startup_test", "test_linux_routing_process_starts")]
+SUPPORTED_PLATFORMS = [
+    "linux",
+    "qnx",
 ]
 
-test_suite(
-    name = "linux_rx_test",
-    tests = [":linux_" + name for name, _ in RX_SCENARIOS] + [":linux_startup_test"],
-)
-
 [
     integration_test(
-        name = "qnx_" + name,
+        name = platform + "_" + name,
         timeout = "moderate",
-        srcs = ["qnx_rx_test.py"],
+        srcs = select({
+            "@platforms//os:linux": ["linux_routing_module_startup_test.py"],
+            "@platforms//os:qnx": ["qnx_routing_module_startup_test.py"],
+            "//conditions:default": [],
+        }),
         args = [
             "-k",
             test_case,
         ],
         data = ["rx_scenarios.py"],
-        filesystem = ":qnx_rx_test_app",
+        filesystem = ":rx_test_app",
         tags = ["exclusive"],
-        target_compatible_with = ["@platforms//os:qnx"],
+        target_compatible_with = ["@platforms//os:" + platform],
     )
-    for name, test_case in RX_SCENARIOS + [("logging_test", "test_module_loads_and_logs_to_slog")]
+    for platform in SUPPORTED_PLATFORMS
+    for name, test_case in RX_SCENARIOS
 ]
 
-test_suite(
-    name = "qnx_rx_test",
-    tests = [":qnx_" + name for name, _ in RX_SCENARIOS] + [":qnx_logging_test"],
-)
+[
+    test_suite(
+        name = platform + "_rx_test",
+        tests = [":" + platform + "_" + name for name, _ in RX_SCENARIOS],
+    )
+    for platform in SUPPORTED_PLATFORMS
+]

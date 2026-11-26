@@ -11,11 +11,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-"""Test the io-sock module's UDP receive path."""
+"""Exercise the Linux routing module with real UDP and LoLa."""
 
 import time
 
 import pytest
+
 
 from score.someip.test.rx_scenarios import test_basic_udp_notification as test_basic_udp_notification
 from score.someip.test.rx_scenarios import (
@@ -52,24 +53,19 @@ from score.someip.test.rx_scenarios import (
 from score.someip.test.rx_scenarios import test_wrong_service_is_not_forwarded as test_wrong_service_is_not_forwarded
 
 
-@pytest.fixture(scope="session")
-def loaded_module(target_init):
-    target = target_init
-    exit_code, output = target.execute("mount -T io-sock /opt/someip_routing/bin/mods-someip-routing.so")
-    assert exit_code == 0, output.decode(errors="replace")
-    return target
+@pytest.fixture
+def loaded_module(target):
+    with target.wrap_exec("/opt/someip_routing/bin/linux_routing_module", enforce_clean_shutdown=True):
+        yield target
 
 
-def test_module_loads_and_logs_to_slog(loaded_module, record_property):
-    record_property("lobster-tracing", "RoutingModule.CR_RoutingModule_IoSockModule")
-    record_property("given", "a QNX io-sock process and a configured routing module")
-    record_property("when", "the routing module is loaded")
-    record_property("then", "the module starts and its C and C++ messages reach slog2")
-    deadline = time.monotonic() + 10
-    while time.monotonic() < deadline:
-        _, output = loaded_module.execute("slog2info")
-        if b"Routing module started with LoLa configuration" in output and b"kernel thread started" in output:
-            break
-        time.sleep(0.1)
-    else:
-        raise AssertionError(output.decode(errors="replace"))
+def test_startup(target):
+    with target.wrap_exec("/opt/someip_routing/bin/linux_routing_module", enforce_clean_shutdown=True) as process:
+        deadline = time.monotonic() + 10
+        socket_output = b""
+        while time.monotonic() < deadline and process.is_running():
+            exit_code, socket_output = target.execute("cat /proc/net/unix")
+            if exit_code == 0 and b"someip_routing_module" in socket_output:
+                return
+            time.sleep(0.1)
+        raise AssertionError(f"{process.get_output()}\nSocket table: {socket_output!r}")
