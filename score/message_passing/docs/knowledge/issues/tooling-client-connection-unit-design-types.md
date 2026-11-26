@@ -4,6 +4,8 @@ Status: open
 Area: tooling
 Scope: common-client class comparison; tooling pin 3.0.2
 Evidence checked: 2026-11-13; focused unit build and generated validation report
+Additional evidence: 2026-11-17; engine parser reproduction and project
+clarification of parameter constness and upstream fix status
 
 ## Finding
 
@@ -78,6 +80,32 @@ a mismatch. Dropping that qualifier from a by-value parameter does not change
 the C++ function type; pointer-to-const was retained. Do not remove const from
 the implementation to accommodate this notation limitation.
 
+## Parameter Constness and Pointer Qualifiers
+
+The project's lint rules require by-value parameters to be declared `const`
+when their values are not modified in the function body. This includes the
+pointer value independently of the pointed-to object: `T* const p` prevents
+reassignment of `p`, but permits modification of `*p`. Pointee constness
+(`const T*`) is a separate property and must not be discarded.
+
+The pinned tooling's failures to parse or compare `* const` parameters are
+known limitations, not reasons to change lint-compliant implementation
+declarations. The engine pilot also reproduced rejection of the
+`memory_resource* const` member declarator. Its selected class view omits that
+member rather than changing the type; ownership is still described.
+Unlike top-level const on a by-value parameter, member constness is meaningful
+to the class design and must not be normalized away.
+
+Per project clarification on 2026-11-17, fixes for this handling are already on
+tooling main and are expected in the next tooling version. They have not yet
+been adopted by this checkout's 3.0.2 pin. Recheck parsing and comparison after
+the dependency update before treating the limitation as resolved.
+
+Keep the constness convention and parser-workaround explanations in developer
+knowledge, not the published unit-design artifacts. Those artifacts should
+describe ownership and behavior without explaining routine lint requirements
+or temporary notation restrictions.
+
 ## Follow-Up
 
 Keep readable source spellings and development-mode findings visible during
@@ -88,6 +116,7 @@ and ignore only function-type-irrelevant top-level const on by-value parameters.
 It must not erase pointee const or meaningful allocator distinctions.
 
 The [unit rationale](../../../dependability/software_unit_design/client_connection.rst)
-records cleanup behavior and regression coverage. Runtime tests address those
-changes separately; they do not resolve these type-comparison findings. Native
+records cleanup behavior; the [verification inventory](../client-connection-verification.md)
+owns regression evidence. Runtime tests address those changes separately;
+they do not resolve these type-comparison findings. Native
 QNX extraction remains a [separate tooling limitation](tooling-qnx-unit-analysis.md).

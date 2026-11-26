@@ -1,0 +1,58 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_server_connect_activity
+title QnxDispatchServer - native connection acceptance
+
+start
+:Enter ProcessConnect from the engine's native open callback\nThe native server attributes are locked by that caller;
+:ConnectClientInfo(ctp->info.scoid, client info, 0);
+if (Client-info lookup fails?) then (yes)
+    :Log ConnectClientInfo error and return EINVAL;
+    stop
+else (identity available)
+    :Build ClientIdentity from request pid and effective uid/gid;
+endif
+:Allocate ServerConnection with the engine memory resource\nA local unique pointer owns the pending object;
+:Construct identity and outgoing storage\nUserData and self_ remain empty;
+:Invoke connect_callback_ with the pending connection;
+note right
+    Native OCB attachment has not happened yet.
+    Notify can queue without an active select/ping event.
+    AcceptConnection has not installed UserData.
+end note
+if (Connect callback returns an error?) then (yes)
+    :Log connect_callback error;
+    :Return EACCES\nThe local owner destroys the pending connection;
+    stop
+else (accepted by application)
+    :engine_->AttachConnection(ctp, msg, server, connection);
+endif
+if (Native attachment returns an error?) then (yes)
+    :Log AttachConnection error;
+    :Return that native status\nThe local owner destroys the pending connection;
+    stop
+else (OCB bound)
+    :AcceptConnection(move UserData, move local owner)\nStore user_data_, then transfer ownership to self_;
+endif
+:Return EOK;
+stop
+
+legend
+    This view follows normal native request dispatch on the server worker.
+    Allocation, application admission and OCB attachment are distinct steps.
+    No catch/recovery or default-callback fallback is introduced.
+    GetServer-based access depends on native binding; identity is already stored.
+endlegend
+
+@enduml

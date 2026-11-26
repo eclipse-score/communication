@@ -71,8 +71,8 @@ the starting-state callback runs synchronously during start/restart. Other
 ordering and thread guarantees are documented on `StateCallback`. Do not infer
 cross-thread ordering from the vertical order in a sequence diagram.
 
-The [client unit design](../../dependability/software_unit_design/client_connection.rst)
-has focused common-client tests for competing stop requests, ready-callback
+The [client verification inventory](client-connection-verification.md)
+records focused common-client tests for competing stop requests, ready-callback
 stopping, and stopped-callback restart/destruction. These are not complete
 reentrancy qualification. Read [establishment-stop review gaps](issues/functionality-client-stop-during-establishment.md)
 before treating stopping from the starting callback or during an open attempt
@@ -142,6 +142,14 @@ Check its review status before treating recovered intent as an agreed contract.
 server implementation interface. Each backend's server uses its concrete
 engine: [QnxDispatchServer](../../qnx_dispatch/qnx_dispatch_server.h) or
 [UnixDomainServer](../../unix_domain/unix_domain_server.h).
+
+For native thread contexts, client versus server receive storage, client
+endpoint/pulse handling, resource-manager adapters and `io_*` callback routing, read the
+[QNX dispatch engine guide](qnx-dispatch-engine.md).
+
+For listener/admission ordering, self-owned server connections, UserData routing,
+and outgoing reply/notification storage, read the
+[QNX dispatch server guide](qnx-dispatch-server.md).
 
 [TimedCommandQueue](../../timed_command_queue.h) cleans entries by owner-key
 equality. Its `CleanUpOwner(nullptr)` intentionally selects all null-owner

@@ -79,7 +79,35 @@ unit_design(
 
 unit_design(
     name = "qnx_dispatch_server_unit_design",
+    dynamic = [
+        "qnx_dispatch_server_connect_activity.puml",
+        "qnx_dispatch_server_destroy_connection_activity.puml",
+        "qnx_dispatch_server_input_activity.puml",
+        "qnx_dispatch_server_listening_activity.puml",
+        "qnx_dispatch_server_notify_activity.puml",
+        "qnx_dispatch_server_read_activity.puml",
+        "qnx_dispatch_server_reply_activity.puml",
+    ],
+    static = [
+        "qnx_dispatch_server.rst",
+        "qnx_dispatch_server_class_diagram.puml",
+        "qnx_dispatch_server_connection_class_diagram.puml",
+    ],
     visibility = ["//score/message_passing:__pkg__"],
+)
+
+plantuml_render(
+    name = "qnx_dispatch_server_render",
+    srcs = glob(["qnx_dispatch_server*.puml"]),
+)
+
+html_integrity_test(
+    name = "qnx_dispatch_server_html_test",
+    size = "small",
+    expectations = "qnx_dispatch_server_html_expectations.json",
+    site = "//docs/sphinx:sphinx_doc",
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 unit_design(
@@ -99,5 +127,35 @@ unit_design(
 
 unit_design(
     name = "qnx_dispatch_engine_unit_design",
+    dynamic = [
+        "qnx_dispatch_engine_cleanup_activity.puml",
+        "qnx_dispatch_engine_client_pulses_activity.puml",
+        "qnx_dispatch_engine_commands_activity.puml",
+        "qnx_dispatch_engine_connection_callbacks_activity.puml",
+        "qnx_dispatch_engine_dispatch_activity.puml",
+        "qnx_dispatch_engine_lifecycle_activity.puml",
+        "qnx_dispatch_engine_register_endpoint_activity.puml",
+        "qnx_dispatch_engine_runner_activity.puml",
+        "qnx_dispatch_engine_unselect_endpoint_activity.puml",
+    ],
+    static = [
+        "qnx_dispatch_engine.rst",
+        "qnx_dispatch_engine_class_diagram.puml",
+        "qnx_dispatch_engine_resource_manager_class_diagram.puml",
+    ],
     visibility = ["//score/message_passing:__pkg__"],
+)
+
+plantuml_render(
+    name = "qnx_dispatch_engine_render",
+    srcs = glob(["qnx_dispatch_engine*.puml"]),
+)
+
+html_integrity_test(
+    name = "qnx_dispatch_engine_html_test",
+    size = "small",
+    expectations = "qnx_dispatch_engine_html_expectations.json",
+    site = "//docs/sphinx:sphinx_doc",
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
 )

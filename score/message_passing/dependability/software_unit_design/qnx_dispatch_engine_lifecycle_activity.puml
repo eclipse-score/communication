@@ -1,0 +1,61 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_engine_lifecycle_activity
+title QnxDispatchEngine - object lifetime
+
+start
+if (Entry is construction?) then (yes)
+    :Retain borrowed memory resource, move OSAL adapters and logger,\nconstruct both runners, empty endpoint storage and timer queue;
+    :SetupResourceManagerCallbacks()\ninitializes connect/io tables and installs native callbacks;
+    :client_runner_.Start with InitClientThread();
+    note right
+        InitClientThread runs in the constructing thread
+        under the client runner mutex.
+        Attach timer, select and connection-death pulses;
+        create a CLOCK_MONOTONIC pulse timer.
+        Checked initialization failures log and terminate.
+    end note
+    :server_runner_.Start with InitServerThread();
+    note right
+        InitServerThread runs in the constructing thread
+        under the server runner mutex.
+        Set up resource-manager dispatch buffering
+        with a null-path resmgr_attach.
+        StartPostInit then allocates the server dispatch
+        context and its receive workspace.
+        A checked failure logs and terminates.
+    end note
+    :Return with separate client and server dispatch threads;
+    stop
+else (destruction)
+    :server_runner_.Stop();
+endif
+
+if (Client dispatch pointer is non-null?) then (yes)
+    :Destroy timer_id_ through TimerDestroy()\nwithout checking the result;
+    :client_runner_.Stop();
+else (not initialized)
+    :Skip client timer and runner teardown;
+endif
+:Destroy remaining members after the explicit joins;
+stop
+
+legend
+    Runner startup and stopping are separate procedures.
+    Destruction stops the server before destroying the client timer
+    and stopping the client. This order does not establish a finite
+    shutdown deadline or qualify destruction from a callback thread.
+endlegend
+
+@enduml

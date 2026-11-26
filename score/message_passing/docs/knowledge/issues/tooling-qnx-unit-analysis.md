@@ -17,7 +17,8 @@ Status: blocked
 Area: tooling
 Scope: Bazel `unit()` QNX build/analysis; tooling pin 3.0.2
 Owner: upstream tooling support; component follow-up unassigned
-Evidence checked: 2026-11-04; source inspection and explicit project clarification
+Evidence checked: 2026-11-17; wrapper/rule inspection and VM-backed runtime tests.
+Original platform/tooling clarification: 2026-11-04.
 
 ## Finding
 
@@ -43,6 +44,16 @@ did not replace the need for supported analysis.
 Explicitly requesting an incompatible wrapper and skipping it are not successful
 analysis. Wildcard builds can skip incompatible wrappers too. Runtime test
 wrappers are separate; see [build and test](../build-and-test.md).
+
+The 2026-11-17 engine-design baseline executed the public `qnx_dispatch_test`,
+`timed_command_queue_test`, and `qnx_resource_path_test` targets with
+`--config=qnx`. The infrastructure built the guest image and started the VM;
+the guest identified QNX OS 8.0 on x86_64, and all 54/6/4 cases passed.
+This confirms runtime execution is available independently of `unit()` analysis.
+The [engine design](../../../dependability/software_unit_design/qnx_dispatch_engine.rst)
+records selected behavior; the [verification inventory](../qnx-dispatch-engine-verification.md)
+owns test scope and remaining checks.
+The blocked analysis status and compatibility guards are unchanged.
 
 ## Next Check
 

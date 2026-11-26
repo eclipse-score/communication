@@ -68,9 +68,17 @@ The renderer jar may not be materialized in a local dependency cache. Locate the
 actual renderer/toolchain before using an old command; do not publish personal
 cache paths or commit generated rendering output.
 
+## C++ Type Representation
+
+Preserve implementation constness rather than changing declarations to satisfy
+a checker. [The unit-design type record](issues/tooling-client-connection-unit-design-types.md#parameter-constness-and-pointer-qualifiers)
+explains lint-required parameter constness, known pointer-qualifier limitations,
+and pending upstream fixes. Keep these tooling explanations in developer
+knowledge rather than the published design artifacts.
+
 ## Sequence-Validation Boundary
 
-[The existing integration-validation proposals](../../dependability/software_architectural_design/sequence_validation_proposals.md)
+[The integration-validation research](integration-sequence-validation-research.md)
 record the pilot, reproducer, known gaps, and proposed upstream capabilities.
 They distinguish API-object lifelines, external actors, callable bindings,
 returns, and IPC messages from internal-unit calls.

@@ -1,0 +1,42 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_server_destroy_connection_activity
+title QnxDispatchServer - connection destruction
+
+start
+:Enter ServerConnection destructor in its destruction caller;
+:GetQnxDispatchServer() through the native OCB binding;
+if (user_data_ is engaged?) then (yes)
+    if (UserData holds a handler unique pointer?) then (handler)
+        :Invoke handler->OnDisconnect(connection);
+    else (server callback)
+        :Invoke server.disconnect_callback_(connection);
+    endif
+else (pending/unaccepted)
+    :Skip application disconnect delivery;
+endif
+:Clear send_queue_ intrusive membership;
+:Clear notify_pool_ intrusive membership;
+:Destroy members, including outgoing storage and UserData;
+stop
+
+legend
+    ProcessDisconnect resets self_ and invokes destruction of an accepted object.
+    Failed admission also destroys its locally owned pending object.
+    The server lookup precedes the UserData presence check in the implementation.
+    No send mutex, empty-callback guard or queued-message flush is added here.
+    RequestDisconnect is a distinct public method whose current body is empty.
+endlegend
+
+@enduml

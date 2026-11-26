@@ -11,7 +11,16 @@
   SPDX-License-Identifier: Apache-2.0
 ----------------------------------------------------------------------------- -->
 
-# Integration Sequence Validation Proposals
+# Integration Sequence Validation Research
+
+Status: proposals and historical evidence requiring revalidation
+Scope: integration/API sequence modeling and upstream tooling capabilities
+Evidence: pilot observations dated 2026-10-23; not rerun by this relocation
+
+The findings and implementation details below describe the historical pilot,
+not a newly verified baseline for the currently pinned tooling or tooling main.
+Use [the tooling guide](tooling.md) to resolve the actual dependency before
+reproduction. This research is developer knowledge, not a design contract.
 
 ## Purpose And Scope
 
@@ -20,7 +29,7 @@ It does not change that tooling or prescribe its implementation. The SEooC and
 tooling can evolve together while `maturity = "development"` is in use.
 
 The concrete example is
-[the integration pilot](client_server_async_integration.puml): setup and one
+[the integration pilot](../../dependability/software_architectural_design/client_server_async_integration.puml): setup and one
 asynchronous request/reply through the OS-independent public API. Existing
 QNX/Linux sequences remain implementation views; the pilot does not replace them.
 Disconnect teardown, notifications, connection rejection/retry, synchronous
@@ -35,8 +44,8 @@ request/reply, and the per-connection-handler alternative are outside this pilot
   `server : IServer`, and `connection : IServerConnection`. A connection handle
   is not interchangeable with the listening server object.
 - Public API contracts include both library-provided operations and
-  application-provided callbacks. In [the static view](static_design.puml), the
-  latter are required interfaces. In [the public API view](public_api.puml),
+  application-provided callbacks. In [the static view](../../dependability/software_architectural_design/static_design.puml), the
+    latter are required interfaces. In [the public API view](../../dependability/software_architectural_design/public_api.puml),
   `<<callback>>` and `operator()` describe existing `score::cpp::callback` type
   aliases, not new C++ virtual interfaces or new callback method names.
 - Callback calls are solid arrows to the application that supplied the callable.
@@ -63,10 +72,10 @@ Observed on 2026-10-23 with the repository's resolved `@score_tooling` dependenc
 - The build exits successfully because the target is in development maturity;
   that is not evidence that the new public interactions have been checked.
 
-The additional findings are explained by the current model, rather than by
+The additional findings were explained by the pilot's model, rather than by
 missing implementation units:
 
-| Historical behavior | Pilot evidence | Needed distinction |
+| Observed pilot behavior | Pilot evidence | Needed distinction |
 | --- | --- | --- |
 | Every non-reserved participant must name an internal unit | `client_api`, `server_api`, `server_connection_api` are rejected | Public API object instance versus internal unit |
 | Only the literal alias `ExternalEndpoint` is special | Distinct application actors are rejected | Explicitly declared external actors |

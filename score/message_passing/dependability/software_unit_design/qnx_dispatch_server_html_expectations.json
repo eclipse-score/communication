@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "pages": [
+    {
+      "anchor": "qnx-dispatch-server-operation-inventory",
+      "required_anchors": [
+        "qnx-dispatch-server-ownership",
+        "qnx-dispatch-server-connection-storage",
+        "qnx-dispatch-server-listening",
+        "qnx-dispatch-server-acceptance",
+        "qnx-dispatch-server-input",
+        "qnx-dispatch-server-reply",
+        "qnx-dispatch-server-notify",
+        "qnx-dispatch-server-read",
+        "qnx-dispatch-server-destruction",
+        "qnx-dispatch-server-execution-context"
+      ],
+      "diagrams": [
+        {
+          "title": "QNX dispatch server - server ownership",
+          "caption_targets": ["#qnx-dispatch-server-connection-storage"]
+        },
+        {
+          "title": "QNX dispatch server - connection storage",
+          "caption_targets": ["#qnx-dispatch-server-acceptance", "#qnx-dispatch-server-destruction"]
+        },
+        {
+          "title": "QnxDispatchServer - caller-side listening lifecycle",
+          "caption_targets": ["#qnx-dispatch-server-acceptance"]
+        },
+        {
+          "title": "QnxDispatchServer - native connection acceptance",
+          "caption_targets": ["#qnx-dispatch-server-notify", "#qnx-dispatch-server-destruction"]
+        },
+        {
+          "title": "QnxDispatchServer - request and one-way input dispatch",
+          "caption_targets": ["#qnx-dispatch-server-reply", "#qnx-dispatch-server-notify"]
+        },
+        {
+          "title": "QnxDispatchServer - reply admission",
+          "caption_targets": ["#qnx-dispatch-server-read"]
+        },
+        {
+          "title": "QnxDispatchServer - notification admission",
+          "caption_targets": ["#qnx-dispatch-server-read", "#qnx-dispatch-server-acceptance"]
+        },
+        {
+          "title": "QnxDispatchServer - native read and queue retirement",
+          "caption_targets": ["#qnx-dispatch-server-reply", "#qnx-dispatch-server-notify"]
+        },
+        {
+          "title": "QnxDispatchServer - connection destruction",
+          "caption_targets": ["#qnx-dispatch-server-listening"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml qnx_dispatch_server_class_diagram
+title QNX dispatch server - server ownership
+hide empty members
+skinparam classAttributeIconSize 0
+
+namespace score::message_passing {
+    abstract class "IServer" as ServerApi
+    class "QnxDispatchEngine" as Engine
+    abstract class "QnxDispatchEngine::ResourceManagerServer" as NativeServer
+
+    namespace detail {
+        class "QnxDispatchServer" as Server {
+            + StopListening() noexcept override : void
+            --
+            - identifier_ : const score::cpp::pmr::string
+            - max_request_size_ : const std::uint32_t
+            - max_reply_size_ : const std::uint32_t
+            - max_notify_size_ : const std::uint32_t
+            - server_config_ : const IServerFactory::ServerConfig
+            - connect_callback_ : ConnectCallback
+            - disconnect_callback_ : DisconnectCallback
+            - sent_callback_ : MessageCallback
+            - sent_with_reply_callback_ : MessageCallback
+            --
+            - ProcessConnect(ctp : resmgr_context_t*, msg : io_open_t*) noexcept override : std::int32_t
+        }
+    }
+}
+
+ServerApi <|-- Server
+NativeServer <|-- Server : private
+
+note bottom of NativeServer
+    Adapter definition belongs to the engine unit.
+    Its base state retains shared engine ownership and the attachment ID.
+end note
+
+note bottom of Server
+    Copies identifier, size limits and configuration.
+    StartListening replaces the four callback objects.
+    Accepted connections own themselves; there is no server-owned connection list.
+    The factory remains a separate architectural unit.
+end note
+
+@enduml
