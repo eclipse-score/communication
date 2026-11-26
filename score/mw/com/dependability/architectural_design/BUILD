@@ -29,6 +29,7 @@ architectural_design(
         "dynamic_design/generic_skeleton_offer_seq.puml",
         "dynamic_design/generic_proxy_create_seq.puml",
     ],
+    maturity = "development",
     static = [
         "static_design/overall.puml",
         "static_design/binding_independent.puml",
