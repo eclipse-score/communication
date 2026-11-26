@@ -147,7 +147,7 @@ Result<GenericSkeleton> GenericSkeleton::Create(const InstanceIdentifier& identi
     return skeleton;
 }
 
-ServiceElementMapView<GenericSkeletonEvent> GenericSkeleton::GetEvents() const noexcept
+GenericSkeleton::EventMapView GenericSkeleton::GetEvents() const noexcept
 {
     return ServiceElementMapViewFactory<GenericSkeletonEvent>::Create(*events_);
 }
