@@ -133,7 +133,7 @@ class ProxyBase
 
     /// \brief A Proxy shall be movable
     /// \requirement SWS_CM_00137
-    ProxyBase(ProxyBase&& other) noexcept = default;
+    ProxyBase(ProxyBase&&) noexcept = default;
     ProxyBase& operator=(ProxyBase&& other) noexcept = default;
 
     /// \brief Deinitialize all events and fields and tears down binding-level state.

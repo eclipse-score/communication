@@ -120,12 +120,6 @@ class UnixDomainEngine final : public ISharedResourceEngine
         TIMER
     };
 
-    struct CleanupCommand
-    {
-        FinalizeOwnerCallback callback;
-        const void* owner;
-    };
-
     void UnpollEndpoint(const std::size_t index) noexcept;
     void SendPipeEvent(PipeEvent pipe_event) noexcept;
     void ProcessPipeEvent() noexcept;
