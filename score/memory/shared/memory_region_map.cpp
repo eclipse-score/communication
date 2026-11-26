@@ -19,6 +19,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <iterator>
@@ -32,6 +33,15 @@ namespace score::memory::shared::detail
 
 namespace
 {
+
+// Bounds-checked element access that terminates on an out-of-range index (like std::array::at() does in a noexcept
+// context), but without relying on an exception being thrown.
+template <typename ArrayType>
+auto& CheckedAt(ArrayType& array, const std::size_t index) noexcept
+{
+    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(index < array.size());
+    return *std::next(array.begin(), static_cast<std::ptrdiff_t>(index));
+}
 
 bool DoesRegionIteratorOverlapWithExistingRegionInMap(
     const std::map<std::uintptr_t, std::uintptr_t>::const_iterator region_it,
@@ -142,8 +152,9 @@ bool MemoryRegionMapImpl<AtomicIndirectorType>::UpdateKnownRegion(const std::uin
     if (new_version_idx.has_value())
     {
         //  copy latest known regions into our new version
-        auto& new_known_regions = known_regions_versions_.at(static_cast<std::size_t>(new_version_idx.value()));
-        new_known_regions = known_regions_versions_.at(static_cast<std::size_t>(latest_known_region_version_));
+        auto& new_known_regions = CheckedAt(known_regions_versions_, static_cast<std::size_t>(*new_version_idx));
+        new_known_regions =
+            CheckedAt(known_regions_versions_, static_cast<std::size_t>(latest_known_region_version_.load()));
         const auto insertion_result = new_known_regions.insert({memory_range_start, memory_range_end});
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(insertion_result.second);
 
@@ -156,11 +167,11 @@ bool MemoryRegionMapImpl<AtomicIndirectorType>::UpdateKnownRegion(const std::uin
 
         // Set the refcount of our new version to 0
         auto& known_region_version_refcount =
-            known_regions_versions_refcounts_.at(static_cast<std::size_t>(new_version_idx.value()));
+            CheckedAt(known_regions_versions_refcounts_, static_cast<std::size_t>(*new_version_idx));
         known_region_version_refcount.store(0U, std::memory_order_release);
 
         // ... and set the latest version to our new version
-        latest_known_region_version_.store(new_version_idx.value(), std::memory_order_release);
+        latest_known_region_version_.store(*new_version_idx, std::memory_order_release);
         return true;
     }
     else
@@ -180,8 +191,9 @@ void MemoryRegionMapImpl<AtomicIndirectorType>::RemoveKnownRegion(const std::uin
     if (new_version_idx.has_value())
     {
         // copy latest known regions into our new version
-        auto& new_known_regions = known_regions_versions_.at(static_cast<std::size_t>(new_version_idx.value()));
-        new_known_regions = known_regions_versions_.at(static_cast<std::size_t>(latest_known_region_version_));
+        auto& new_known_regions = CheckedAt(known_regions_versions_, static_cast<std::size_t>(*new_version_idx));
+        new_known_regions =
+            CheckedAt(known_regions_versions_, static_cast<std::size_t>(latest_known_region_version_.load()));
         const auto region_it = new_known_regions.find(memory_range_start);
 
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(
@@ -191,11 +203,11 @@ void MemoryRegionMapImpl<AtomicIndirectorType>::RemoveKnownRegion(const std::uin
 
         // Set the refcount of our new version to 0
         auto& known_region_version_refcount =
-            known_regions_versions_refcounts_.at(static_cast<std::size_t>(new_version_idx.value()));
+            CheckedAt(known_regions_versions_refcounts_, static_cast<std::size_t>(*new_version_idx));
         known_region_version_refcount.store(0U, std::memory_order_release);
 
         // ... and set the latest version to our new version
-        latest_known_region_version_.store(new_version_idx.value(), std::memory_order_release);
+        latest_known_region_version_.store(*new_version_idx, std::memory_order_release);
     }
     else
     {
@@ -213,15 +225,15 @@ void MemoryRegionMapImpl<AtomicIndirectorType>::ClearKnownRegions() noexcept
     if (new_version_idx.has_value())
     {
         // clear the map in the new version
-        known_regions_versions_.at(static_cast<std::size_t>(new_version_idx.value())).clear();
+        CheckedAt(known_regions_versions_, static_cast<std::size_t>(*new_version_idx)).clear();
 
         // Set the refcount of our new version to 0
         auto& known_region_version_refcount =
-            known_regions_versions_refcounts_.at(static_cast<std::size_t>(new_version_idx.value()));
+            CheckedAt(known_regions_versions_refcounts_, static_cast<std::size_t>(*new_version_idx));
         known_region_version_refcount.store(0U, std::memory_order_release);
 
         // ... and set the latest version to our new version
-        latest_known_region_version_.store(new_version_idx.value(), std::memory_order_release);
+        latest_known_region_version_.store(*new_version_idx, std::memory_order_release);
     }
     else
     {
@@ -246,7 +258,7 @@ auto MemoryRegionMapImpl<AtomicIndirectorType>::GetBoundsFromAddress(const std::
     }
 
     const auto& latest_known_regions =
-        known_regions_versions_.at(static_cast<std::size_t>(latest_regions_version_index.value().GetIndex()));
+        CheckedAt(known_regions_versions_, static_cast<std::size_t>(latest_regions_version_index->GetIndex()));
 
     if (latest_known_regions.empty())
     {
@@ -290,7 +302,7 @@ size_t MemoryRegionMapImpl<AtomicIndirectorType>::GetSize() const noexcept
     }
 
     const auto& latest_known_regions =
-        known_regions_versions_.at(static_cast<std::size_t>(latest_regions_version_index.value().GetIndex()));
+        CheckedAt(known_regions_versions_, static_cast<std::size_t>(latest_regions_version_index->GetIndex()));
     return latest_known_regions.size();
 }
 
@@ -308,7 +320,9 @@ auto MemoryRegionMapImpl<AtomicIndirectorType>::AcquireLatestRegionVersionForRea
     {
         const uint8_t region_index = latest_known_region_version_.load(std::memory_order_relaxed);
         const std::uint32_t previous_refcount = AtomicIndirectorType<RegionVersionRefCountType>::fetch_add(
-            known_regions_versions_refcounts_.at(static_cast<size_t>(region_index)), 1U, std::memory_order_acq_rel);
+            CheckedAt(known_regions_versions_refcounts_, static_cast<size_t>(region_index)),
+            1U,
+            std::memory_order_acq_rel);
 
         const bool num_of_concurrent_readers_overflow = (previous_refcount == (INVALID_REF_COUNT_INTERVAL_START - 1U));
         const bool num_of_reads_during_writing_overflow = (previous_refcount == INVALID_REF_COUNT_INTERVAL_END);
@@ -321,8 +335,8 @@ auto MemoryRegionMapImpl<AtomicIndirectorType>::AcquireLatestRegionVersionForRea
         }
         else if (previous_refcount < (INVALID_REF_COUNT_INTERVAL_START - 1U))
         {
-            return AcquiredRefcountIndex{region_index,
-                                         known_regions_versions_refcounts_.at(static_cast<size_t>(region_index))};
+            return AcquiredRefcountIndex{
+                region_index, CheckedAt(known_regions_versions_refcounts_, static_cast<size_t>(region_index))};
         }
         else
         {
@@ -352,11 +366,11 @@ std::optional<std::uint8_t> MemoryRegionMapImpl<AtomicIndirectorType>::AcquireRe
                 static_cast<std::uint32_t>(latest_known_region_version_.load(std::memory_order_relaxed));
             const auto version_idx = static_cast<std::uint8_t>((loop_idx + current_version) % VERSION_COUNT);
             RegionVersionRefCountType cur_ref_count =
-                known_regions_versions_refcounts_.at(static_cast<size_t>(version_idx)).load();
+                CheckedAt(known_regions_versions_refcounts_, static_cast<size_t>(version_idx)).load();
             if (cur_ref_count == 0U)
             {
                 if (AtomicIndirectorType<RegionVersionRefCountType>::compare_exchange_weak(
-                        known_regions_versions_refcounts_.at(static_cast<size_t>(version_idx)),
+                        CheckedAt(known_regions_versions_refcounts_, static_cast<size_t>(version_idx)),
                         cur_ref_count,
                         INVALID_REF_COUNT_INTERVAL_START,
                         std::memory_order_acq_rel))
