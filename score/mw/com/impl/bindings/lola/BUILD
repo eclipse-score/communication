@@ -1322,6 +1322,7 @@ cc_unit_test(
     srcs = [
         "runtime_test.cpp",
     ],
+    tags = ["exclusive"],  # Real LoLa runtime binds a PID-derived message-passing endpoint.
     deps = [
         ":runtime",
         # TODO: Change for mock once it provides all symbols (see https://github.com/eclipse-score/baselibs/issues/198)
@@ -1547,6 +1548,7 @@ cc_unit_test(
     srcs = [
         "runtime_application_id_test.cpp",
     ],
+    tags = ["exclusive"],  # Real LoLa runtime binds a PID-derived message-passing endpoint.
     deps = [
         ":runtime",
         # TODO: Change for mock once it provides all symbols (see https://github.com/eclipse-score/baselibs/issues/198)

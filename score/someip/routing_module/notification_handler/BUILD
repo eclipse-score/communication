@@ -57,6 +57,7 @@ cc_library(
 cc_unit_test(
     name = "notification_handler_test",
     srcs = ["notification_handler_test.cpp"],
+    tags = ["exclusive"],
     deps = [
         ":notification_handler",
         "//score/mw/com",

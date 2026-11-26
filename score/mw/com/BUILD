@@ -138,6 +138,7 @@ cc_unit_test(
     data = [
         "//score/mw/com/impl/configuration:mw_com_config.json",
     ],
+    tags = ["exclusive"],  # One test initializes the real LoLa runtime and its message-passing endpoint.
     visibility = [
         "//score/mw/com:__subpackages__",
     ],

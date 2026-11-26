@@ -76,6 +76,7 @@ cc_shared_library(
 cc_unit_test(
     name = "routing_bridge_test",
     srcs = ["routing_bridge_test.cpp"],
+    tags = ["exclusive"],
     deps = [
         ":routing_bridge",
         ":routing_bridge_entry",
@@ -92,6 +93,7 @@ cc_unit_test(
 cc_unit_test(
     name = "linux_bridge_test",
     srcs = ["linux_bridge_test.cpp"],
+    tags = ["exclusive"],
     target_compatible_with = ["@platforms//os:linux"],
     deps = [
         ":routing_bridge",

@@ -1226,6 +1226,7 @@ cc_unit_test(
     features = [
         "aborts_upon_exception",
     ],
+    tags = ["exclusive"],  # Real LoLa runtime binds a PID-derived message-passing endpoint.
     deps = [
         ":impl",
         ":runtime",
