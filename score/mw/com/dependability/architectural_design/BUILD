@@ -15,6 +15,9 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "architectural_d
 architectural_design(
     name = "software_architectural_design",
     dynamic = [
+        "dynamic_design/proxy_create_seq.puml",
+        "dynamic_design/proxy_subdiagrams/lola_proxy_creation.puml",
+        "dynamic_design/proxy_subdiagrams/lola_proxy_event_creation.puml",
         "dynamic_design/skeleton_create_seq.puml",
         "dynamic_design/skeleton_offer_seq.puml",
         "dynamic_design/skeleton_subdiagrams/lola_skeleton_binding_offer.puml",
