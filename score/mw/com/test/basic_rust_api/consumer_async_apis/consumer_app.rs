@@ -35,7 +35,6 @@ use score_com::{
     ServiceDiscovery, Subscriber, Subscription,
 };
 use std::path::Path;
-use std::sync::mpsc;
 use std::thread;
 
 const CONFIG_PATH: &str = "etc/config.json";
@@ -107,20 +106,14 @@ async fn receive_with_cancellation<R: Runtime>(
 
     println!("[bigdata-consumer] Using async cancellable receive with timeout");
 
-    // Thread for simulating a timeout mechanism.
-    // This is just for demonstration purposes, but in a real application you would likely use a more robust timer mechanism or library.
-    let (timer_tx, timer_rx) = mpsc::channel::<oneshot::Sender<()>>();
-    thread::spawn(move || {
-        while let Ok(reply_tx) = timer_rx.recv() {
-            thread::sleep(Duration::from_millis(50));
-            let _ = reply_tx.send(());
-        }
-    });
-
     while total_cycle < num_cycles {
-        // Request a timeout from the shared timer thread.
+        // Thread for simulating a timeout mechanism.
+        // This is just for demonstration purposes, but in a real application you would likely use a more robust timer mechanism or library.
         let (tx, rx) = oneshot::channel();
-        timer_tx.send(tx).expect("Timer thread unexpectedly stopped");
+        thread::spawn(move || {
+            thread::sleep(Duration::from_millis(50));
+            let _ = tx.send(());
+        });
 
         // Map the receiver to resolve to () instead of Result<(), Canceled>
         let timeout_future = rx.map(|_| ());

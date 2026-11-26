@@ -29,3 +29,8 @@ called_from_lib:sample_allocatee_ptr_test_rs
 # pthread_create happens-before relationship and incorrectly reports a race on the closure data transferred to the spawned test thread.
 race:<std::sync::mpmc::list::Channel<test::event::CompletedTest>>
 race:test::run_test
+
+# The Rust COM API is not built with TSan instrumentation. In async find-service, the C++ callback
+# allocates the ServiceHandleContainer on the discovery thread and Rust hands it to the polling
+# thread through a std::sync::Mutex, which TSan cannot observe (#1640).
+race:mw_com_impl_handle_container_get_size
