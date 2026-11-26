@@ -113,7 +113,7 @@ inline Result<std::size_t> ProxyEvent::GetNewSamples(Callback&& receiver, Tracke
 
         SamplePtr sample{type_erased_sample_ptr, event_data_control_local_, *slot_index_it};
 
-        auto guard = std::move(*tracker.TakeGuard());
+        auto guard = *tracker.TakeGuard();
         auto sample_binding_independent = this->MakeSamplePtr(std::move(sample), std::move(guard));
 
         static_assert(
