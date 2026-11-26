@@ -208,6 +208,10 @@ TracingRuntimeAtomicState::TracingRuntimeAtomicState(TracingRuntimeAtomicState&&
 
 TracingRuntimeAtomicState& TracingRuntimeAtomicState::operator=(TracingRuntimeAtomicState&& other) & noexcept
 {
+    if (this == &other)
+    {
+        return *this;
+    }
     // Suppress "AUTOSAR C++14 A12-8-4", The rule states: "Move constructor shall not initialize its class
     // members and base classes using copy semantics".
     // Suppress "AUTOSAR C++14 A18-9-2", The rule states: "Forwarding values to other functions shall be done
