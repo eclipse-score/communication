@@ -126,8 +126,8 @@ class SampleReferenceTracker final
   private:
     void Deallocate(const std::size_t num_deallocations) noexcept;
 
-    std::atomic_size_t available_samples_;
-    std::size_t max_num_samples_;
+    std::atomic_size_t available_samples_{0U};
+    std::size_t max_num_samples_{0U};
 };
 
 /// Tracks the usage of a single allocated sample and releases the associated reference on destruction.
