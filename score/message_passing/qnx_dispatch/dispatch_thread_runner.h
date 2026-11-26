@@ -89,7 +89,10 @@ class DispatchThreadRunner
     void StartPostInit() noexcept;
     void RunOnThread() noexcept;
 
-    static int QuitPulseCallback(message_context_t* ctp, int code, unsigned flags, void* handle) noexcept;
+    static std::int32_t QuitPulseCallback(message_context_t* ctp,
+                                          std::int32_t code,
+                                          std::uint32_t flags,
+                                          void* handle) noexcept;
 
     void SendQuitPulse() noexcept;
 
