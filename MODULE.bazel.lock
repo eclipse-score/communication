@@ -4986,7 +4986,7 @@
     "@@score_bazel_cpp_toolchains+//extensions:gcc.bzl%gcc": {
       "general": {
         "bzlTransitiveDigest": "B8q0vqoyCF73c604BGTN8TCFKF0Ep76GQiW3O313m10=",
-        "usagesDigest": "TSs4a7FtoFhqO9Tnj1cK0UIorb/I8B6zTdm21pqz5vY=",
+        "usagesDigest": "+FbRPjMOUpxIKk+vm0vgLSDf9Y8DPNkh7Nrw0epQjF8=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_tools,rules_cc rules_cc+",
           "REPO_MAPPING:score_bazel_cpp_toolchains+,bazel_tools bazel_tools",
@@ -5073,8 +5073,8 @@
               "extra_cxx_compile_flags": [],
               "extra_known_features": [],
               "extra_enabled_features": [
-                "@@//quality/compiler_warnings:fortify_source",
-                "@@//quality/compiler_warnings:optimize_code",
+                "@@//bazel/toolchains/compiler_flags:fortify_source",
+                "@@//bazel/toolchains/compiler_flags:optimize_code",
                 "@@//quality/compiler_warnings:treat_warnings_as_errors",
                 "@@//quality/compiler_warnings/gcc:misra_warnings",
                 "@@//quality/compiler_warnings/gcc:minimal_warnings"
@@ -5105,8 +5105,8 @@
               "extra_cxx_compile_flags": [],
               "extra_known_features": [],
               "extra_enabled_features": [
-                "@@//quality/compiler_warnings:fortify_source",
-                "@@//quality/compiler_warnings:optimize_code",
+                "@@//bazel/toolchains/compiler_flags:fortify_source",
+                "@@//bazel/toolchains/compiler_flags:optimize_code",
                 "@@//quality/compiler_warnings:treat_warnings_as_errors",
                 "@@//quality/compiler_warnings/gcc:misra_warnings",
                 "@@//quality/compiler_warnings/gcc:minimal_warnings"
@@ -5137,8 +5137,8 @@
               "extra_cxx_compile_flags": [],
               "extra_known_features": [],
               "extra_enabled_features": [
-                "@@//quality/compiler_warnings:fortify_source",
-                "@@//quality/compiler_warnings:optimize_code",
+                "@@//bazel/toolchains/compiler_flags:fortify_source",
+                "@@//bazel/toolchains/compiler_flags:optimize_code",
                 "@@//quality/compiler_warnings:treat_warnings_as_errors",
                 "@@//quality/compiler_warnings/gcc:misra_warnings",
                 "@@//quality/compiler_warnings/gcc:minimal_warnings"
@@ -5169,8 +5169,8 @@
               "extra_cxx_compile_flags": [],
               "extra_known_features": [],
               "extra_enabled_features": [
-                "@@//quality/compiler_warnings:fortify_source",
-                "@@//quality/compiler_warnings:optimize_code",
+                "@@//bazel/toolchains/compiler_flags:fortify_source",
+                "@@//bazel/toolchains/compiler_flags:optimize_code",
                 "@@//quality/compiler_warnings:treat_warnings_as_errors",
                 "@@//quality/compiler_warnings/gcc:misra_warnings",
                 "@@//quality/compiler_warnings/gcc:minimal_warnings"
