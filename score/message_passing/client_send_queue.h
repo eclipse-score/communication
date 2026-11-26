@@ -32,6 +32,10 @@ class ClientSendQueue final
                     std::uint32_t max_send_size,
                     SendActor send,
                     ScheduleActor schedule_drain) noexcept;
+    ClientSendQueue(const ClientSendQueue&) = delete;
+    ClientSendQueue& operator=(const ClientSendQueue&) = delete;
+    ClientSendQueue(ClientSendQueue&&) = delete;
+    ClientSendQueue& operator=(ClientSendQueue&&) = delete;
     ~ClientSendQueue() noexcept;
 
     SendResult Send(Message message) noexcept;
