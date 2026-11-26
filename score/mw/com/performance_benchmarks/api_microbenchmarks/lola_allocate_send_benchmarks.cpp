@@ -87,6 +87,9 @@ class LolaAllocateSendBenchmarkFixtureBase : public benchmark::Fixture
 
 std::atomic<bool> LolaAllocateSendBenchmarkFixtureBase::fixture_initialized_{false};
 
+namespace
+{
+
 // Fixture for the combined AllocateSend benchmark: uses Google Benchmark's automatic (CPU/wall-clock)
 // timing, exactly as before.
 class LolaAllocateSendBenchmarkFixture : public LolaAllocateSendBenchmarkFixtureBase
@@ -133,6 +136,8 @@ class LolaAllocateSendManualTimeBenchmarkFixture : public LolaAllocateSendBenchm
         this->Unit(benchmark::kMicrosecond);
     }
 };
+
+}  // namespace
 
 BENCHMARK_F(LolaAllocateSendBenchmarkFixture, AllocateSend)(benchmark::State& state)
 {
