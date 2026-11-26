@@ -19,6 +19,8 @@ architectural_design(
         "dynamic_design/skeleton_offer_seq.puml",
         "dynamic_design/skeleton_subdiagrams/lola_skeleton_binding_offer.puml",
         "dynamic_design/skeleton_subdiagrams/lola_skeleton_event_binding_offer.puml",
+        "dynamic_design/generic_skeleton_create_seq.puml",
+        "dynamic_design/generic_skeleton_offer_seq.puml",
     ],
     static = [
         "static_design/overall.puml",

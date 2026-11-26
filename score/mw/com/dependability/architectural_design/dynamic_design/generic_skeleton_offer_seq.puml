@@ -1,0 +1,75 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml generic_skeleton_offer_seq
+title "Generic Skeleton OfferService Sequence"
+hide footbox
+
+actor "ExternalEndpoint" as Process
+participant "mw_com::binding_independent::generic_skeleton_and_service_elements" as generic_skeleton_and_service_elements
+participant "mw_com::lola_binding::skeleton_and_service_elements" as lola_skeleton_and_service_elements
+participant "mw_com::lola_binding::event_data_control" as event_data_control
+participant "memory::shared::memory_shared" as memory_shared
+participant "mw_com::binding_independent::service_discovery" as service_discovery
+participant "mw_com::lola_binding::message_passing_service" as message_passing_service
+
+activate Process
+
+' Start message passing thread
+Process -> message_passing_service: Construct
+activate message_passing_service
+
+message_passing_service -> message_passing_service: Start message reception thread
+note right of message_passing_service: We currently have no official way of representing a thread. \nFor now, this is represented by the lifetime of the \nMessage Passing Service.
+
+' Create Generic Skeleton
+Process -> generic_skeleton_and_service_elements: CreateGenericSkeleton(InstanceSpecifier, GenericSkeletonServiceElementInfo)
+activate generic_skeleton_and_service_elements
+
+generic_skeleton_and_service_elements --> Process: return: GenericSkeleton instance
+deactivate generic_skeleton_and_service_elements
+
+' Offer service
+Process -> generic_skeleton_and_service_elements: OfferService()
+activate generic_skeleton_and_service_elements
+
+' TODO: Check linkages to subdiagrams are correct.
+generic_skeleton_and_service_elements -> lola_skeleton_and_service_elements: OfferSkeleton()
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements --> generic_skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+' Offer service for all events
+loop for all events in internal events_ map
+
+generic_skeleton_and_service_elements -> lola_skeleton_and_service_elements: OfferSkeletonEvent()
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements --> generic_skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+end loop
+
+generic_skeleton_and_service_elements -> service_discovery: OfferService(InstanceIdentifier)
+activate service_discovery
+
+service_discovery --> generic_skeleton_and_service_elements
+deactivate service_discovery
+
+generic_skeleton_and_service_elements --> Process
+deactivate generic_skeleton_and_service_elements
+
+deactivate Process
+
+@enduml
