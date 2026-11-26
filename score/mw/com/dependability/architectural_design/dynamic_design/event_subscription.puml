@@ -1,0 +1,74 @@
+@startuml event_subscription
+title "Event Subscription"
+hide footbox
+
+participant "ExternalEndpoint" as Process
+
+participant "mw_com::binding_independent::skeleton_and_service_elements" as skeleton_and_service_elements
+participant "mw_com::lola_binding::skeleton_and_service_elements" as lola_skeleton_and_service_elements
+participant "mw_com::lola_binding::event_data_control" as event_data_control
+participant "mw_com::lola_binding::proxy_and_service_elements" as lola_proxy_and_service_elements
+participant "mw_com::binding_independent::proxy_and_service_elements" as proxy_and_service_elements
+
+activate Process
+
+' Create and offer Skeleton
+Process -> skeleton_and_service_elements: CreateSkeleton(InstanceSpecifier)
+activate skeleton_and_service_elements
+
+skeleton_and_service_elements --> Process: return: Result<Skeleton>
+deactivate skeleton_and_service_elements
+
+Process -> skeleton_and_service_elements: OfferService()
+activate skeleton_and_service_elements
+
+skeleton_and_service_elements -> lola_skeleton_and_service_elements: OfferService()
+activate lola_skeleton_and_service_elements
+
+lola_skeleton_and_service_elements -> event_data_control: EventSubscriptionControl::CreateInShm(\nmax_slot_count, max_subscribers, enforce_max_samples)
+activate event_data_control
+
+event_data_control --> lola_skeleton_and_service_elements
+deactivate event_data_control
+
+lola_skeleton_and_service_elements --> skeleton_and_service_elements
+deactivate lola_skeleton_and_service_elements
+
+skeleton_and_service_elements --> Process
+deactivate skeleton_and_service_elements
+
+Process -> proxy_and_service_elements: FindService(InstanceSpecifier)
+activate proxy_and_service_elements
+
+Process <-- proxy_and_service_elements: return: Handle
+deactivate proxy_and_service_elements
+
+' Create Proxy
+Process -> proxy_and_service_elements: CreateProxy(HandleType)
+activate proxy_and_service_elements
+
+proxy_and_service_elements --> Process: return: Result<Proxy>
+deactivate proxy_and_service_elements
+
+' Step 1: ProxyEvent subscribing
+Process -> proxy_and_service_elements: ProxyEvent::Subscribe(max_sample_count)
+activate proxy_and_service_elements
+
+proxy_and_service_elements -> lola_proxy_and_service_elements: Subscribe(max_sample_count)
+activate lola_proxy_and_service_elements
+
+lola_proxy_and_service_elements -> event_data_control: EventSubscriptionControl::Subscribe(max_sample_count)
+activate event_data_control
+
+event_data_control --> lola_proxy_and_service_elements: return: Result
+deactivate event_data_control
+
+lola_proxy_and_service_elements --> proxy_and_service_elements: return: Result
+deactivate lola_proxy_and_service_elements
+
+proxy_and_service_elements --> Process: return: Result
+deactivate proxy_and_service_elements
+
+deactivate Process
+
+@enduml
