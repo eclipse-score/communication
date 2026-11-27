@@ -885,11 +885,11 @@ impl FFIBridge for LolaFFIBridge {
     ///
     /// # Returns
     /// Result containing a HandleContainer if the service was found, or an error if not found
-    fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ()> {
+    fn find_service(&self, instance_specifier: InstanceSpecifier) -> Result<HandleContainer, ServiceNotFound> {
         // SAFETY: instance_specifier.inner is a valid pointer.
         let container = unsafe { mw_com_impl_find_service(instance_specifier.as_native_mut()) };
         if container.is_null() {
-            Err(())
+            Err(ServiceNotFound)
         } else {
             Ok(HandleContainer::new(container))
         }

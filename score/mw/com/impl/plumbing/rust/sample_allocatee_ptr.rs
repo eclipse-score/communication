@@ -62,21 +62,6 @@ struct LolaSampleAllocateePtrBinding<T> {
     _consumer_data_control_local_: *mut ConsumerEventDataControlLocalView,
 }
 
-/// Mirror of `someip::SampleAllocateePtr`. Unlike the LoLa counterpart it is not templated on the sample type on
-/// the C++ side, but the generic parameter is kept here so that all alternatives of the variant share one shape.
-#[repr(C)]
-struct SomeIpSampleAllocateePtrBinding<T> {
-    _managed_object: *mut T,
-    _event_slot_index: SlotIndexType,
-    _slot_allocation_control: *mut core::ffi::c_void,
-}
-
-#[repr(C)]
-union SomeIpSampleAllocateePtrVariant<T> {
-    _variant: ManuallyDrop<SomeIpSampleAllocateePtrBinding<T>>,
-    _mock_binding: ManuallyDrop<MockBindingVariant<T>>,
-}
-
 #[repr(C)]
 union LolaSampleAllocateePtrVariant<T> {
     _variant: ManuallyDrop<LolaSampleAllocateePtrBinding<T>>,
