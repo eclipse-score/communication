@@ -1242,8 +1242,10 @@ Result<void> MessagePassingServiceInstance::RegisterOnServiceMethodSubscribedHan
     IMessagePassingService::AllowedConsumerUids allowed_proxy_uids)
 {
     std::unique_lock<std::shared_mutex> write_lock(subscribe_service_method_handlers_mutex_);
-    const auto [existing_element, was_inserted] = subscribe_service_method_handlers_.insert(
-        {skeleton_instance_identifier, {std::move(subscribed_callback), std::move(allowed_proxy_uids)}});
+    const bool was_inserted =
+        subscribe_service_method_handlers_
+            .insert({skeleton_instance_identifier, {std::move(subscribed_callback), std::move(allowed_proxy_uids)}})
+            .second;
 
     if (!was_inserted)
     {
@@ -1261,8 +1263,9 @@ Result<void> MessagePassingServiceInstance::RegisterOnServiceMethodUnsubscribedH
     IMessagePassingService::ServiceMethodUnsubscribedHandler unsubscribed_callback)
 {
     std::unique_lock<std::shared_mutex> write_lock(unsubscribe_service_method_handlers_mutex_);
-    const auto [existing_element, was_inserted] =
-        unsubscribe_service_method_handlers_.insert({skeleton_instance_identifier, std::move(unsubscribed_callback)});
+    const bool was_inserted =
+        unsubscribe_service_method_handlers_.insert({skeleton_instance_identifier, std::move(unsubscribed_callback)})
+            .second;
 
     if (!was_inserted)
     {

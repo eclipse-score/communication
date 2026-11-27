@@ -51,7 +51,7 @@ class TracingConfiguration final
      * \brief Class is only move constructible
      */
     TracingConfiguration(const TracingConfiguration& other) = delete;
-    TracingConfiguration(TracingConfiguration&& other) noexcept = default;
+    TracingConfiguration(TracingConfiguration&&) noexcept = default;
     TracingConfiguration& operator=(const TracingConfiguration& other) & = delete;
     TracingConfiguration& operator=(TracingConfiguration&& other) & noexcept = default;
 

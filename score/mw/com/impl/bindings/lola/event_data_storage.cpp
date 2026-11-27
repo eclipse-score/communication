@@ -85,8 +85,8 @@ std::byte* EventDataStorage::GetTypeErasedDataSlotsEnd() const
 
     // This is the OffsetPtr to the last valid byte in the storage. We apply explicit bounds-check here via get()
     const auto last_valid_byte_offset_ptr =
-        type_erased_data_slots_ +
-        decltype(type_erased_data_slots_)::difference_type(type_erased_data_slots_storage_size_in_bytes_ - 1U);
+        type_erased_data_slots_ + static_cast<decltype(type_erased_data_slots_)::difference_type>(
+                                      type_erased_data_slots_storage_size_in_bytes_ - 1U);
     auto* const last_valid_byte_raw_ptr = last_valid_byte_offset_ptr.get();
     // Here we return the one-past-the-last-byte pointer, which may be already out-of-bounds.
     return memory::shared::AddOffsetToPointer(last_valid_byte_raw_ptr, static_cast<std::size_t>(1U));
@@ -99,7 +99,8 @@ void EventDataStorage::InitializeSlots(const InitializeSampleCallback& initializ
     const auto last_slot_offset = sample_size_info_.Size() * (number_of_slots_ - 1U);
     // Verify that the last slot is still within bounds of the OffsetPtr's bounds-checking.
     score::cpp::ignore =
-        (type_erased_data_slots_ + decltype(type_erased_data_slots_)::difference_type(last_slot_offset)).get();
+        (type_erased_data_slots_ + static_cast<decltype(type_erased_data_slots_)::difference_type>(last_slot_offset))
+            .get();
 
     for (SlotIndexType slot_index = 0U; safe_math::CmpLess(slot_index, number_of_slots_); ++slot_index)
     {

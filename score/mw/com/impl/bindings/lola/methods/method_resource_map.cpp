@@ -48,9 +48,9 @@ auto MethodResourceMap::Insert(const ProxyInstanceIdentifier proxy_instance_iden
 
     auto& process_specific_resource_map = inner_pair_it.first->second;
     process_specific_resource_map.pid = proxy_pid;
-    const auto [inserted_resource_it, _] = process_specific_resource_map.inner_resource_map.insert(
-        {proxy_instance_identifier.proxy_instance_counter, methods_shm_resource});
-    return inserted_resource_it;
+    return process_specific_resource_map.inner_resource_map
+        .insert({proxy_instance_identifier.proxy_instance_counter, methods_shm_resource})
+        .first;
 }
 
 auto MethodResourceMap::CleanUpOldRegions(const ProxyInstanceIdentifier proxy_instance_identifier,

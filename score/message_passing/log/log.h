@@ -25,7 +25,13 @@ inline std::string_view LogConvert(std::string_view t)
     return t;
 }
 
-template <class T, typename std::enable_if<std::is_unsigned_v<T>, bool>::type = true>
+template <class T, typename std::enable_if<std::is_same_v<T, bool>, bool>::type = true>
+std::uint64_t LogConvert(const T& t)
+{
+    return t ? 1U : 0U;
+}
+
+template <class T, typename std::enable_if<std::is_unsigned_v<T> && !std::is_same_v<T, bool>, bool>::type = true>
 std::uint64_t LogConvert(const T& t)
 {
     return static_cast<std::uint64_t>(t);
