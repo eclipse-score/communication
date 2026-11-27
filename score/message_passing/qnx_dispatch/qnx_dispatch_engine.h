@@ -202,10 +202,12 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     {
         return os_resources_;
     }
+    const OsResources&& GetOsResources() && noexcept = delete;
     const LoggingCallback& GetLogger() & noexcept override
     {
         return logger_;
     }
+    const LoggingCallback&& GetLogger() && noexcept = delete;
 
     using FinalizeOwnerCallback = score::cpp::callback<void() /* noexcept */>;
 

@@ -92,6 +92,7 @@ class ServiceDataStorage
     ServiceDataStorage(const ServiceDataStorage&) = delete;
     ServiceDataStorage& operator=(const ServiceDataStorage&) = delete;
     ServiceDataStorage& operator=(ServiceDataStorage&&) = delete;
+    ~ServiceDataStorage() = default;
 
     /// \brief Constructs a new (type-erased) EventDataStorage for the given service-element (event/field) on the
     ///        very same memory-resource this ServiceDataStorage was constructed on, and registers it (together with

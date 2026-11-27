@@ -32,6 +32,10 @@ class ClientSendQueue final
                     std::uint32_t max_send_size,
                     SendActor send,
                     ScheduleActor schedule_drain) noexcept;
+    ClientSendQueue(const ClientSendQueue&) = delete;
+    ClientSendQueue& operator=(const ClientSendQueue&) = delete;
+    ClientSendQueue(ClientSendQueue&&) = delete;
+    ClientSendQueue& operator=(ClientSendQueue&&) = delete;
     ~ClientSendQueue() noexcept;
 
     SendResult Send(Message message) noexcept;
@@ -42,9 +46,8 @@ class ClientSendQueue final
     void CancelPending() noexcept;
 
   private:
-    struct ReplySlotToken
-    {
-    };
+    using ReplySlotId = std::uint64_t;
+    static constexpr ReplySlotId kNoReplySlot{0U};
 
     class SendCommand : public score::containers::intrusive_list_element<>
     {
@@ -76,7 +79,8 @@ class ClientSendQueue final
     score::containers::intrusive_list<SendCommand> pool_;
     score::containers::intrusive_list<SendCommand> queue_;
     std::optional<ReplyCallback> waiting_for_reply_;
-    const ReplySlotToken* reply_slot_owner_;
+    ReplySlotId reply_slot_owner_;
+    ReplySlotId last_reply_slot_id_;
 };
 
 }  // namespace score::message_passing::detail
