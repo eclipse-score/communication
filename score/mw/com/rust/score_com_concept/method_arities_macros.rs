@@ -34,8 +34,8 @@
 //! This macro covers arities 1 through 8 (inclusive) by default, but can be extended to higher arities if needed.
 
 use crate::{
-    CommData, MethodArgs, MethodArgsAllocate, MethodArgsPtrTuple, MethodCallInput, MethodCaller, MethodHandlerCall,
-    MethodInArgAllocator, Reloc, Result, Runtime, ZeroCopyArgs,
+    method_concept::method_arg_offset, CommData, MethodArgs, MethodArgsAllocate, MethodArgsCodec, MethodArgsPtrTuple,
+    MethodCallInput, MethodCaller, MethodHandlerCall, MethodInArgAllocator, Reloc, Result, Runtime, ZeroCopyArgs,
 };
 use core::future::Future;
 
@@ -61,6 +61,48 @@ macro_rules! impl_all_arities {
         }
 
         impl<$($T: CommData,)* $nextT: CommData> MethodArgs for ($($T,)* $nextT,) {}
+
+        impl<$($T: CommData,)* $nextT: CommData> MethodArgsCodec for ($($T,)* $nextT,) {
+            fn layout() -> (usize, usize) {
+                let mut size: usize = 0;
+                let mut align: usize = 1;
+                $(
+                    size = method_arg_offset(size, core::mem::align_of::<$T>()) + core::mem::size_of::<$T>();
+                    align = align.max(core::mem::align_of::<$T>());
+                )*
+                size = method_arg_offset(size, core::mem::align_of::<$nextT>()) + core::mem::size_of::<$nextT>();
+                align = align.max(core::mem::align_of::<$nextT>());
+                (method_arg_offset(size, align), align)
+            }
+
+            unsafe fn write_into(self, buf: *mut u8) {
+                let ($($a,)* $nextA,) = self;
+                let mut offset: usize = 0;
+                $(
+                    offset = method_arg_offset(offset, core::mem::align_of::<$T>());
+                    // SAFETY: the offsets are those of layout(), so every write is inside the buffer.
+                    unsafe { (buf.add(offset) as *mut $T).write($a) };
+                    offset += core::mem::size_of::<$T>();
+                )*
+                offset = method_arg_offset(offset, core::mem::align_of::<$nextT>());
+                // SAFETY: as above.
+                unsafe { (buf.add(offset) as *mut $nextT).write($nextA) };
+            }
+
+            unsafe fn read_from(buf: *const u8) -> Self {
+                let mut offset: usize = 0;
+                $(
+                    offset = method_arg_offset(offset, core::mem::align_of::<$T>());
+                    // SAFETY: the buffer holds a value written by write_into with the same offsets.
+                    let $a = unsafe { (buf.add(offset) as *const $T).read() };
+                    offset += core::mem::size_of::<$T>();
+                )*
+                offset = method_arg_offset(offset, core::mem::align_of::<$nextT>());
+                // SAFETY: as above.
+                let $nextA = unsafe { (buf.add(offset) as *const $nextT).read() };
+                ($($a,)* $nextA,)
+            }
+        }
 
         impl<$($T: CommData,)* $nextT: CommData, R: Runtime + ?Sized>
             MethodArgsPtrTuple<R> for ($($T,)* $nextT,)

@@ -483,7 +483,7 @@ impl<I: Interface> Builder<I::Consumer<MockRuntimeImpl>> for MockConsumerBuilder
             instance_specifier: self.instance_specifier.clone(),
         };
 
-        Ok(Consumer::new(instance_info))
+        Consumer::new(instance_info)
     }
 }
 

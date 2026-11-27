@@ -22,7 +22,10 @@
 /// - C++ side: Template-based, type-erased implementation
 
 #include "score/mw/com/impl/rust/com-api/com-api-ffi-lola/registry_bridge_macro.h"
+#include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/find_service_handler.h"
+#include "score/mw/com/impl/methods/proxy_method_binding.h"
+#include "score/mw/com/impl/methods/skeleton_method_binding.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/proxy_base.h"
 #include "score/mw/com/impl/proxy_event.h"
@@ -36,8 +39,14 @@
 #include "score/mw/log/logging.h"
 #include "score/string_manipulation/arguments/arguments.h"
 
+#include <score/span.hpp>
+
+#include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <optional>
 #include <string_view>
+#include <utility>
 
 namespace score::mw::com::impl::rust
 {
@@ -349,6 +358,176 @@ bool mw_com_skeleton_send_event_allocatee(SkeletonEventBase* event_ptr,
     }
 
     return type_ops->SkeletonSendEventAllocatee(event_ptr, allocatee_ptr);
+}
+
+// --- Method FFI functions. They operate directly on the type-erased ProxyMethodBinding*/SkeletonMethodBinding*
+// (see MethodMemberOperation in registry_bridge_macro.h). The C++ binding supports one call in flight
+// (kCallQueueSize == 1), so the Rust side always passes queue_position 0.
+
+/// \brief Get the type-erased ProxyMethodBinding for a named method on a proxy.
+/// \details Mirrors mw_com_get_event_from_proxy's shape, but looks the member up in the *method* registry
+/// (InterfaceOperations::method_operation_map_) rather than the event one, and returns the binding directly
+/// instead of a `ProxyEventBase*` (there is no per-type dispatch needed here, see the file comment above).
+/// \param proxy_ptr Opaque proxy pointer (actually ProxyType*)
+/// \param interface_id UTF-8 string view of interface ID
+/// \param method_id UTF-8 string view of method name
+/// \return Pointer to ProxyMethodBinding if found, nullptr otherwise (including: the binding failed to construct —
+/// see ProxyMethodBase's constructor, which stores nullptr in binding_ and the real error in
+/// binding_construction_result_ on failure, not surfaced through this FFI function).
+ProxyMethodBinding* mw_com_get_method_from_proxy(ProxyBase* proxy_ptr, StringView interface_id, StringView method_id)
+{
+    if (proxy_ptr == nullptr || interface_id.data == nullptr || method_id.data == nullptr)
+    {
+        return nullptr;
+    }
+    auto* const registry = GlobalRegistryMapping::FindMethodOperation(static_cast<std::string_view>(interface_id),
+                                                                      static_cast<std::string_view>(method_id));
+    if (registry == nullptr)
+    {
+        return nullptr;
+    }
+    return registry->GetProxyMethodBinding(proxy_ptr);
+}
+
+/// \brief Get the type-erased SkeletonMethodBinding for a named method on a skeleton.
+/// \param skeleton_ptr Opaque skeleton pointer (actually SkeletonType*)
+/// \param interface_id UTF-8 string view of interface ID
+/// \param method_id UTF-8 string view of method name
+/// \return Pointer to SkeletonMethodBinding if found, nullptr otherwise
+SkeletonMethodBinding* mw_com_get_method_from_skeleton(SkeletonBase* skeleton_ptr,
+                                                       StringView interface_id,
+                                                       StringView method_id)
+{
+    if (skeleton_ptr == nullptr || interface_id.data == nullptr || method_id.data == nullptr)
+    {
+        return nullptr;
+    }
+    auto* const registry = GlobalRegistryMapping::FindMethodOperation(static_cast<std::string_view>(interface_id),
+                                                                      static_cast<std::string_view>(method_id));
+    if (registry == nullptr)
+    {
+        return nullptr;
+    }
+    return registry->GetSkeletonMethodBinding(skeleton_ptr);
+}
+
+/// \brief Allocate/retrieve the in-arguments buffer for a proxy method call at queue position 0.
+/// \details Wraps ProxyMethodBinding::GetInArgsBuffer. The Rust caller serializes its arguments with the same
+/// layout as type_erased_storage.h's SerializeArgs (score_com_concept::MethodArgsCodec); a mismatch would corrupt
+/// memory silently.
+/// \param binding Pointer to ProxyMethodBinding, obtained via mw_com_get_method_from_proxy
+/// \param queue_position Call-queue position (always 0, kCallQueueSize == 1)
+/// \param out_data [out] Pointer to the start of the in-args buffer on success
+/// \param out_len [out] Length in bytes of the in-args buffer on success
+/// \return true if the buffer was retrieved successfully, false otherwise (including: this method has no
+/// in-arguments at all — GetInArgsBuffer must not be called in that case per its own doc comment, so this
+/// function must only be invoked by Rust code that already knows, from the method's static Signature, that
+/// ArgTypes is non-empty)
+bool mw_com_proxy_method_get_in_args_buffer(ProxyMethodBinding* binding,
+                                            std::size_t queue_position,
+                                            std::uint8_t** out_data,
+                                            std::size_t* out_len)
+{
+    if (binding == nullptr || out_data == nullptr || out_len == nullptr)
+    {
+        return false;
+    }
+    auto result = binding->GetInArgsBuffer(queue_position);
+    if (!result.has_value())
+    {
+        return false;
+    }
+    // Reinterpreting a type-erased std::byte buffer as std::uint8_t bytes for the FFI boundary: both are 1-byte object
+    // types with no representation difference.
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): see above.
+    *out_data = reinterpret_cast<std::uint8_t*>(result.value().data());
+    *out_len = result.value().size();
+    return true;
+}
+
+/// \brief Allocate/retrieve the return-value buffer for a proxy method call at queue position 0.
+/// \details Wraps ProxyMethodBinding::GetReturnValueBuffer.
+/// \param binding Pointer to ProxyMethodBinding, obtained via mw_com_get_method_from_proxy
+/// \param queue_position Call-queue position (always 0)
+/// \param out_data [out] Pointer to the start of the return-value buffer on success
+/// \param out_len [out] Length in bytes of the return-value buffer on success
+/// \return true if the buffer was retrieved successfully, false otherwise (including: this method has a void
+/// return type — GetReturnValueBuffer must not be called in that case per its own doc comment)
+bool mw_com_proxy_method_get_return_value_buffer(ProxyMethodBinding* binding,
+                                                 std::size_t queue_position,
+                                                 std::uint8_t** out_data,
+                                                 std::size_t* out_len)
+{
+    if (binding == nullptr || out_data == nullptr || out_len == nullptr)
+    {
+        return false;
+    }
+    auto result = binding->GetReturnValueBuffer(queue_position);
+    if (!result.has_value())
+    {
+        return false;
+    }
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): see mw_com_proxy_method_get_in_args_buffer above.
+    *out_data = reinterpret_cast<std::uint8_t*>(result.value().data());
+    *out_len = result.value().size();
+    return true;
+}
+
+/// \brief Perform the actual method call at queue position 0.
+/// \details Wraps ProxyMethodBinding::DoCall. The in-args buffer (if any) must be filled and the return-value buffer
+/// (if any) retrieved first, as in ProxyMethod<Signature>::operator(). Blocks until the call completes.
+/// \param binding Pointer to ProxyMethodBinding, obtained via mw_com_get_method_from_proxy
+/// \param queue_position Call-queue position (always 0)
+/// \return true if the call succeeded, false otherwise
+bool mw_com_proxy_method_do_call(ProxyMethodBinding* binding, std::size_t queue_position)
+{
+    if (binding == nullptr)
+    {
+        return false;
+    }
+    return binding->DoCall(queue_position).has_value();
+}
+
+/// \brief Register a Rust closure as the handler for a skeleton method.
+/// \details Wraps SkeletonMethodBinding::RegisterHandler, adapting its TypeErasedHandler signature
+/// (void(QualityType, optional<span<byte>>, optional<span<byte>>)) to the flattened
+/// mw_com_impl_call_method_handler FFI callback (see that function's doc comment in registry_bridge_macro.h for
+/// why the optionals are flattened to (ptr, len, present) triples).
+/// \param binding Pointer to SkeletonMethodBinding, obtained via mw_com_get_method_from_skeleton
+/// \param boxed_handler Pointer to FatPtr containing the Rust closure to invoke on each call
+/// \return true if the handler was registered successfully, false otherwise
+/// \note SkeletonMethodBinding has no way to unregister a handler, so the boxed Rust closure lives as long as the
+/// process (unlike event receive handlers, freed via mw_com_impl_delete_boxed_fnmut).
+bool mw_com_skeleton_method_register_handler(SkeletonMethodBinding* binding, const FatPtr* boxed_handler)
+{
+    if (binding == nullptr || boxed_handler == nullptr)
+    {
+        return false;
+    }
+    const FatPtr handler_ptr = *boxed_handler;
+    SkeletonMethodBinding::TypeErasedHandler type_erased_handler =
+        [handler_ptr](QualityType quality_type,
+                      std::optional<score::cpp::span<std::byte>> in_args,
+                      std::optional<score::cpp::span<std::byte>> return_value) mutable {
+            // std::byte* -> std::uint8_t*, safe for the same reason as mw_com_proxy_method_get_in_args_buffer above.
+            std::uint8_t* const in_args_data =
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): see above.
+                in_args.has_value() ? reinterpret_cast<std::uint8_t*>(in_args->data()) : nullptr;
+            const std::size_t in_args_len = in_args.has_value() ? in_args->size() : 0U;
+            std::uint8_t* const return_data =
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): see above.
+                return_value.has_value() ? reinterpret_cast<std::uint8_t*>(return_value->data()) : nullptr;
+            const std::size_t return_len = return_value.has_value() ? return_value->size() : 0U;
+            mw_com_impl_call_method_handler(&handler_ptr,
+                                            static_cast<std::uint8_t>(quality_type),
+                                            in_args_data,
+                                            in_args_len,
+                                            in_args.has_value(),
+                                            return_data,
+                                            return_len,
+                                            return_value.has_value());
+        };
+    return binding->RegisterHandler(std::move(type_erased_handler)).has_value();
 }
 
 /// \brief Set event receive handler for proxy event

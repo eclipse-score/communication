@@ -1,0 +1,45 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/test/CalcInterface",
+      "version": { "major": 1, "minor": 0 },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6501,
+          "methods": [
+            { "methodName": "add", "methodId": 2 },
+            { "methodName": "mix", "methodId": 3 },
+            { "methodName": "ping", "methodId": 4 },
+            { "methodName": "reset", "methodId": 5 },
+            { "methodName": "slow", "methodId": 6 },
+            { "methodName": "last", "methodId": 7 }
+          ]
+        }
+      ]
+    }
+  ],
+  "global": { "applicationID": @APPID@ },
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "/Test/Calc/Instance",
+      "serviceTypeName": "/test/CalcInterface",
+      "version": { "major": 1, "minor": 0 },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "methods": [
+            { "methodName": "add", "queueSize": 4 },
+            { "methodName": "mix", "queueSize": 2 },
+            { "methodName": "ping", "queueSize": 2 },
+            { "methodName": "reset", "queueSize": 2 },
+            { "methodName": "slow", "queueSize": 2 },
+            { "methodName": "last", "queueSize": 2 }
+          ]
+        }
+      ]
+    }
+  ]
+}
