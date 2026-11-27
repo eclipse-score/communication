@@ -21,6 +21,7 @@
 #include <score/assert.hpp>
 
 #include <cstdint>
+#include <cstring>
 #include <limits>
 #include <memory>
 #include <string>
@@ -508,11 +509,45 @@ score::Result<void> GatewayApplication::RegisterUpdateNotification(
     auto scoped_handler = std::make_shared<ReceiveCallback>(
         scope_, [this, spec = specifier_str, elem_name = std::string(element_name), elem_type = element_type]() {
             std::lock_guard<std::recursive_mutex> lock(mutex_);
+            score::mw::log::LogDebug() << "GatewayApplication: scoped_handler for " << spec << " element " << elem_name;
+            const auto proxy_it = proxies_.find(spec);
+            if (proxy_it == proxies_.cend())
+            {
+                score::mw::log::LogError()
+                    << "GatewayApplication: No proxy found for " << spec << " in update receive handler";
+                return;
+            }
+
+            auto handler_event_map = proxy_it->second.GetEvents();
+            const auto handler_event_it = handler_event_map.find(elem_name);
+            if (handler_event_it == handler_event_map.cend())
+            {
+                score::mw::log::LogError() << "GatewayApplication: Event " << elem_name << " not found in proxy for "
+                                           << spec << " in update receive handler";
+                return;
+            }
+
+            auto& handler_proxy_event = handler_event_it->second;
+            const auto data_size = handler_proxy_event.GetDataTypeSizeInfo().Size();
+
+            std::vector<std::uint8_t> sample_data{};
+            const auto get_samples_result = handler_proxy_event.GetNewSamples(
+                [&sample_data, data_size](auto sample) {
+                    sample_data.resize(data_size);
+                    std::memcpy(sample_data.data(), sample.get(), data_size);
+                },
+                kGatewaySubscribeSamples);
+            if (!get_samples_result.has_value())
+            {
+                score::mw::log::LogError()
+                    << "GatewayApplication: Failed to read new samples for " << elem_name << " of " << spec;
+            }
+
             auto specifier_result = score::mw::com::InstanceSpecifier::Create(std::string{spec});
             if (specifier_result.has_value())
             {
-                const auto notify_update_result = transport_layer_->NotifyUpdate(
-                    std::move(specifier_result).value(), elem_type, std::string{elem_name});
+                const auto notify_update_result = transport_layer_->NotifySampleUpdate(
+                    std::move(specifier_result).value(), elem_type, std::string{elem_name}, std::move(sample_data));
                 if (!notify_update_result.has_value())
                 {
                     score::mw::log::LogError() << "GatewayApplication: Failed to notify update for " << elem_name;
@@ -570,6 +605,17 @@ score::Result<void> GatewayApplication::NotifyUpdate(score::mw::com::InstanceSpe
                                                      impl::ServiceElementType updated_element_type,
                                                      std::string updated_element_name)
 {
+    return NotifySampleUpdate(std::move(service_instance_specifier),
+                              updated_element_type,
+                              std::move(updated_element_name),
+                              std::vector<std::uint8_t>{});
+}
+
+score::Result<void> GatewayApplication::NotifySampleUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
+                                                           impl::ServiceElementType updated_element_type,
+                                                           std::string updated_element_name,
+                                                           std::vector<std::uint8_t> sample_data)
+{
     auto specifier_str = std::string(service_instance_specifier.ToString());
 
     auto it = skeletons_.find(specifier_str);
@@ -591,11 +637,39 @@ score::Result<void> GatewayApplication::NotifyUpdate(score::mw::com::InstanceSpe
         return MakeUnexpected(GatewayErrorc::kUnknownServiceElement);
     }
 
-    const auto notify_result = event_it->second.Notify();
-    if (!notify_result.has_value())
+    auto& skeleton_event = event_it->second;
+
+    if (!sample_data.empty())
     {
-        score::mw::log::LogError() << "GatewayApplication: Failed to notify update for event " << updated_element_name;
-        return MakeUnexpected(GatewayErrorc::kNotificationFailed);
+        auto allocate_result = skeleton_event.Allocate();
+        if (!allocate_result.has_value())
+        {
+            score::mw::log::LogError() << "GatewayApplication: Failed to allocate sample for update notification of "
+                                       << updated_element_name;
+            return MakeUnexpected(GatewayErrorc::kNotificationFailed);
+        }
+
+        auto sample = std::move(allocate_result).value();
+        std::memcpy(sample.Get(), sample_data.data(), sample_data.size());
+
+        const auto send_result = skeleton_event.Send(std::move(sample));
+        if (!send_result.has_value())
+        {
+            score::mw::log::LogError() << "GatewayApplication: Failed to send update notification data for "
+                                       << updated_element_name;
+            return MakeUnexpected(GatewayErrorc::kNotificationFailed);
+        }
+        return {};
+    }
+    else
+    {
+        const auto notify_result = skeleton_event.Notify();
+        if (!notify_result.has_value())
+        {
+            score::mw::log::LogError() << "GatewayApplication: Failed to notify update for event "
+                                       << updated_element_name;
+            return MakeUnexpected(GatewayErrorc::kNotificationFailed);
+        }
     }
     return {};
 }

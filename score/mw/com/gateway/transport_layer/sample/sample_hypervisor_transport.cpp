@@ -191,8 +191,8 @@ void SampleHyperVisorTransport::HandleUpdateNotification(std::unique_ptr<Transpo
         log::LogError("LoLa") << "SampleTransport: Invalid instance specifier in UpdateNotification!";
         return;
     }
-    const auto notify_update_result = gateway_app_.NotifyUpdate(
-        specifier_result.value(), notification.GetElementType(), notification.GetElementName());
+    const auto notify_update_result = gateway_app_.NotifySampleUpdate(
+        specifier_result.value(), notification.GetElementType(), notification.GetElementName(), notification.GetData());
     if (!notify_update_result.has_value())
     {
         log::LogError("LoLa") << "SampleTransport: Failed to notify update in UpdateNotification!";
@@ -272,7 +272,20 @@ score::Result<void> SampleHyperVisorTransport::NotifyUpdate(
     impl::ServiceElementType updated_element_type,
     std::string updated_element_name)
 {
-    UpdateNotification notification{service_instance_specifier, updated_element_type, std::move(updated_element_name)};
+    return NotifySampleUpdate(std::move(service_instance_specifier),
+                              updated_element_type,
+                              std::move(updated_element_name),
+                              std::vector<std::uint8_t>{});
+}
+
+score::Result<void> SampleHyperVisorTransport::NotifySampleUpdate(
+    score::mw::com::InstanceSpecifier service_instance_specifier,
+    impl::ServiceElementType updated_element_type,
+    std::string updated_element_name,
+    std::vector<std::uint8_t> sample_data)
+{
+    UpdateNotification notification{
+        service_instance_specifier, updated_element_type, std::move(updated_element_name), std::move(sample_data)};
     return message_transport_->SendNotification(notification);
 }
 

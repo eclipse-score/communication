@@ -45,6 +45,10 @@ class TransportMock : public Transport
                 NotifyUpdate,
                 (score::mw::com::InstanceSpecifier, impl::ServiceElementType, std::string),
                 (override));
+    MOCK_METHOD(score::Result<void>,
+                NotifySampleUpdate,
+                (score::mw::com::InstanceSpecifier, impl::ServiceElementType, std::string, std::vector<std::uint8_t>),
+                (override));
 };
 
 }  // namespace score::mw::com::gateway

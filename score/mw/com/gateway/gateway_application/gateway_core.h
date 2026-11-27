@@ -18,7 +18,9 @@
 #include "score/mw/com/types.h"
 #include "score/result/result.h"
 
+#include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace score::mw::com::gateway
@@ -89,6 +91,27 @@ class GatewayCore
     virtual score::Result<void> NotifyUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
                                              impl::ServiceElementType updated_element_type,
                                              std::string updated_element_name) = 0;
+
+    /// \brief Notify a new sample of the given service instance and element locally within the destination domain,
+    /// handing over the sample's raw bytes if the transport delivered them.
+    /// \details Called by transports without memory sharing support, where the sample is not visible via shared
+    /// memory. If sample_data is non-empty, it is written into the local skeleton before notifying. If it is empty,
+    /// only a notification is triggered, i.e. the behavior equals NotifyUpdate. The default implementation ignores
+    /// sample_data and forwards to NotifyUpdate.
+    /// \param service_instance_specifier instance specifier of the service instance, for which notification takes
+    /// place.
+    /// \param updated_element_type type of the element (currently only events supported).
+    /// \param updated_element_name name of the element (e.g. event name) for which an update shall be notified.
+    /// \param sample_data raw bytes of the new sample as received from the source gateway. May be empty.
+    /// \return result indicating success or failure.
+    virtual score::Result<void> NotifySampleUpdate(score::mw::com::InstanceSpecifier service_instance_specifier,
+                                                   impl::ServiceElementType updated_element_type,
+                                                   std::string updated_element_name,
+                                                   std::vector<std::uint8_t> /*sample_data*/)
+    {
+        return NotifyUpdate(
+            std::move(service_instance_specifier), updated_element_type, std::move(updated_element_name));
+    }
 };
 
 }  // namespace score::mw::com::gateway
