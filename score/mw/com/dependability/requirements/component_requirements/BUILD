@@ -36,6 +36,7 @@ component_requirements(
         "binding_independent/proxy_and_service_elements/component_requirements_ipc_proxy_event.trlc",
         "binding_independent/proxy_and_service_elements/component_requirements_ipc_proxy_field.trlc",
         "component_requirements_ipc.trlc",
+        "component_requirements_ipc_fields.trlc",
         "component_requirements_ipc_methods.trlc",
         "component_requirements_ipc_partial_restart.trlc",
         "component_requirements_ipc_tracing.trlc",
