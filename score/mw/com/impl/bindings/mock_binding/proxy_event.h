@@ -28,6 +28,9 @@
 namespace score::mw::com::impl::mock_binding
 {
 
+// Typedef for complex callback type used by gmock
+using SubscriptionStateChangeTracingCallback = score::cpp::callback<void(SubscriptionState), 64U>;
+
 /// \brief Mock implementation for proxy event bindings.
 ///
 /// This mock also includes a default behavior for GetNewSamples(): If there are fake samples added to an internal FIFO,
@@ -60,6 +63,14 @@ class ProxyEvent : public ProxyEventBinding
     MOCK_METHOD(Result<void>, UnsetSubscriptionStateChangeHandler, (), (noexcept, override));
     MOCK_METHOD(std::optional<std::uint16_t>, GetMaxSampleCount, (), (const, noexcept, override));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override));
+    MOCK_METHOD(void,
+                SetSubscriptionStateChangeTracingCallback,
+                (SubscriptionStateChangeTracingCallback),
+                (noexcept, override));
+    MOCK_METHOD(void,
+                SetSubscriptionStateChangeHandlerTracingCallback,
+                (SubscriptionStateChangeTracingCallback),
+                (noexcept, override));
 
     /// \brief Add a sample to the internal queue of fake events.
     ///
@@ -136,6 +147,15 @@ class ProxyEventFacade : public ProxyEventBinding
     BindingType GetBindingType() const noexcept override
     {
         return proxy_event_.GetBindingType();
+    }
+    void SetSubscriptionStateChangeTracingCallback(SubscriptionStateChangeTracingCallback callback) noexcept override
+    {
+        return proxy_event_.SetSubscriptionStateChangeTracingCallback(std::move(callback));
+    }
+    void SetSubscriptionStateChangeHandlerTracingCallback(
+        SubscriptionStateChangeTracingCallback callback) noexcept override
+    {
+        return proxy_event_.SetSubscriptionStateChangeHandlerTracingCallback(std::move(callback));
     }
 
   private:
