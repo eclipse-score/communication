@@ -27,6 +27,7 @@
 #include "score/mw/com/impl/service_element_type.h"
 #include "score/mw/com/impl/skeleton_binding.h"
 
+#include "score/concurrency/notification.h"
 #include "score/memory/data_type_size_info.h"
 #include "score/memory/shared/fake/my_bounded_memory_resource.h"
 #include "score/memory/shared/shared_memory_resource_mock.h"
@@ -39,10 +40,13 @@
 
 #include <gtest/gtest.h>
 
+#include <atomic>
+#include <chrono>
 #include <cstddef>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -624,6 +628,140 @@ TEST_F(SkeletonPrepareStopOfferFixture, UnregistersAllRegisteredMethodCallHandle
 
     // When calling PrepareStopOffer
     PrepareStopOffer();
+}
+
+using SkeletonStopMethodHandlingFixture = SkeletonMethodHandlingFixture;
+TEST_F(SkeletonStopMethodHandlingFixture, ExpiresScopesOfMethodCallHandlersAndSubscribeHandler)
+{
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
+
+    // Expecting that a method call handler is registered for the foo method and that its callback is never called
+    std::optional<IMessagePassingService::MethodCallHandler> method_call_handler{};
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(kDummyQualityType, foo_proxy_method_identifier_qm_, _, _))
+        .WillOnce(WithArgs<2>(Invoke([this, &method_call_handler](auto handler) {
+            method_call_handler.emplace(handler);
+            return MethodCallRegistrationGuardFactory::Create(message_passing_mock_,
+                                                              kDummyQualityType,
+                                                              foo_proxy_method_identifier_qm_,
+                                                              method_call_registration_guard_scope_);
+        })));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(kDummyQualityType, dumb_proxy_method_identifier_qm_, _, _));
+    EXPECT_CALL(foo_mock_type_erased_callback_, Call(_, _, _)).Times(0);
+
+    // and given that the registered method subscribed handler was called
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                     proxy_instance_identifier_qm_,
+                                     test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
+    ASSERT_TRUE(method_call_handler.has_value());
+
+    // When stopping the method handling
+    skeleton_->StopMethodHandling();
+
+    // Then the retained copies of the handlers can no longer be called
+    const auto method_call_result = std::invoke(method_call_handler.value(), test::kFooMethodQueueSize - 1U);
+    const auto subscribe_result = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                              proxy_instance_identifier_qm_,
+                                              test::kAllowedQmMethodConsumer,
+                                              kDummyPid);
+    EXPECT_FALSE(method_call_result.has_value());
+    EXPECT_FALSE(subscribe_result.has_value());
+}
+
+TEST_F(SkeletonStopMethodHandlingFixture, CallingItAgainOrPrepareStopOfferUnregistersMethodCallHandlersOnlyOnce)
+{
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
+
+    // Given that the registered method subscribed handler was called
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                     proxy_instance_identifier_qm_,
+                                     test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
+
+    // Expecting that each method call handler is unregistered exactly once
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_QM, foo_proxy_method_identifier_qm_))
+        .Times(1);
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_QM, dumb_proxy_method_identifier_qm_))
+        .Times(1);
+
+    // When stopping the method handling twice and then calling PrepareStopOffer
+    skeleton_->StopMethodHandling();
+    skeleton_->StopMethodHandling();
+    PrepareStopOffer();
+}
+
+TEST_F(SkeletonStopMethodHandlingFixture, BlocksUntilRunningMethodCallHandlerHasFinished)
+{
+    constexpr auto kTimeout = std::chrono::seconds{10};
+    GivenASkeletonWithTwoMethods().WhichCapturesRegisteredMethodSubscribedHandlers().WhichIsOffered();
+
+    // Expecting that the callback of the foo method signals that it runs and then waits to be released
+    score::concurrency::Notification handler_entered{};
+    score::concurrency::Notification release_handler{};
+    std::atomic<bool> handler_finished{false};
+    EXPECT_CALL(foo_mock_type_erased_callback_, Call(QualityType::kASIL_QM, _, _)).WillOnce(InvokeWithoutArgs([&]() {
+        handler_entered.notify();
+        score::cpp::ignore = release_handler.waitForWithAbort(kTimeout, {});
+        handler_finished.store(true);
+    }));
+
+    // and that the handler is released only once the method handling is being stopped, which starts by unregistering
+    // the method call handlers
+    score::concurrency::Notification stop_started{};
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_QM, foo_proxy_method_identifier_qm_))
+        .WillOnce(InvokeWithoutArgs([&]() {
+            stop_started.notify();
+        }));
+    EXPECT_CALL(message_passing_mock_,
+                UnregisterMethodCallHandler(QualityType::kASIL_QM, dumb_proxy_method_identifier_qm_));
+
+    std::optional<IMessagePassingService::MethodCallHandler> method_call_handler{};
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(kDummyQualityType, foo_proxy_method_identifier_qm_, _, _))
+        .WillOnce(WithArgs<2>(Invoke([this, &method_call_handler](auto handler) {
+            method_call_handler.emplace(handler);
+            return MethodCallRegistrationGuardFactory::Create(message_passing_mock_,
+                                                              kDummyQualityType,
+                                                              foo_proxy_method_identifier_qm_,
+                                                              method_call_registration_guard_scope_);
+        })));
+    EXPECT_CALL(message_passing_mock_,
+                RegisterMethodCallHandler(kDummyQualityType, dumb_proxy_method_identifier_qm_, _, _));
+    ASSERT_TRUE(captured_method_subscribed_handler_qm_.has_value());
+    score::cpp::ignore = std::invoke(captured_method_subscribed_handler_qm_.value(),
+                                     proxy_instance_identifier_qm_,
+                                     test::kAllowedQmMethodConsumer,
+                                     kDummyPid);
+    ASSERT_TRUE(method_call_handler.has_value());
+
+    // Given that a method call is running
+    std::thread handler_thread{[&]() {
+        score::cpp::ignore = std::invoke(method_call_handler.value(), test::kFooMethodQueueSize - 1U);
+    }};
+    EXPECT_TRUE(handler_entered.waitForWithAbort(kTimeout, {}));
+    std::thread release_thread{[&]() {
+        if (stop_started.waitForWithAbort(kTimeout, {}))
+        {
+            release_handler.notify();
+        }
+    }};
+
+    // When stopping the method handling
+    skeleton_->StopMethodHandling();
+    const bool handler_finished_when_stop_returned = handler_finished.load();
+    release_handler.notify();
+    handler_thread.join();
+    release_thread.join();
+
+    // Then it returned only after the running method call has finished
+    EXPECT_TRUE(handler_finished_when_stop_returned);
 }
 
 using SkeletonOnServiceMethodsSubscribedFixture = SkeletonMethodHandlingFixture;

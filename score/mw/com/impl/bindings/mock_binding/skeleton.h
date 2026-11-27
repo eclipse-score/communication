@@ -33,6 +33,7 @@ class Skeleton : public SkeletonBinding
                 (SkeletonEventBindings&, SkeletonFieldBindings&, std::optional<RegisterShmObjectTraceCallback>),
                 (noexcept, override, final));
     MOCK_METHOD(void, PrepareStopOffer, (std::optional<UnregisterShmObjectTraceCallback>), (noexcept, override, final));
+    MOCK_METHOD(void, StopMethodHandling, (), (override, final));
     MOCK_METHOD(BindingType, GetBindingType, (), (const, noexcept, override, final));
     MOCK_METHOD(bool, VerifyAllMethodHandlersRegistered, (), (const, override));
 };
@@ -53,6 +54,11 @@ class SkeletonFacade : public SkeletonBinding
     void PrepareStopOffer(std::optional<UnregisterShmObjectTraceCallback> callback) override final
     {
         return skeleton_.PrepareStopOffer(std::move(callback));
+    }
+
+    void StopMethodHandling() override final
+    {
+        skeleton_.StopMethodHandling();
     }
 
     BindingType GetBindingType() const noexcept override final

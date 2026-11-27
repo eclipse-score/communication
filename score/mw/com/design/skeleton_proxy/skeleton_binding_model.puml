@@ -64,6 +64,7 @@ class SkeletonBinding {
     --
     +PrepareOffer(SkeletonEventBindings&, SkeletonFieldBindings&) = 0 : Result<void>
     +PrepareStopOffer() = 0 : void
+    +StopMethodHandling() = 0 : void
     --
     Notes:
     SkeletonBinding is not moveable or copyable.

@@ -248,12 +248,14 @@ class SkeletonBaseFixture : public ::testing::Test
 
     void ExpectStopOfferService() noexcept
     {
-        // PrepareStopOffer is called on the skeleton binding and both events
-        EXPECT_CALL(*event_binding_mock_1_, PrepareStopOffer());
-        EXPECT_CALL(*event_binding_mock_2_, PrepareStopOffer());
-        EXPECT_CALL(*field_binding_mock_1_, PrepareStopOffer());
-        EXPECT_CALL(*field_binding_mock_2_, PrepareStopOffer());
-        EXPECT_CALL(*binding_mock_, PrepareStopOffer(_));
+        // The method handlers are stopped first, as they access the state of the events and fields that is torn down
+        // by their PrepareStopOffer. Afterwards PrepareStopOffer is called on both events, both fields and the binding
+        const ::testing::Expectation stop_method_handling = EXPECT_CALL(*binding_mock_, StopMethodHandling());
+        EXPECT_CALL(*event_binding_mock_1_, PrepareStopOffer()).After(stop_method_handling);
+        EXPECT_CALL(*event_binding_mock_2_, PrepareStopOffer()).After(stop_method_handling);
+        EXPECT_CALL(*field_binding_mock_1_, PrepareStopOffer()).After(stop_method_handling);
+        EXPECT_CALL(*field_binding_mock_2_, PrepareStopOffer()).After(stop_method_handling);
+        EXPECT_CALL(*binding_mock_, PrepareStopOffer(_)).After(stop_method_handling);
         EXPECT_CALL(service_discovery_mock_, StopOfferService(_));
     }
 
@@ -268,9 +270,10 @@ class SkeletonBaseFixture : public ::testing::Test
 
     void ExpectMinimalStopOfferService() noexcept
     {
-        // PrepareStopOffer is called on the skeleton binding and the single event
-        EXPECT_CALL(*minimal_event_binding_mock__, PrepareStopOffer());
-        EXPECT_CALL(*minimal_binding_mock_, PrepareStopOffer(_));
+        // PrepareStopOffer is called on the skeleton binding and the single event, after the method handlers stopped
+        const ::testing::Expectation stop_method_handling = EXPECT_CALL(*minimal_binding_mock_, StopMethodHandling());
+        EXPECT_CALL(*minimal_event_binding_mock__, PrepareStopOffer()).After(stop_method_handling);
+        EXPECT_CALL(*minimal_binding_mock_, PrepareStopOffer(_)).After(stop_method_handling);
         EXPECT_CALL(service_discovery_mock_, StopOfferService(_));
     }
 
@@ -688,6 +691,10 @@ TEST_F(SkeletonBaseStopOfferFixture, StopOfferServiceNotifiesRegisteredMethodsTh
     SkeletonBaseView{*simple_skeleton_}.RegisterMethod(method_name, method.GetReferenceToMoveable());
 
     // Expecting that PrepareOffer and PrepareStopOffer get called on the skeleton binding and the event
+    bool method_offered_while_handling_stopped{false};
+    ON_CALL(*minimal_binding_mock_, StopMethodHandling()).WillByDefault([&]() {
+        method_offered_while_handling_stopped = method.IsServiceOffered();
+    });
     ExpectMinimalOfferService();
     ExpectMinimalStopOfferService();
 
@@ -699,7 +706,10 @@ TEST_F(SkeletonBaseStopOfferFixture, StopOfferServiceNotifiesRegisteredMethodsTh
     // When stop offering the Service
     simple_skeleton_->StopOfferService();
 
-    // Then the registered method is notified that the service is no longer offered
+    // Then the registered method was still marked as offered while the method handling was stopped
+    EXPECT_TRUE(method_offered_while_handling_stopped);
+
+    // and is notified afterwards that the service is no longer offered
     EXPECT_FALSE(method.IsServiceOffered());
 }
 
@@ -738,8 +748,9 @@ TEST_F(SkeletonBaseStopOfferFixture, StopOfferIsNotCalledIfServiceWasNotOffered)
     EXPECT_CALL(*event_binding_mock_1_, PrepareStopOffer()).Times(0);
     EXPECT_CALL(*field_binding_mock_1_, PrepareStopOffer()).Times(0);
 
-    // and that the binding does not get un-initialized (PrepareStopOffer() called)
+    // and that the binding does not get un-initialized (PrepareStopOffer() called) and no method handling is stopped
     EXPECT_CALL(*binding_mock_, PrepareStopOffer(_)).Times(0);
+    EXPECT_CALL(*binding_mock_, StopMethodHandling()).Times(0);
 
     // When stop offering a Service
     skeleton_->StopOfferService();
