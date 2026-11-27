@@ -17,7 +17,12 @@
 
 #include "score/message_passing/i_server_connection.h"
 
+#include <fcntl.h>
+#include <unistd.h>
+
+#include <algorithm>
 #include <future>
+#include <set>
 
 namespace score::message_passing
 {
@@ -33,6 +38,22 @@ void stdout_handler(const score::cpp::handler_parameters& param)
 }
 
 std::chrono::seconds kFutureWaitTimeout{5};
+
+std::set<int> GetOpenDescriptors()
+{
+    std::set<int> descriptors{};
+    const auto descriptor_table_size = ::sysconf(_SC_OPEN_MAX);
+    const int limit{static_cast<int>(
+        descriptor_table_size > 0 ? std::min<decltype(descriptor_table_size)>(descriptor_table_size, 65536) : 1024)};
+    for (int descriptor{0}; descriptor < limit; ++descriptor)
+    {
+        if (::fcntl(descriptor, F_GETFD) != -1)
+        {
+            descriptors.insert(descriptor);
+        }
+    }
+    return descriptors;
+}
 
 // param:
 // - false: client and server use different engines with different background threads
@@ -407,6 +428,37 @@ TEST_P(ServerToClientTestFixtureUnix, EchoServerSetup)
     WithStandardEchoServerSetup();
 
     WhenClientSendsMessageItReceivesEchoReply();
+
+    client_->Stop();
+    WaitClientStoppedExpectStatusStopped();
+}
+
+TEST_P(ServerToClientTestFixtureUnix, ConnectedDescriptorsHaveCloseOnExecSet)
+{
+    // Given the descriptors that are open before a server and a client are created
+    const std::set<int> descriptors_before{GetOpenDescriptors()};
+
+    // When a client is connected to a listening server and the server has handled the connection
+    WithStandardEchoServerSetup();
+    WhenClientSendsMessageItReceivesEchoReply();
+
+    // Then every descriptor opened in the meantime has close-on-exec set
+    // (engine pipes, listening socket, client socket and the socket accepted by the server)
+    std::size_t new_descriptors{0U};
+    for (const int descriptor : GetOpenDescriptors())
+    {
+        if (descriptors_before.count(descriptor) == 0U)
+        {
+            ++new_descriptors;
+            const int flags{::fcntl(descriptor, F_GETFD)};
+            ASSERT_NE(flags, -1) << "descriptor " << descriptor << " cannot be inspected";
+            EXPECT_NE(flags & FD_CLOEXEC, 0) << "descriptor " << descriptor << " leaks";
+        }
+    }
+    // Guard against checking nothing: at least the two ends of the engine pipe, the listening socket and the client
+    // socket must have been opened.
+    constexpr std::size_t kMinimumNewDescriptors{4U};
+    EXPECT_GE(new_descriptors, kMinimumNewDescriptors);
 
     client_->Stop();
     WaitClientStoppedExpectStatusStopped();

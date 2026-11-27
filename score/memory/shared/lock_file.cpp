@@ -33,7 +33,7 @@ constexpr auto kReadAccessForAll = Mode::kReadUser | Mode::kReadGroup | Mode::kR
 std::optional<LockFile> LockFile::Create(std::string path) noexcept
 {
     using Open = ::score::os::Fcntl::Open;
-    constexpr auto opening_flags = Open::kCreate | Open::kExclusive | Open::kReadOnly;
+    constexpr auto opening_flags = Open::kCreate | Open::kExclusive | Open::kReadOnly | Open::kCloseOnExec;
     // The reason for banning is, because it's error-prone to use. One should use abstractions e.g. provided by
     // the C++ standard library. But these abstraction do not support exclusive access, which is why we created
     // this abstraction library.
@@ -59,7 +59,7 @@ std::optional<LockFile> LockFile::Create(std::string path) noexcept
 std::optional<LockFile> LockFile::CreateOrOpen(std::string path, bool take_ownership) noexcept
 {
     using Open = ::score::os::Fcntl::Open;
-    constexpr auto opening_flags = Open::kCreate | Open::kReadOnly;
+    constexpr auto opening_flags = Open::kCreate | Open::kReadOnly | Open::kCloseOnExec;
     // The reason for banning is, because it's error-prone to use. One should use abstractions e.g. provided by
     // the C++ standard library. But these abstraction do not support exclusive access, which is why we created
     // this abstraction library.
@@ -84,7 +84,7 @@ std::optional<LockFile> LockFile::CreateOrOpen(std::string path, bool take_owner
 std::optional<LockFile> LockFile::Open(std::string path) noexcept
 {
     using Open = ::score::os::Fcntl::Open;
-    constexpr auto opening_flags = Open::kReadOnly;
+    constexpr auto opening_flags = Open::kReadOnly | Open::kCloseOnExec;
     // The reason for banning is, because it's error-prone to use. One should use abstractions e.g. provided by
     // the C++ standard library. But these abstraction do not support exclusive access, which is why we created
     // this abstraction library.

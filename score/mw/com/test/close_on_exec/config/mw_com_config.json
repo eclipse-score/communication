@@ -1,0 +1,67 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/test/close_on_exec/CloseOnExecInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 2250,
+          "events": [
+            {
+              "eventName": "test_event",
+              "eventId": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "test/close_on_exec/CloseOnExecInterface",
+      "serviceTypeName": "/test/close_on_exec/CloseOnExecInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "test_event",
+              "numberOfSampleSlots": 5,
+              "maxSubscribers": 1
+            }
+          ],
+          "allowedConsumer": {
+            "QM": [
+              424242
+            ],
+            "B": [
+              424242
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              424242
+            ],
+            "B": [
+              424242
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "global": {
+    "asil-level": "QM",
+    "applicationID": 4010
+  }
+}

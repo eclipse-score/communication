@@ -134,11 +134,11 @@ TEST_F(LockFileCreateFixture, LockFileCreateShouldReturnEmptyIfChmodFails)
     ASSERT_FALSE(lock_file_result.has_value());
 }
 
-TEST_F(LockFileCreateFixture, LockFileCreateShouldCallOpenWithExclusiveFlag)
+TEST_F(LockFileCreateFixture, LockFileCreateShouldCallOpenWithExclusiveAndCloseOnExecFlags)
 {
-    const auto exclusive_opening_flags = Open::kExclusive | Open::kCreate | Open::kReadOnly;
+    const auto exclusive_opening_flags = Open::kExclusive | Open::kCreate | Open::kReadOnly | Open::kCloseOnExec;
 
-    // Expect that open is called on the file with the exclusive flag set
+    // Expect that open is called on the file with the exclusive and close-on-exec flags set
     EXPECT_CALL(*fcntl_mock_, open(StrEq(kLockFilePath.data()), exclusive_opening_flags, _));
 
     // When we Create a LockFile
@@ -147,7 +147,7 @@ TEST_F(LockFileCreateFixture, LockFileCreateShouldCallOpenWithExclusiveFlag)
 
 TEST_F(LockFileCreateFixture, IfLockFileCreateIsCalledThenLockFileShouldBeClosedAndUnlinkedOnDestruction)
 {
-    const auto exclusive_opening_flags = Open::kExclusive | Open::kCreate | Open::kReadOnly;
+    const auto exclusive_opening_flags = Open::kExclusive | Open::kCreate | Open::kReadOnly | Open::kCloseOnExec;
     bool close_called{false};
     bool unlink_called{false};
     {
@@ -176,11 +176,11 @@ TEST_F(LockFileCreateFixture, IfLockFileCreateIsCalledThenLockFileShouldBeClosed
 }
 
 using LockFileCreateOrOpenFixture = LockFileTestFixture;
-TEST_F(LockFileCreateOrOpenFixture, LockFileCreateOrOpenShouldCallOpenWithoutExclusiveFlag)
+TEST_F(LockFileCreateOrOpenFixture, LockFileCreateOrOpenShouldCallOpenWithCloseOnExecAndWithoutExclusiveFlag)
 {
-    const auto opening_flags = Open::kCreate | Open::kReadOnly;
+    const auto opening_flags = Open::kCreate | Open::kReadOnly | Open::kCloseOnExec;
 
-    // Expect that open is called on the file without the exclusive flag set
+    // Expect that open is called on the file with the close-on-exec flag set and without the exclusive flag
     EXPECT_CALL(*fcntl_mock_, open(StrEq(kLockFilePath.data()), opening_flags, _));
 
     // When we CreateOrOpen a LockFile
@@ -236,7 +236,7 @@ TEST_F(LockFileCreateOrOpenFixture, LockFileCreateOrOpenShouldReturnEmptyIfChmod
 
 TEST_F(LockFileCreateOrOpenFixture, IfLockFileCreateOrOpenIsCalledThenLockFileShouldBeClosedButNotUnlinkedOnDestruction)
 {
-    const auto opening_flags = Open::kCreate | Open::kReadOnly;
+    const auto opening_flags = Open::kCreate | Open::kReadOnly | Open::kCloseOnExec;
     bool close_called{false};
     {
         // Expect that open is called on the file
@@ -264,7 +264,7 @@ TEST_F(LockFileCreateOrOpenFixture, IfLockFileCreateOrOpenIsCalledThenLockFileSh
 TEST_F(LockFileCreateOrOpenFixture,
        IfLockFileCreateOrOpenWithOwnershipFlagSetIsCalledThenLockFileShouldBeClosedAndUnlinkedOnDestruction)
 {
-    const auto exclusive_opening_flags = Open::kCreate | Open::kReadOnly;
+    const auto exclusive_opening_flags = Open::kCreate | Open::kReadOnly | Open::kCloseOnExec;
     bool close_called{false};
     bool unlink_called{false};
     {
@@ -299,7 +299,7 @@ TEST_F(LockFileCreateOrOpenFixture,
 TEST_F(LockFileCreateOrOpenFixture,
        IfLockFileCreateOrOpenAndTakeOwnershipIsCalledThenLockFileShouldBeClosedAndUnlinkedOnDestruction)
 {
-    const auto exclusive_opening_flags = Open::kCreate | Open::kReadOnly;
+    const auto exclusive_opening_flags = Open::kCreate | Open::kReadOnly | Open::kCloseOnExec;
     bool close_called{false};
     bool unlink_called{false};
     {
@@ -335,11 +335,11 @@ TEST_F(LockFileCreateOrOpenFixture,
 }
 
 using LockFileOpenFixture = LockFileTestFixture;
-TEST_F(LockFileOpenFixture, LockFileOpenShouldCallFcntlOpenWithReadFlagOnly)
+TEST_F(LockFileOpenFixture, LockFileOpenShouldCallFcntlOpenWithReadAndCloseOnExecFlags)
 {
-    const auto opening_flags = Open::kReadOnly;
+    const auto opening_flags = Open::kReadOnly | Open::kCloseOnExec;
 
-    // Expect that open is called on the file without the exclusive flag set
+    // Expect that open is called on the file with the read and close-on-exec flags set, and without the exclusive flag
     EXPECT_CALL(*fcntl_mock_, open(StrEq(kLockFilePath.data()), opening_flags, _));
 
     // When we Open a LockFile
@@ -375,7 +375,7 @@ TEST_F(LockFileOpenFixture, LockFileOpenDoesNotCloseAndUnlinkFileIfOpenFails)
 
 TEST_F(LockFileOpenFixture, IfLockFileOpenIsCalledThenLockFileShouldBeClosedButNotUnlinkedOnDestruction)
 {
-    const auto opening_flags = Open::kReadOnly;
+    const auto opening_flags = Open::kReadOnly | Open::kCloseOnExec;
     bool close_called{false};
     {
         // Expect that open is called on the file
@@ -401,7 +401,7 @@ TEST_F(LockFileOpenFixture, IfLockFileOpenIsCalledThenLockFileShouldBeClosedButN
 
 TEST_F(LockFileOpenFixture, IfLockFileOpenAndTakeOwnershipIsCalledThenLockFileShouldBeClosedAndUnlinkedOnDestruction)
 {
-    const auto exclusive_opening_flags = Open::kReadOnly;
+    const auto exclusive_opening_flags = Open::kReadOnly | Open::kCloseOnExec;
     bool close_called{false};
     bool unlink_called{false};
     {

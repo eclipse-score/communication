@@ -279,7 +279,8 @@ void SharedMemoryResourceTest::expectCreateLockFileReturns(const std::string& lo
                                                            score::cpp::expected<std::int32_t, Error> return_value,
                                                            bool is_death_test)
 {
-    const auto flags = Fcntl::Open::kReadOnly | Fcntl::Open::kCreate | Fcntl::Open::kExclusive;
+    const auto flags =
+        Fcntl::Open::kReadOnly | Fcntl::Open::kCreate | Fcntl::Open::kExclusive | Fcntl::Open::kCloseOnExec;
     if (is_death_test)
     {
         EXPECT_CALL(*fcntl_mock_, open(StrEq(lock_path), flags, _))
