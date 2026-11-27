@@ -29,6 +29,7 @@ GenericProxyEvent::GenericProxyEvent(ProxyBase& parent, const std::string_view e
                              return Result<std::unique_ptr<ProxyEventBinding>>{std::move(binding)};
                          })}
 {
+    ProxyBaseView{parent}.RegisterEvent(event_name, GetReferenceToMoveable());
 }
 
 GenericProxyEvent::GenericProxyEvent(const std::string_view event_name,
