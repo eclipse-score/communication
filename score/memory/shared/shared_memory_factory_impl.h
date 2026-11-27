@@ -91,6 +91,7 @@ namespace detail
 ///          public shared_memory_factory.h to avoid pulling the concrete SharedMemoryResource/TypedMemory dependencies
 ///          into that lightweight public header.
 // coverity[autosar_cpp14_a3_3_2_violation] non-trivial constructor is required to implement the nifty-counter idiom
+// Deviation of MISRA RULE-6-7-2: codeql::misra_deviation_next_line(nifty-counter-static-destruction-guard)
 static ::score::utils::StaticDestructionGuard<SharedMemoryFactoryImpl> nifty_counter_shared_memory_factory_impl;
 
 }  // namespace detail
