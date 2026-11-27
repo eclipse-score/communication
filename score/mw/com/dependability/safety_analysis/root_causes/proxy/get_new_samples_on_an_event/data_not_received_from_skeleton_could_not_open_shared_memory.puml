@@ -1,0 +1,55 @@
+' ********************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' ********************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$IntermediateEvent("Could not open shared memory created by skeleton", "CannotOpenSharedMemory", "t")
+$OrGate("OrGate20", "CannotOpenSharedMemory")
+$IntermediateEvent("Opened wrong shared memory", "OpenedWrongSharedMemory", "OrGate20")
+
+$OrGate("OrGate21", "OpenedWrongSharedMemory")
+
+
+$IntermediateEvent("Looking for shared memory in wrong path", "LookingForSharedMemoryInWrongPath", "OrGate21")
+$OrGate("OrGate4", "LookingForSharedMemoryInWrongPath")
+$RootCause("Not searching for shared memory in path derived from Handle", "NotSearchingForSharedMemoryInPathDerivedFromHandle", "OrGate4")
+$RootCause("Handle contains wrong values", "HandleContainsWrongValues", "OrGate4")
+$TransferInGate("mw_com.InMemoryConfigurationWrong", "HandleContainsWrongValues")
+
+$IntermediateEvent("Currently mapped shared memory no longer written to by skeleton (Skeleton unlinked old region and recreated region)", "CurrentlyMappedSharedMemoryNoLongerWrittenToBySkeleton", "OrGate21")
+$AndGate("AndGate22", "CurrentlyMappedSharedMemoryNoLongerWrittenToBySkeleton")
+$RootCause("Previous skeleton crashed or stop offered while proxies were connected and reoffered while proxies are still connected", "SkeletonRecreatedSharedMemoryRegion", "AndGate22")
+$IntermediateEvent("Skeleton exclusively locked usage marker file while share locked by Proxy", "SkeletonDidNotInitializeSharedMemoryOnRestart", "AndGate22")
+$RootCause("Flock OS error", "FlockOSError", "SkeletonDidNotInitializeSharedMemoryOnRestart")
+
+$IntermediateEvent("Proxy UID not in ACL list", "ProxyUidNotInAclList", "OrGate20")
+$IntermediateEvent("Skeleton created shm with ACLs different to allowed consumers in configuration", "ShmAclsDifferentToAllowedConsumers", "ProxyUidNotInAclList")
+$IntermediateEvent("Allowed consumer list in memory is wrong", "AllowedConsumersInMemoryConfigurationIsWrong", "ShmAclsDifferentToAllowedConsumers")
+$TransferInGate("mw_com.InMemoryConfigurationWrong", "AllowedConsumersInMemoryConfigurationIsWrong")
+
+
+$IntermediateEvent("UID of shared memory creator not in proxies allowed provider list", "UidOfSharedMemoryCreatorNotInProxiesAllowedProviderList", "OrGate20")
+$IntermediateEvent("Allowed provider list in memory is wrong", "AllowedProvidersInMemoryConfigurationIsWrong", "UidOfSharedMemoryCreatorNotInProxiesAllowedProviderList")
+$TransferInGate("mw_com.InMemoryConfigurationWrong", "AllowedProvidersInMemoryConfigurationIsWrong")
+
+$RootCause("Shm open os error", "ShmOpenOSError", "OrGate20")
+
+$IntermediateEvent("Shared Memory Object was created by skeleton in the wrong path", "SharedMemoryObjectCreatedInWrongPath", "OrGate20")
+$OrGate("OrGate5", "SharedMemoryObjectCreatedInWrongPath")
+$RootCause("Not creating shared memory in path derived from Instance Identifier", "NotCreatingSharedMemoryInPathDerivedFromInstanceIdentifier", "OrGate5")
+$IntermediateEvent("InstanceIdentifier contains wrong data", "InstanceIdentifierContainsWrongData", "OrGate5")
+$TransferInGate("mw_com.InMemoryConfigurationWrong", "InstanceIdentifierContainsWrongData")
+
+@enduml

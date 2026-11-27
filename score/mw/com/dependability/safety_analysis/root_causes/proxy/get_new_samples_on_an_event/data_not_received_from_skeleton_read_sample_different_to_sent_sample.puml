@@ -1,0 +1,79 @@
+' ********************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' ********************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$IntermediateEvent("Found sample in does not have the same value as sample provided to SkeletonEvent::Send()", "SampleInSharedMemoryNotEqualToSentSample", "OrGate30")
+$OrGate("OrGate41", "SampleInSharedMemoryNotEqualToSentSample")
+
+$IntermediateEvent("Sample read from wrong location in shared memory by ProxyEvent", "SampleReadFromWrongLocationInSharedMemory", "OrGate41")
+$OrGate("OrGate42", "SampleReadFromWrongLocationInSharedMemory")
+' $TransferInGate("UninitializedSharedMemoryOpened", "OrGate42")
+
+$IntermediateEvent("Sample value in the expected location does not match expected value", "SampleValueDoesNotMatchExpectedValue", "OrGate41")
+$OrGate("OrGate43", "SampleValueDoesNotMatchExpectedValue")
+' $IntermediateEvent("Sample written to wrong location in shared memory by SkeletonEvent", "SampleWrittenToWrongLocationInSharedMemory", "OrGate41")
+
+$RootCause("Sent sample not written to data shared memory although marked ready for reading", "SendSampleNotWrittenToDataSharedMemory", "OrGate43")
+$RootCause("Unrelated actor wrote to this location with the wrong value", "UnrelatedActorWroteWrongValue", "OrGate43")
+
+$IntermediateEvent("Correct SkeletonEvent::Send() wrote to the wrong slot", "CorrectSkeletonEventWroteWrongSlot", "OrGate43")
+$IntermediateEvent("Other SkeletonEvent::Send() of same skeleton wrote to the wrong EventDataStorage", "OtherSkeletonEventOfSameSkeletonWroteToWrongEventDataStorage", "OrGate43")
+$IntermediateEvent("Other SkeletonEvent::Send() of different skeleton wrote to the wrong EventDataStorage", "OtherSkeletonEventOfDifferentSkeletonWroteToWrongEventDataStorage", "OrGate43")
+
+$OrGate("OrGate57", "SkeletonEventWroteWrongValue")
+
+$IntermediateEvent("Found wrong EventDataStorage in data shared memory", "WrongEventDataStorageInSharedMemory", "OrGate57")
+
+$IntermediateEvent("Found wrong index into EventDataStorage", "WrongIndexIntoEventDataStorage", "OrGate57")
+
+' ------
+' $IntermediateEvent("Data shared memory corrupted by other process", "DataSharedMemoryCorruptedByOtherProcess", "OrGate57")
+' $OrGate("OrGate58", "DataSharedMemoryCorruptedByOtherProcess")
+' $RootCause("QM process corrupted data shared memory", "LowerASILLeverProcessCorruptedDataSharedMemory", "OrGate58")
+' $RootCause("Asil-B process corrupted data shared memory", "SameOrHigherASILLeverProcessCorruptedDataSharedMemory", "OrGate58")
+
+' ' $IntermediateEvent("Sample written by other SkeletonEvent", "SampleWrittenByOtherSkeletonEvent", "OrGate57")
+
+' $IntermediateEvent("Uninitialized shared memory opened instead of created by skeleton on reoffer", "UninitializedSharedMemoryOpened", "OrGate57")
+' $AndGate("AndGate1", "UninitializedSharedMemoryOpened")
+' ' $IntermediateEvent("Skeleton erroneously thought proxies connected on restart", "SharedMemoryNotCreatedBySkeleton", "AndGate1")
+' $RootCause("Previous skeleton crashed while initializing shared memory", "PreviousSkeletonCrashed", "AndGate1")
+' $IntermediateEvent("Skeleton could not exclusively lock usage marker file although no Proxies are connected", "SkeletonCouldNotLockUsageMarkerFile", "AndGate1")
+' $OrGate("OrGate59", "SkeletonCouldNotLockUsageMarkerFile")
+' $RootCause("Unrelated actor locked usage marker file", "UnrelatedActorLockedUsageMarkerFile", "OrGate59")
+' $RootCause("Flock OS error", "FlockOSError", "OrGate59")
+' ------
+
+
+
+
+
+
+' $IntermediateEvent("Shared memory not initialized correctly", "SharedMemoryNotInitializedCorrectly", "SampleInSharedMemoryNotEqualToSentSample")
+' $OrGate("OrGate31", "SharedMemoryNotInitializedCorrectly")
+
+' $RootCause("Shared memory not initialized by skeleton", "SharedMemoryNotInitializedBySkeleton", "OrGate31")
+
+@enduml
+
+' // data shm
+' service data storage (map)
+'     Event 0 -> EventDataStorage (vector)
+'     Event 1 -> EventDataStorage (vector)
+
+' // control shm
+' service data control (map)
+'     ElementFqId -> EventControlStorage (vector)

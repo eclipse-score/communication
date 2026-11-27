@@ -15,14 +15,16 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("Only partially offered", "Communication.ServiceOnlyPartiallyOffered")
+$FailureMode("In-Memory configuration wrong", "mw_com.InMemoryConfigurationWrong")
 
-$OrGate("Gate1", "Communication.ServiceOnlyPartiallyOffered")
-$IntermediateEvent("Not all quality levels are served", "Event1", "Gate1")
-$IntermediateEvent("Not all events are offered", "Event2", "Gate1")
+$OrGate("Gate1", "Communication.InMemoryConfigurationWrong")
+$IntermediateEvent("JSON-Tree corrupt", "Event2", "Gate1")
 $OrGate("Gate2", "Event2")
-$RootCause("Not all events are populated", "NotAllEventsArePopulated", "Gate2")
-$IntermediateEvent("Config is wrong", "Event3", "Gate2")
-$TransferInGate("Communication.InMemoryConfigurationWrong", "Event3")
+$RootCause("File corrupted", "FileCorrupted", "Gate2")
+$RootCause("JSON Parser broken", "JsonParserBroken", "Gate2")
+$IntermediateEvent("Configuration gets corrupted reading the JSON-Tree", "Event3", "Gate1")
+$OrGate("Gate3", "Event3")
+$RootCause("Manipulate read data", "ManipulateReadData", "Gate3")
+$RootCause("Omit reading of relevant elements", "OmitReadingOfRelevantElements", "Gate3")
 
 @enduml

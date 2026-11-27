@@ -15,8 +15,11 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("User already holds max sample count, but another SamplePtr is handed out", "Communication.UsesTooManySampleptr")
+$FailureMode("InstanceSpecifier resolves to a subset of InstanceIdentifiers", "Communication.InstanceSpecifierResolvesToSubsetOfInstanceIdentifier")
 
-$RootCause("Reference counting facility for SamplePtr is broken", "ReferenceCountingFacilityForSampleptrIsBroken", "Communication.UsesTooManySampleptr")
+$OrGate("OrGate1", "Communication.InstanceSpecifierResolvesToSubsetOfInstanceIdentifier")
+$IntermediateEvent("In-memory configuration is corrupted", "InMemoryConfigurationIsCorrupted", "OrGate1")
+$TransferInGate("Communication.InMemoryConfigurationWrong", "InMemoryConfigurationIsCorrupted")
+$RootCause("Does not search for all required InstanceIdentifiers", "DoesNotSearchForAllRequiredInstanceIdentifiers", "OrGate1")
 
 @enduml
