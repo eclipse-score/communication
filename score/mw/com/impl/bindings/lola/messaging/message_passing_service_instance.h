@@ -33,6 +33,7 @@
 // TODO: PMR
 #include <array>
 #include <atomic>
+#include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <memory>
@@ -271,9 +272,9 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
     template <typename MapType>
     // Suppress "AUTOSAR C++14 A15-5-3" rule findings. This rule states: "The std::terminate() function shall not be
     // called implicitly".
-    // This is a false positive: .at() could throw if the index is outside of the range of the container but it is
-    // checked before accessing the dest_buffer that the function will break as soon as the index is equal to the
-    // buffersize. So an access out of the range and consequently a call to std::terminate() is not possible.
+    // This is a false positive: it is checked before accessing the dest_buffer that the function will break as soon
+    // as the index is equal to the buffersize. So an access out of the range and consequently a call to
+    // std::terminate() is not possible.
     // coverity[autosar_cpp14_a15_5_3_violation : FALSE]
     static std::pair<std::uint32_t, bool> CopyNodeIdentifiers(ElementFqId event_id,
                                                               MapType& src_map,
@@ -300,7 +301,7 @@ class MessagePassingServiceInstance : public IMessagePassingServiceInstance
                     // That return `pid_t` type as a result. Tolerated implicit conversion as underlying types are
                     // the same
                     // coverity[autosar_cpp14_m5_0_3_violation : FALSE]
-                    dest_buffer.at(num_nodeids_copied) = *iter;
+                    *std::next(dest_buffer.begin(), static_cast<std::ptrdiff_t>(num_nodeids_copied)) = *iter;
                     num_nodeids_copied++;
                     if (num_nodeids_copied == dest_buffer.size())
                     {

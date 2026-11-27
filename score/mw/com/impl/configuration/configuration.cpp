@@ -281,23 +281,25 @@ score::Result<void> Configuration::CrossCheckServiceInstancesToTypes() const
         // LCOV_EXCL_BR_START: Defensive programming: Parse() currently terminates if the ServiceInstanceDeployment
         // contains anything other than a Lola binding. Therefore, it's impossible to reach this point without
         // a LolaServiceInstanceDeployment.
-        if (!std::holds_alternative<LolaServiceInstanceDeployment>(service_instance.second.bindingInfo_))
+        const auto* const serviceInstanceDeploymentPtr =
+            std::get_if<LolaServiceInstanceDeployment>(&service_instance.second.bindingInfo_);
+        if (serviceInstanceDeploymentPtr == nullptr)
         {
             return MakeUnexpected(
                 configuration_errc::configuration_unsupported_instance_binding,
                 "Service instance refers to an not yet supported binding. This is invalid, terminating");
         }
-        if (!std::holds_alternative<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_))
+        const auto* const serviceTypeDeploymentPtr =
+            std::get_if<LolaServiceTypeDeployment>(&foundServiceType->second.binding_info_);
+        if (serviceTypeDeploymentPtr == nullptr)
         {
             return MakeUnexpected(configuration_errc::configuration_unsupported_type_binding,
                                   "Service type refers to an not yet supported binding. This is invalid, terminating");
         }
-        const auto& serviceInstanceDeployment =
-            std::get<LolaServiceInstanceDeployment>(service_instance.second.bindingInfo_);
+        const auto& serviceInstanceDeployment = *serviceInstanceDeploymentPtr;
         for (const auto& eventInstanceElement : serviceInstanceDeployment.events_)
         {
-            const auto& serviceTypeDeployment =
-                std::get<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_);
+            const auto& serviceTypeDeployment = *serviceTypeDeploymentPtr;
             const auto search = serviceTypeDeployment.events_.find(eventInstanceElement.first);
             if (search == serviceTypeDeployment.events_.cend())
             {
@@ -308,8 +310,7 @@ score::Result<void> Configuration::CrossCheckServiceInstancesToTypes() const
         }
         for (const auto& fieldInstanceElement : serviceInstanceDeployment.fields_)
         {
-            const auto& serviceTypeDeployment =
-                std::get<LolaServiceTypeDeployment>(foundServiceType->second.binding_info_);
+            const auto& serviceTypeDeployment = *serviceTypeDeploymentPtr;
             const auto search = serviceTypeDeployment.fields_.find(fieldInstanceElement.first);
             if (search == serviceTypeDeployment.fields_.cend())
             {
@@ -346,20 +347,9 @@ score::Result<bool> Configuration::HasLolaServiceDeployment() const
 
 score::Result<bool> Configuration::HasSomeIpServiceDeployment() const noexcept
 {
-    auto deployment_info_visitor = score::cpp::overload(
-        [](const LolaServiceTypeDeployment&) noexcept {
-            return false;
-        },
-        [](const SomeIpServiceTypeDeployment&) {
-            return true;
-        },
-        [](const score::cpp::blank&) noexcept {
-            return false;
-        });
-
     for (const auto& service_type : GetServiceTypes())
     {
-        if (std::visit(deployment_info_visitor, service_type.second.binding_info_))
+        if (std::holds_alternative<SomeIpServiceTypeDeployment>(service_type.second.binding_info_))
         {
             return true;
         }
