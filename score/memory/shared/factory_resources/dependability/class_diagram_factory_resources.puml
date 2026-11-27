@@ -57,7 +57,7 @@ namespace score::memory::shared {
       + allowedProviders_: const std::optional<score::cpp::span<const uid_t>>
     }
 
-    ISharedMemoryResource +-- ISharedMemoryResourceAccessControl
+    ISharedMemoryResource ..> ISharedMemoryResourceAccessControl : <<nested>>
     ISharedMemoryResource --|> ManagedMemoryResource
 
     class ISharedMemoryFactory <<abstract>> {
@@ -131,7 +131,7 @@ namespace score::memory::shared {
           - owns_resource_: bool
         }
 
-        MemoryRegionMapImpl +-- AcquiredRefcountIndex
+        MemoryRegionMapImpl ..> AcquiredRefcountIndex : <<nested>>
     }
 
     detail.MemoryRegionMapImpl ..> MemoryRegionBounds : returns
@@ -295,7 +295,7 @@ namespace score::memory::shared {
       shared by all processes mapping the region.
     end note
 
-    SharedMemoryResource +-- ControlBlock
+    SharedMemoryResource ..> ControlBlock : <<nested>>
     SharedMemoryResource --|> ISharedMemoryResource
     SharedMemoryResource --> "1" ControlBlock : control_block_
     ControlBlock *-- "1" MemoryResourceProxy : memoryResourceProxy

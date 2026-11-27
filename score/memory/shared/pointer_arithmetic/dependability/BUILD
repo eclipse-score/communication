@@ -15,7 +15,7 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit_design")
 unit_design(
     name = "pointer_arithmetic_unit_design",
     static = [
-        # "class_diagram_pointer_arithmetic.puml",  # rejected by the rules_score PlantUML parser
+        "class_diagram_pointer_arithmetic.puml",
     ],
     visibility = ["//score/memory/shared:__pkg__"],
 )
