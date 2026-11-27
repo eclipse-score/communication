@@ -11,12 +11,15 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component", "unit")
+load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "component")
 
 component(
     name = "routing_module",
     components = [
-        ":event_handler",
+        "//score/someip/routing_module/routing_bridge:routing_bridge_unit",
+        "//score/someip/routing_module/notification_handler:notification_handler_unit",
+        "//score/someip/routing_module/udp_transport:udp_transport",
+        "//score/someip/routing_module/lola_mapping:lola_mapping_unit",
         "//score/someip/routing_module/routing_manager:routing_manager_unit",
     ],
     design_name = "RoutingModule",
@@ -31,14 +34,11 @@ component(
     visibility = ["//score/someip/dependability:__pkg__"],
 )
 
-unit(
-    name = "event_handler",
-    design_name = "EventHandler",
-    maturity = "development",
-    scope = [],
-    test_specs = [],
-    tests = [],
-    unit_design = [],
-    visibility = ["//score/someip/dependability:__subpackages__"],
-    implementation = [],
+alias(
+    name = "platform_routing_module",
+    actual = select({
+        "@platforms//os:linux": "//score/someip/routing_module/udp_transport:linux_routing_module",
+        "@platforms//os:qnx": "//score/someip/routing_module/routing_bridge:mods_someip_routing",
+    }),
+    visibility = ["//visibility:public"],
 )

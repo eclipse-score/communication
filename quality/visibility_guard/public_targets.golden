@@ -88,3 +88,5 @@
 //score/someip/dependability:someip_doc_needs
 //score/someip/dependability:someip_index
 //score/someip/dependability:someip_rst
+//score/someip/routing_module/lola_mapping:lola_mapping
+//score/someip/routing_module:platform_routing_module

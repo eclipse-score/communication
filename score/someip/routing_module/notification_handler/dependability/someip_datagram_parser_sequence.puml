@@ -1,0 +1,66 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml someip_datagram_parser_sequence
+
+participant UdpTransport
+participant NotificationHandler
+participant SomeipDatagramParser as DatagramParser
+participant UdpPacketReader as PacketReader
+participant SomeipMessageHeaderParser as HeaderParser
+participant GenericSkeletonEvent as LolaEvent
+
+UdpTransport -> NotificationHandler : OnUdpDatagram(udp_local_port, udp_sender, datagram)
+activate NotificationHandler
+loop until the datagram is exhausted or malformed
+    NotificationHandler -> DatagramParser : NextMessage(datagram)
+    activate DatagramParser
+    DatagramParser -> PacketReader : Size()
+    alt no bytes remain
+        DatagramParser --> NotificationHandler : empty optional
+    else fewer than 16 bytes remain
+        DatagramParser --> NotificationHandler : kInvalidHeaderSize
+    else complete header remains
+        DatagramParser -> PacketReader : Copy(offset, 16-byte stack header)
+        PacketReader -> UdpTransport : someip_transport_copy_packet(packet, offset, 16, header)
+        UdpTransport --> PacketReader : copy completes
+        alt packet read fails
+            DatagramParser --> NotificationHandler : kPacketReadFailed
+        else header copied to stack storage
+            DatagramParser -> HeaderParser : Parse(header, bytes remaining)
+            HeaderParser --> DatagramParser : parsed header or parse error
+            DatagramParser --> NotificationHandler : header metadata and payload offset, or parse error
+        end
+    end
+    deactivate DatagramParser
+
+    alt not a notification, no active receive path, unknown or not locally subscribed event
+        note right of NotificationHandler : drop, log warning
+    else payload larger than kMaxPayloadSize
+        note right of NotificationHandler : drop, log error
+    else locally subscribed notification fits into the LoLa sample
+        NotificationHandler -> LolaEvent : Allocate()
+        alt no free LoLa sample slot
+            note right of NotificationHandler : drop, log error
+        else EventSample slot allocated
+            NotificationHandler -> PacketReader : Copy(payload offset, EventSample payload)
+            PacketReader -> UdpTransport : someip_transport_copy_packet(packet, offset, size, payload)
+            UdpTransport --> PacketReader : copy completes
+            NotificationHandler -> LolaEvent : Send(EventSample)
+            note right of NotificationHandler : a failed copy or send drops, log error
+        end
+    end
+end
+deactivate NotificationHandler
+
+@enduml

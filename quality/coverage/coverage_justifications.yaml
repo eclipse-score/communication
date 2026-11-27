@@ -203,3 +203,79 @@ justifications:
       Unsubscribe() only reaches this assert if is_subscribed_flag_ is set. The flag is only set after Subscribe()
       has used binding_ (or on the mock path, which returns earlier), and is cleared on move. So binding_ is never
       null here and the assert-failure path is unreachable.
+
+  - id: notification-handler-invalid-lola-specifier
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >-
+      LolaInstanceSpecifier() formats the uint16 service and instance IDs as fixed-width hexadecimal components in
+      the canonical someip/<service>/<instance> form. Those typed inputs cannot produce an invalid specifier, so this
+      defensive error path is unreachable without changing the mapping contract.
+
+  - id: notification-handler-offer-service-failure
+    category: other
+    platforms: [linux, qnx]
+    reason: >-
+      NotificationHandler owns a concrete GenericSkeleton and has no injection point for making OfferService() fail.
+      GenericSkeletonTest.OfferServiceReturnsErrorIfBindingFails verifies that OfferService() propagates a binding
+      failure. Exercising this caller branch would require adding a test-only skeleton factory seam, so the existing
+      lower-level failure test is accepted for this defensive propagation path.
+
+  - id: routing-manager-dispatch-default
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >-
+      RoutingManager::OnCommand() enqueues only commands returned by Decode(), which rejects unknown opcode values
+      with kUnknownOpcode before Dispatch() is called. The default case is retained as a defensive fallback for
+      internally constructed commands or future opcode changes; malformed wire input is covered by
+      RoutingManagerTest.DiscardsInvalidCommandAndKeepsTheConnection.
+
+  - id: routing-manager-enqueue-wakeup
+    category: tool_false_positive
+    platforms: [linux]
+    reason: >-
+      RoutingManagerTest.AppliesCommandsOnlyWhenProcessedInArrivalOrder passes with wakeups_ equal to three after
+      three valid commands are enqueued. In an isolated LLVM coverage run, the queue insertion lines have three hits
+      but this callback invocation is reported with zero hits. The test assertion and absence of disconnects prove
+      the callback executes; LLVM attributes no line count to this call site.
+
+  - id: routing-bridge-entry-eio-fallback
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >-
+      This fallback maps startup failures without an OS-dependent error code to EIO. The production entry point owns
+      a static concrete ServerFactory, so producing a synthetic zero-code startup error would require an injection
+      seam solely for this defensive case. Existing startup tests cover the normal errno-preserving failure path.
+
+  - id: log-limiter-clock-failure
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >-
+      The limiter calls clock_gettime() with the supported CLOCK_MONOTONIC ID and a valid local timespec. The failure
+      branch is a defensive fallback to the previous timestamp for an OS clock-call failure; deterministically
+      triggering it would require interposing the system call or adding clock injection to this low-level C helper.
+
+  - id: notification-handler-lola-event-map-miss
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >-
+      GenericSkeleton::Create() validates each supplied event name and inserts every event before returning success.
+      GetEvents() exposes that same event map, so a requested event missing from the map is unreachable unless the
+      GenericSkeleton contract is violated.
+
+  - id: notification-handler-unoffered
+    category: other
+    platforms: [linux, qnx]
+    reason: >-
+      These guards handle a RemoteService retained after OfferService() fails. NotificationHandler owns a concrete
+      GenericSkeleton and cannot inject that failure; the handler-level offer failure is already justified separately,
+      and GenericSkeleton tests cover lower-level failure propagation. Reaching these follow-on states would require
+      introducing the same test-only injection seam.
+
+  - id: handler-send-failure
+    category: defensive_programming
+    platforms: [linux, qnx]
+    reason: >-
+      ForwardToLola() calls Send() only after Allocate() succeeds for an offered event. The concrete LoLa
+      SkeletonEvent::Send() publishes the allocated slot and returns success without a failure path, so this generic
+      Send() error handler cannot be triggered through the production LoLa receive path.

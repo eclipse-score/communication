@@ -91,11 +91,11 @@ std::uint16_t Get16(const score::cpp::span<const std::uint8_t> data, const std::
 
 score::cpp::expected_blank<ErrorCode> Validate(const Message& message) noexcept
 {
+    const UsedParameters used = UsedParametersOf(message.opcode);
     if (!IsKnownOpcode(static_cast<std::uint8_t>(message.opcode)))
     {
         return score::cpp::make_unexpected(ErrorCode::kUnknownOpcode);
     }
-    const UsedParameters used = UsedParametersOf(message.opcode);
     const bool remote_endpoint_set =
         (message.remote_port != 0U) ||
         std::any_of(message.remote_ip.cbegin(), message.remote_ip.cend(), [](const std::uint8_t byte) {

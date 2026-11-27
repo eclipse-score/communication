@@ -1,0 +1,47 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+@startuml routing_bridge_sequence
+
+participant UdpTransport
+participant RoutingBridge
+participant RoutingManager
+participant NotificationHandler
+participant SdDaemon
+
+== Startup ==
+UdpTransport -> RoutingBridge : someip_routing_prepare_logging()
+note right of RoutingBridge : initialize mw::log with the configured backend
+UdpTransport -> RoutingBridge : someip_routing_start()
+activate RoutingBridge
+note right of RoutingBridge : LoLa configuration from <prefix>/etc
+RoutingBridge -> RoutingManager : Start()
+RoutingBridge --> UdpTransport : 0 or errno
+deactivate RoutingBridge
+
+== Routing command ==
+SdDaemon -> RoutingManager : routing command (message_passing thread)
+RoutingManager -> UdpTransport : someip_transport_wakeup()
+
+== Data-path thread ==
+UdpTransport -> RoutingBridge : someip_routing_poll()
+activate RoutingBridge
+RoutingBridge -> RoutingManager : ProcessPendingCommands()
+RoutingManager -> NotificationHandler : queued routing commands
+deactivate RoutingBridge
+UdpTransport -> RoutingBridge : someip_routing_datagram(local_port, sender_ip, sender_port, packet, size)
+activate RoutingBridge
+RoutingBridge -> NotificationHandler : OnUdpDatagram(udp_local_port, udp_sender, UdpPacketReader)
+deactivate RoutingBridge
+
+@enduml

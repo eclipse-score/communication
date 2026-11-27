@@ -1,0 +1,6 @@
+{
+  "appId": "SRTM",
+  "appDesc": "SOME/IP routing module test",
+  "logLevel": "kInfo",
+  "logMode": "kConsole"
+}

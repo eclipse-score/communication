@@ -15,5 +15,8 @@ load("@rules_cc//cc:defs.bzl", "cc_binary")
 cc_binary(
     name = "example",
     srcs = ["main.cpp"],
-    deps = ["@score_communication//score/mw/com"],
+    deps = [
+        "@score_communication//score/mw/com",
+        "@score_communication//score/someip/routing_module:platform_routing_module",
+    ],
 )

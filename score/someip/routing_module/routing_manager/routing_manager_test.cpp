@@ -198,6 +198,20 @@ TEST_F(RoutingManagerTest, StartsRoutingCommandServer)
     EXPECT_TRUE(manager_.Start().has_value());
 }
 
+TEST_F(RoutingManagerTest, StartFailsWhenServerCreationFails)
+{
+    Trace("RoutingModule.CR_RoutingModule_ControlInterface",
+          "a routing command server factory that cannot create a server",
+          "the routing manager is started",
+          "starting fails with an out-of-memory error");
+    EXPECT_CALL(server_factory_, Create(_, _)).WillOnce(Return(nullptr));
+
+    const auto result = manager_.Start();
+
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error().GetOsDependentErrorCode(), ENOMEM);
+}
+
 TEST_F(RoutingManagerTest, StartFailsWhenListeningFails)
 {
     Trace("RoutingModule.CR_RoutingModule_ControlInterface",
@@ -369,11 +383,28 @@ TEST_F(RoutingManagerTest, RejectsSecondClientWhileTheDaemonIsConnected)
     StartAndConnectDaemon();
 
     const auto second = connect_(other_client_);
+    other_user_data_ = std::uintptr_t{2U};
     disconnect_(other_client_);
 
     ASSERT_FALSE(second.has_value());
     EXPECT_EQ(second.error(), score::os::Error::Code::kDeviceOrResourceBusy);
     EXPECT_CALL(handler_, RemoveAll()).Times(0);
+    manager_.ProcessPendingCommands();
+}
+
+TEST_F(RoutingManagerTest, IgnoresDisconnectFromClientWithoutAcceptedMarker)
+{
+    Trace("RoutingModule.CR_RoutingModule_SingleController",
+          "a connected SD daemon and a second client with no accepted user-data marker",
+          "the second client is rejected and then disconnects",
+          "the rejected client's disconnect does not remove routing state");
+    StartAndConnectDaemon();
+
+    const auto second = connect_(other_client_);
+    ASSERT_FALSE(second.has_value());
+    EXPECT_CALL(handler_, RemoveAll()).Times(0);
+
+    disconnect_(other_client_);
     manager_.ProcessPendingCommands();
 }
 

@@ -60,8 +60,8 @@ ScoreReq.CompReq CR_RoutingModule_LocalSubscriptions {
     description = "The routing module shall publish a received event notification to LoLa only while a local subscription for that event is active."
     safety = ScoreReq.Asil.QM
     derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
-    note = "The controller adds and removes local subscriptions; one subscription covers a single event or all events of a service instance."
-    version = 1
+    note = "The controller adds and removes local subscriptions; one subscription covers a single event of a service instance."
+    version = 2
 }
 
 ScoreReq.CompReq CR_RoutingModule_AddLocalService {
@@ -110,6 +110,14 @@ ScoreReq.CompReq CR_RoutingModule_ControlQueueOverflow {
     version = 1
 }
 
+ScoreReq.CompReq CR_RoutingModule_ErrorLogRate {
+    description = "The routing module shall log recurring errors as aggregated occurrences at a configurable maximum frequency per error condition."
+    safety = ScoreReq.Asil.QM
+    derived_from = [ RoutingModule.FEAT_SomeipNotificationDataExchange@1 ]
+    note = "An aggregated message reports the occurrences suppressed since the previous message. The requirement covers error conditions reported by the routing module at warning or error severity, not messages emitted by dependencies."
+    version = 1
+}
+
 ScoreReq.CompReq CR_RoutingModule_SingleController {
     description = "The routing module shall accept at most one controller connection at a time and reject further connection attempts."
     safety = ScoreReq.Asil.QM
@@ -152,8 +160,8 @@ ScoreReq.CompReq CR_RoutingModule_UniqueReceiveRoute {
     description = "The routing module shall reject a routing command that would let one received notification match more than one local service instance."
     safety = ScoreReq.Asil.QM
     derived_from = [ RoutingModule.FEAT_SomeipRoutingLifecycle@1 ]
-    note = "A receive route maps a remote service instance (service ID, remote endpoint, local UDP port) to a local LoLa service instance. Wildcard overlaps count as matches; the previous routing state is kept."
-    version = 1
+    note = "A receive route maps a remote service instance (service ID, remote endpoint, local UDP port) to a local LoLa service instance; the previous routing state is kept."
+    version = 2
 }
 
 ScoreReq.CompReq CR_RoutingModule_PayloadPreservation {

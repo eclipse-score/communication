@@ -188,7 +188,9 @@ void RoutingManager::Enqueue(const Message& command) noexcept
         }
         queue_.push_back(QueueEntry{QueueEntry::Kind::kCommand, command});
     }
+    // COV_JUSTIFIED_START routing-manager-enqueue-wakeup
     wakeup_();
+    // COV_JUSTIFIED_STOP
 }
 
 std::optional<RoutingManager::QueueEntry> RoutingManager::PopEntry() noexcept
@@ -237,10 +239,12 @@ void RoutingManager::Dispatch(const Message& command) noexcept
             score::mw::log::LogWarn(kLogContext) << "SD daemon announced its shutdown, removing all routing state";
             handler_.RemoveAll();
             break;
+        // COV_JUSTIFIED_START routing-manager-dispatch-default
         default:
             // Unreachable: Decode only returns defined opcodes.
             result = CommandResult::kRejected;
             break;
+            // COV_JUSTIFIED_STOP
     }
     if (result == CommandResult::kRejected)
     {
