@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@buildifier_prebuilt//:rules.bzl", "buildifier")
-load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//bazel/rules:expand_template.bzl", "expand_template")
 load(":linters.bzl", "BUILDIFIER_EXCLUDE_PATTERNS")
