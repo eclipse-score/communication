@@ -15,9 +15,10 @@ package Communication
 import ScoreReq
 
 ScoreReq.AssumedSystemReq ASR_ErrorHandling {
-    description = """(C++) exceptions shall not be used for error handling."""
+    description = "The platform shall report errors to the caller so that the caller can decide how to react to them."
     safety = ScoreReq.Asil.B
-    rationale = "Exceptions will be directly leading to an abort and thus reducing availability of the S-CORE platform."
+    rationale = """Terminating a process on an error (e.g. via an unhandled C++ exception) reduces availability of the S-CORE platform; the caller decides how to react to a reported error.
+    ASIL-B because ASIL-B software elements rely on the reported errors."""
     version = 1
 }
 
@@ -95,5 +96,28 @@ ScoreReq.AssumedSystemReq ASR_AvailabilityOfCommunicationPartners {
     description = "The platform shall provide a mechanism to detect the availability of communication partners for internal and external communication systems and provide the required information to communicate with them."
     safety = ScoreReq.Asil.QM
     rationale = "Applications do have independent lifecycles and thus may not be available at all times. The platform shall provide a mechanism to detect the availability of communication partners and provide the required information to communicate with them."
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_SafeState {
+    description = "The platform shall stop delivering data, instead of delivering possibly corrupted data, when it detects an unrecoverable communication error (safe-silent)."
+    safety = ScoreReq.Asil.B
+    rationale = """Only fail-safe systems are in scope; losing the communication function is less critical than acting on corrupted data.
+    Consumers detect the absence of data (e.g. via timeouts) and transition to their own safe state.
+    ASIL-B because ASIL-B software elements rely on this reaction."""
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_ApplicationTestability {
+    description = "The platform shall enable testing of applications without the platform's communication runtime environment."
+    safety = ScoreReq.Asil.QM
+    rationale = "Application developers need to test their communication logic in isolation. This is a development aid which is not used in production."
+    version = 1
+}
+
+ScoreReq.AssumedSystemReq ASR_MultiThreadedApplications {
+    description = "The platform shall support applications that use multiple threads."
+    safety = ScoreReq.Asil.B
+    rationale = "Applications commonly distribute their work across multiple threads which communicate concurrently."
     version = 1
 }

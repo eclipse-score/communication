@@ -122,7 +122,7 @@ ScoreReq.FeatReq FEAT_ServiceInstanceNames {
 ScoreReq.FeatReq FEAT_ServiceLocationTransparency {
     description = "The interface to access service instances shall be agnostic to the binding used to communicate with the service."
     safety = ScoreReq.Asil.B
-    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SafeCommunication@1 ]
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SafeCommunication@1, Communication.ASR_IntraProcessCommunication@1 ]
     version = 1
 }
 
@@ -143,14 +143,14 @@ ScoreReq.FeatReq FEAT_ServiceInstanceGranularity {
 ScoreReq.FeatReq FEAT_ServiceDiscovery {
     description = "The communication framework shall provide service discovery that considers version compatibility to find available services during runtime."
     safety = ScoreReq.Asil.B
-    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SafeCommunication@1 ]
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SafeCommunication@1, Communication.ASR_AvailabilityOfCommunicationPartners@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_SafeCommunication {
     description = "The communication framework shall support safe communication involving communication partners on the same or multiple criticality levels."
     safety = ScoreReq.Asil.B
-    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SafeCommunication@1 ]
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SafeCommunication@1, Communication.ASR_SafeState@1 ]
     version = 1
 }
 
@@ -214,14 +214,14 @@ ScoreReq.FeatReq FEAT_UseProgrammingLanguageInfrastructure {
 ScoreReq.FeatReq FEAT_FullyMockablePublicAPI {
     description = "The public API shall be fully mockable."
     safety = ScoreReq.Asil.B
-    derived_from = [ Communication.ASR_InterProcessCommunication@1 ]
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_ApplicationTestability@1 ]
     version = 1
 }
 
 ScoreReq.FeatReq FEAT_FakeBinding {
     description = "The communication framework shall provide a fake binding."
     safety = ScoreReq.Asil.B
-    derived_from = [ Communication.ASR_InterProcessCommunication@1 ]
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_ApplicationTestability@1 ]
     version = 1
 }
 
@@ -298,7 +298,7 @@ ScoreReq.FeatReq FEAT_CommunicationASILLevel {
 ScoreReq.FeatReq FEAT_CommunicationPartnerCrashRecovery {
     description = "The communication framework shall support crash recovery and allow a communication partner to rejoin an earlier initialized communication after an application termination."
     safety = ScoreReq.Asil.B
-    derived_from = [ Communication.ASR_InterProcessCommunication@1 ]
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_AvailabilityOfCommunicationPartners@1 ]
     version = 1
 }
 
@@ -316,5 +316,33 @@ ScoreReq.FeatReq FEAT_ErrorHandling {
     the Base Libraries feature."""
     safety = ScoreReq.Asil.B
     derived_from = [ Communication.ASR_ErrorHandling@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_ThreadSafePublicAPI {
+    description = "The public API of the communication framework shall be safe to call concurrently from multiple threads on different instances."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SafeCommunication@1, Communication.ASR_MultiThreadedApplications@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_BoundedResourceUsage {
+    description = "The communication framework shall determine the communication resources of a service instance from its configuration before communication starts."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_NonBlockingCommunication {
+    description = "A communication partner shall not be blocked by the behaviour of another communication partner."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.ASR_SafeCommunication@1, Communication.ASR_SupportForPollingBasedArchitectures@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_CoexistenceWithAdaptiveAutosar {
+    description = "The communication framework shall be operable in the same process as an adaptive AUTOSAR communication stack."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.ASR_ExternalCommunicationSomeip@1 ]
     version = 1
 }
