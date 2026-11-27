@@ -142,6 +142,10 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     ///        receive-handler registration flags are set.
     Result<void> NotifyConsumersIfHandlersRegistered();
 
+    /// \brief Tells whether at least one sample has been sent for this event.
+    /// \details Called by the messaging thread when a remote consumer registers, concurrently with Send().
+    bool DataExists() const noexcept;
+
     Skeleton& parent_;
     std::string_view event_name_;
     ElementFqId element_fq_id_;
@@ -156,7 +160,8 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     EventSlotStatus::EventTimeStamp current_timestamp_;
     impl::tracing::SkeletonEventTracingData tracing_data_;
 
-    bool qm_disconnect_;
+    /// \details Written by Allocate(), read by the messaging thread via the QM data exists callback.
+    std::atomic<bool> qm_disconnect_;
     bool field_getter_enabled_;
     SampleReferenceTracker getter_sample_tracker_;
 
@@ -165,9 +170,8 @@ class SkeletonEvent final : public GenericSkeletonEventBinding
     /// \details These flags are updated via callbacks from MessagePassingServiceInstance when handler
     ///          registration status changes. They allow Send() to skip the NotifyEvent() call when no
     ///          handlers are registered for a specific quality level, avoiding unnecessary lock overhead
-    ///          in the main path. Uses memory_order_relaxed as the flags are optimisation hints - false
-    ///          positives (thinking handlers exist when they don't) are harmless, and false negatives
-    ///          (missing handlers) are prevented by the callback mechanism.
+    ///          in the main path. Accessed with the default memory_order_seq_cst, which DataExists() relies on:
+    ///          a handler registered concurrently with Send() is seen either by Send() or by DataExists().
     std::atomic<bool> qm_event_update_notifications_registered_;
     std::atomic<bool> asil_b_event_update_notifications_registered_;
 

@@ -138,6 +138,12 @@ class MessagePassingService final : public IMessagePassingService
                                                            const ElementFqId event_id,
                                                            HandlerStatusChangeCallback callback) noexcept override;
 
+    /// \brief Registers a callback which tells whether a sample already exists for the event.
+    /// \details See IMessagePassingService::RegisterEventDataExistsCallback for detailed documentation.
+    void RegisterEventDataExistsCallback(const QualityType asil_level,
+                                         const ElementFqId event_id,
+                                         EventDataExistsCallback callback) noexcept override;
+
     /// \brief Unregisters the callback for event notification existence changes.
     /// \details See IMessagePassingService::UnregisterEventNotificationExistenceChangedCallback for detailed
     /// documentation.
