@@ -66,8 +66,6 @@ class PolymorphicOffsetPtrAllocator
     // NOLINTNEXTLINE(performance-unnecessary-value-param): see above, matches std Allocator requirements interface
     void deallocate(pointer p, size_type size);
 
-    OffsetPtr<const MemoryResourceProxy> getMemoryResourceProxy() const;
-
     template <typename U>
     friend bool operator==(const PolymorphicOffsetPtrAllocator<U>& lhs,
                            const PolymorphicOffsetPtrAllocator<U>& rhs) noexcept;
@@ -76,7 +74,15 @@ class PolymorphicOffsetPtrAllocator
     friend bool operator!=(const PolymorphicOffsetPtrAllocator<U>& lhs,
                            const PolymorphicOffsetPtrAllocator<U>& rhs) noexcept;
 
+    // Grants other instantiations of this template (e.g. PolymorphicOffsetPtrAllocator<U> for U != T) access to
+    // proxy_/getMemoryResourceProxy(), needed by the converting constructor below, since distinct instantiations of
+    // the same class template are distinct types and are not implicitly friends of each other.
+    template <typename U>
+    friend class PolymorphicOffsetPtrAllocator;
+
   private:
+    OffsetPtr<const MemoryResourceProxy> getMemoryResourceProxy() const;
+
     OffsetPtr<const MemoryResourceProxy> proxy_;
 };
 
