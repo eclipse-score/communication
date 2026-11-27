@@ -12,36 +12,15 @@
  ********************************************************************************/
 #include "score/mw/com/impl/e2e/e2e_health_tracker.h"
 
-#include <score/assert.hpp>
-
 #include <bitset>
 #include <cstddef>
 
 namespace score::mw::com::impl::e2e
 {
 
-HealthTracker::HealthTracker(const HealthTrackerConfiguration& config) noexcept
+HealthTracker::HealthTracker(const std::optional<HealthTrackerConfiguration>& config) noexcept
     : config_{config}, failed_samples_{0U}, samples_in_window_{0U}, is_currently_error_{false}
 {
-    // A disabled tracker never reads the thresholds or the window, so they are only validated when enabled.
-    if (!config_.enabled)
-    {
-        return;
-    }
-
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config_.error_threshold >= 1U,
-                                                      "error_threshold must be at least 1");
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config_.recovery_threshold >= 1U,
-                                                      "recovery_threshold must be at least 1");
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config_.window_size >= config_.error_threshold,
-                                                      "window_size must be at least error_threshold");
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config_.window_size >= config_.recovery_threshold,
-                                                      "window_size must be at least recovery_threshold");
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(config_.window_size <= kMaxHealthWindowSize,
-                                                      "window_size must not exceed kMaxHealthWindowSize");
-    SCORE_LANGUAGE_FUTURECPP_PRECONDITION_PRD_MESSAGE(
-        (config_.error_threshold + config_.recovery_threshold) > config_.window_size,
-        "error_threshold + recovery_threshold must exceed window_size to avoid oscillation between kOk and kError");
 }
 
 HistoricalHealthStatus HealthTracker::Update(const DataIntegrityStatus data_integrity,
@@ -49,7 +28,7 @@ HistoricalHealthStatus HealthTracker::Update(const DataIntegrityStatus data_inte
 {
     // Without an enabled tracker or without any executed check there is nothing to judge, so the sample must neither
     // be counted as passed nor as failed.
-    if (!config_.enabled ||
+    if (!config_.has_value() ||
         ((data_integrity == DataIntegrityStatus::kDisabled) && (sequence == SequenceStatus::kDisabled)))
     {
         return HistoricalHealthStatus::kDisabled;
@@ -59,11 +38,11 @@ HistoricalHealthStatus HealthTracker::Update(const DataIntegrityStatus data_inte
 
     // Newest sample enters at bit 0; samples older than window_size are masked out.
     failed_samples_ = (failed_samples_ << 1U) | (this_sample_failed ? 1U : 0U);
-    if (config_.window_size < kMaxHealthWindowSize)
+    if (config_->GetWindowSize() < kMaxHealthWindowSize)
     {
-        failed_samples_ &= (std::uint64_t{1U} << config_.window_size) - 1U;
+        failed_samples_ &= (std::uint64_t{1U} << config_->GetWindowSize()) - 1U;
     }
-    if (samples_in_window_ < config_.window_size)
+    if (samples_in_window_ < config_->GetWindowSize())
     {
         ++samples_in_window_;
     }
@@ -71,8 +50,8 @@ HistoricalHealthStatus HealthTracker::Update(const DataIntegrityStatus data_inte
     const std::size_t failed_count{std::bitset<kMaxHealthWindowSize>{failed_samples_}.count()};
     const std::size_t passed_count{samples_in_window_ - failed_count};
 
-    const bool state_flips{is_currently_error_ ? (passed_count >= config_.recovery_threshold)
-                                               : (failed_count >= config_.error_threshold)};
+    const bool state_flips{is_currently_error_ ? (passed_count >= config_->GetRecoveryThreshold())
+                                               : (failed_count >= config_->GetErrorThreshold())};
     if (state_flips)
     {
         is_currently_error_ = !is_currently_error_;

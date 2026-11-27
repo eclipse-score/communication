@@ -84,6 +84,7 @@ TEST(GenericProxyEventTest, SamplePtrsToSlotDataAreConst)
 
     auto mock_proxy_event_ptr = std::make_unique<StrictMock<mock_binding::GenericProxyEvent>>();
     auto& mock_proxy_event = *mock_proxy_event_ptr;
+    EXPECT_CALL(mock_proxy_event, GetHealthTrackerConfiguration());
     GenericProxyEvent proxy_event{kEventName,
                                   std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
 
@@ -115,6 +116,7 @@ TEST(GenericProxyEventDeathTest, DieOnProxyDestructionWhileHoldingSamplePtrs)
 
     auto mock_proxy_event_ptr = std::make_unique<StrictMock<mock_binding::GenericProxyEvent>>();
     auto& mock_proxy_event = *mock_proxy_event_ptr;
+    EXPECT_CALL(mock_proxy_event, GetHealthTrackerConfiguration());
     auto proxy_event = std::make_unique<GenericProxyEvent>(
         kEventName, std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)});
 
@@ -152,6 +154,7 @@ TEST(GenericProxyEventGetDataTypeSizeInfoTest, GetDataTypeSizeInfoDispatchesToBi
     // Given a generic proxy event based on a mock binding
     auto mock_proxy_event_ptr = std::make_unique<StrictMock<mock_binding::GenericProxyEvent>>();
     auto& mock_proxy_event = *mock_proxy_event_ptr;
+    EXPECT_CALL(mock_proxy_event, GetHealthTrackerConfiguration());
     GenericProxyEvent proxy_event{kEventName,
                                   std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
 
@@ -178,6 +181,7 @@ TEST(GenericProxyEventHasSerializedFormatTest, HasSerializedFormatDispatchesToBi
     // Given a generic event proxy, that is connected to a mock binding
     auto mock_proxy_event_ptr = std::make_unique<StrictMock<mock_binding::GenericProxyEvent>>();
     auto& mock_proxy_event = *mock_proxy_event_ptr;
+    EXPECT_CALL(mock_proxy_event, GetHealthTrackerConfiguration());
     GenericProxyEvent proxy_event{kEventName,
                                   std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
 
@@ -227,6 +231,7 @@ TEST(GenericProxyEventGetNewSamplesTest, GetNewSamplesContainsCorrectReceiverSig
     // Given a generic event proxy, that is connected to a mock binding
     auto mock_proxy_event_ptr = std::make_unique<StrictMock<mock_binding::GenericProxyEvent>>();
     auto& mock_proxy_event = *mock_proxy_event_ptr;
+    EXPECT_CALL(mock_proxy_event, GetHealthTrackerConfiguration());
     GenericProxyEvent proxy_event{kEventName,
                                   std::unique_ptr<GenericProxyEventBinding>{std::move(mock_proxy_event_ptr)}};
 

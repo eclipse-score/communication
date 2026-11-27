@@ -1174,12 +1174,6 @@
       "signature": "~ProxyBase : void () noexcept"
     },
     {
-      "name": "AttachE2EResult",
-      "qualified_name": "score::mw::com::GenericProxyEvent::AttachE2EResult",
-      "kind": "template_function",
-      "signature": "AttachE2EResult : void (SamplePtr<SampleType> &) const"
-    },
-    {
       "name": "EnableReferenceToMoveableFromThis<T>",
       "qualified_name": "score::mw::com::GenericProxyEvent::EnableReferenceToMoveableFromThis<T>",
       "kind": "constructor",

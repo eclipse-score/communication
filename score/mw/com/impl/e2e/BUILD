@@ -22,12 +22,26 @@ cc_library(
 )
 
 cc_library(
+    name = "e2e_health_tracker_configuration",
+    srcs = ["e2e_health_tracker_configuration.cpp"],
+    hdrs = [
+        "e2e_health_tracker_configuration.h",
+    ],
+    tags = ["FFI"],
+    visibility = ["//score/mw/com:__subpackages__"],
+    deps = [
+        "@score_baselibs//score/language/futurecpp",
+    ],
+)
+
+cc_library(
     name = "e2e_health_tracker",
     srcs = ["e2e_health_tracker.cpp"],
     hdrs = ["e2e_health_tracker.h"],
     tags = ["FFI"],
     visibility = ["//score/mw/com:__subpackages__"],
     deps = [
+        ":e2e_health_tracker_configuration",
         ":e2e_result",
         "@score_baselibs//score/language/futurecpp",
     ],

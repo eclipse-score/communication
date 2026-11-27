@@ -14,20 +14,16 @@
 
 #include <gtest/gtest.h>
 
+#include <optional>
+
 namespace score::mw::com::impl::e2e
 {
 namespace
 {
 
-constexpr HealthTrackerConfiguration kEnabledConfiguration{/* enabled */ true,
-                                                           /* error_threshold */ 3U,
-                                                           /* recovery_threshold */ 5U,
-                                                           /* window_size */ 7U};
+const HealthTrackerConfiguration kEnabledConfiguration{3U, 5U, 7U};
 
-constexpr HealthTrackerConfiguration kDisabledConfiguration{/* enabled */ false,
-                                                            /* error_threshold */ 3U,
-                                                            /* recovery_threshold */ 5U,
-                                                            /* window_size */ 7U};
+const std::optional<HealthTrackerConfiguration> kDisabledConfiguration{std::nullopt};
 
 // --- ComputeSummary --------------------------------------------------------
 

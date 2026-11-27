@@ -13,41 +13,30 @@
 #ifndef SCORE_MW_COM_IMPL_E2E_E2E_HEALTH_TRACKER_H
 #define SCORE_MW_COM_IMPL_E2E_E2E_HEALTH_TRACKER_H
 
+#include "score/mw/com/impl/e2e/e2e_health_tracker_configuration.h"
 #include "score/mw/com/impl/e2e/e2e_result.h"
 
 #include <cstdint>
+#include <optional>
 
 namespace score::mw::com::impl::e2e
 {
 
-// Largest supported window size (one bit per sample).
-constexpr std::uint32_t kMaxHealthWindowSize{64U};
-
-// Looks at the last window_size samples. In kOk, error_threshold failed samples switch to kError.
-// In kError, recovery_threshold passed samples switch back to kOk.
-// The thresholds and the window size are only validated and used when enabled is true.
-struct HealthTrackerConfiguration
-{
-    bool enabled{false};
-
-    // Failed samples in the window needed to switch to kError. Must be >= 1.
-    std::uint32_t error_threshold{1U};
-
-    // Passed samples in the window needed to switch back to kOk. Must be >= 1.
-    std::uint32_t recovery_threshold{1U};
-
-    // Number of most recent samples considered. Must be >= both thresholds and <= kMaxHealthWindowSize.
-    // Must also be < error_threshold + recovery_threshold, otherwise the state could oscillate between kOk and kError.
-    std::uint32_t window_size{1U};
-};
-
-// Tracks the historical health of one consumer. Each instance owns its own sample window.
-// The sample history is kept when the state flips; samples only leave the window by aging out.
+// Tracks the historical health of one consumer: whether its E2E-checked samples have recently been failing or
+// passing, as opposed to the pass/fail status of a single sample.
+//
+// A single failed (or recovered) sample does not flip the status by itself: the channel only becomes unhealthy
+// (kError) once error_threshold of the last window_size samples failed, and only becomes healthy again (kOk) once
+// recovery_threshold subsequent samples passed (see HealthTrackerConfiguration). This avoids flipping to unhealthy on
+// a transient glitch, and avoids flipping back to healthy on a single lucky sample while mostly still failing.
+//
+// Each instance owns its own sample window; samples only leave the window by aging out.
 class HealthTracker
 {
   public:
-    // Terminates if the configuration is inconsistent.
-    explicit HealthTracker(const HealthTrackerConfiguration& config) noexcept;
+    // An empty config means historical health tracking is disabled; Update() then always returns
+    // HistoricalHealthStatus::kDisabled.
+    explicit HealthTracker(const std::optional<HealthTrackerConfiguration>& config) noexcept;
 
     // Records one checked sample and returns the resulting status (kDisabled if the tracker is disabled).
     HistoricalHealthStatus Update(DataIntegrityStatus data_integrity, SequenceStatus sequence) noexcept;
@@ -57,7 +46,7 @@ class HealthTracker
     void Reset() noexcept;
 
   private:
-    HealthTrackerConfiguration config_;
+    std::optional<HealthTrackerConfiguration> config_;
 
     // Bit 0 is the newest sample; a set bit marks a failed sample.
     std::uint64_t failed_samples_;

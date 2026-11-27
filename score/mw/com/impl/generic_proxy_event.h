@@ -95,16 +95,22 @@ Result<std::size_t> GenericProxyEvent::GetNewSamples(F&& receiver, std::size_t m
         return MakeUnexpected(ComErrc::kMaxSamplesReached);
     }
 
-    auto e2e_receiver = [this, receiver = std::forward<F>(receiver)](SamplePtr<void> sample_ptr) {
-        AttachE2EResult(sample_ptr);
+    // Generic proxies have no real tracing functionality yet, so instead of wrapping the e2e receiver in a
+    // separate tracing closure (extra indirection, extra captured state), both are combined into one closure here.
+    typename GenericProxyEventBinding::Callback tracing_receiver = [this, receiver = std::forward<F>(receiver)](
+                                                                       SamplePtr<void> sample_ptr,
+                                                                       tracing::ITracingRuntime::TracePointDataId) {
+        // Skip re-attaching the E2E result if the binding never ran a check for this sample (data_integrity and
+        // sequence both kDisabled): the result would just be recomputed as kDisabled again, so it's already
+        // correct on the SamplePtr as-is.
+        const auto raw_result = sample_ptr.GetE2EResult();
+        if ((raw_result.data_integrity != e2e::DataIntegrityStatus::kDisabled) ||
+            (raw_result.sequence != e2e::SequenceStatus::kDisabled))
+        {
+            AttachE2EResultToSamplePtr(sample_ptr);
+        }
         receiver(std::move(sample_ptr));
     };
-
-    // \ToDo: Currently we do not have any tracing functionality for generic proxies/skeletons. Thus, this
-    // tracing_receiver is a no-op, which just adds a unnecessary call-indirection.
-    // Maybe remove with ticket: SWP-281948
-    auto tracing_receiver = tracing::CreateTracingGenericGetNewSamplesCallback<decltype(e2e_receiver)>(
-        tracing_data_, std::move(e2e_receiver));
 
     const auto get_new_samples_result = binding_->GetNewSamples(std::move(tracing_receiver), guard_factory);
     if (!get_new_samples_result.has_value())

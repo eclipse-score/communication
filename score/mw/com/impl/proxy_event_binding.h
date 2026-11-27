@@ -13,6 +13,7 @@
 #ifndef SCORE_MW_COM_IMPL_PROXY_EVENT_BINDING_H
 #define SCORE_MW_COM_IMPL_PROXY_EVENT_BINDING_H
 
+#include "score/mw/com/impl/e2e/e2e_health_tracker_configuration.h"
 #include "score/mw/com/impl/e2e/e2e_result.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
@@ -24,6 +25,8 @@
 #include <score/callback.hpp>
 
 #include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <utility>
 
 namespace score::mw::com::impl
@@ -111,6 +114,11 @@ class ProxyEventBinding
     /// that was passed to the Subscribe call. Otherwise, returns empty.
     virtual std::optional<std::uint16_t> GetMaxSampleCount() const noexcept = 0;
 
+    /// \brief Returns the historical E2E health tracking configuration, read by the event on construction.
+    /// \return The configuration if historical health tracking is enabled, or an empty optional for bindings without
+    /// E2E health configuration (tracking disabled).
+    virtual std::optional<e2e::HealthTrackerConfiguration> GetHealthTrackerConfiguration() const = 0;
+
     /// \brief Gets the binding type of the binding
     virtual BindingType GetBindingType() const noexcept = 0;
 
@@ -133,9 +141,12 @@ class ProxyEventBinding
     ///
     /// \tparam BindingSamplePtr The sample pointer from the binding.
     /// \param binding_ptr Type of the binding-specific sample pointer.
-    /// \param reference_guard Reference counting guard managing the count of SamplePtrs that are alive.
-    /// \param raw_check_outcome Outcome of the binding's own E2E check for this sample. Leave at default for
-    ///                          bindings/events without E2E.
+    /// \param reference_guard Releases one allocated sample in the SampleReferenceTracker when it is destroyed.
+    /// \param raw_check_outcome Outcome of the E2E check performed by the binding on the sample pointed to by the
+    ///                          returned SamplePtr. The binding only knows about this single sample, so it cannot
+    ///                          provide the historical health or the summary and therefore no full E2EResult. It
+    ///                          supplies just this raw outcome; the binding-independent layer (ProxyEventBase) sets the
+    ///                          full E2EResult later. Leave at default for bindings/events without E2E support.
     /// \return Binding-independent SamplePtr instance.
     template <typename BindingSamplePtr>
     static SamplePtr<void> MakeSamplePtr(BindingSamplePtr&& binding_ptr,

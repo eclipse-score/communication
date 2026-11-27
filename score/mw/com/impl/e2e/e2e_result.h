@@ -76,7 +76,12 @@ enum class Summary : std::uint8_t
     kError,
 };
 
-// All E2E results for one sample.
+// All E2E results for one sample. All fields default to kDisabled when zero-initialized, so an explicitly
+// disabled check is bit-identical to one whose profile was never configured at all - this is intentional, not an
+// ambiguity to resolve: E2E protection is a deployment-time decision, never a runtime-detectable one, so this
+// result must always carry a concrete value with no "not configured" sentinel. See
+// score/mw/com/design/e2e_protection/E2E_ERROR_HANDLING_PUBLIC_API.md, section 4 ("Deployment states"), for the
+// approved design and why summary == kDisabled must never be read as "safe to use".
 struct E2EResult
 {
     DataIntegrityStatus data_integrity{DataIntegrityStatus::kDisabled};
