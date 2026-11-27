@@ -80,12 +80,14 @@ auto SkeletonMethodBindingFactoryImpl::Create(const InstanceIdentifier& instance
 
     auto deployment_info_visitor = score::cpp::overload(
         lola_deployment_handler,
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         // The SOME/IP binding does not support methods (yet). It is listed explicitly (instead of being served by
         // the score::cpp::blank arm) because std::visit requires an arm for every variant alternative.
         [](const SomeIpServiceTypeDeployment&) noexcept -> LambdaReturnType {
             // TODO(someip-skeleton-method): Create the SOME/IP skeleton method binding.
             return nullptr;
         },
+#endif
         [](const score::cpp::blank&) noexcept -> LambdaReturnType {
             // coverage false positive. Covered by the test:
             // SkeletonMethodFactoryFixture.CannotConstructEventFromBlankBinding

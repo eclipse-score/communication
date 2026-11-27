@@ -95,16 +95,23 @@ Result<std::size_t> GenericProxyEvent::GetNewSamples(F&& receiver, std::size_t m
         return MakeUnexpected(ComErrc::kMaxSamplesReached);
     }
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
     auto e2e_receiver = [this, receiver = std::forward<F>(receiver)](SamplePtr<void> sample_ptr) {
         AttachE2EResult(sample_ptr);
         receiver(std::move(sample_ptr));
     };
+#endif
 
     // \ToDo: Currently we do not have any tracing functionality for generic proxies/skeletons. Thus, this
     // tracing_receiver is a no-op, which just adds a unnecessary call-indirection.
     // Maybe remove with ticket: SWP-281948
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
     auto tracing_receiver = tracing::CreateTracingGenericGetNewSamplesCallback<decltype(e2e_receiver)>(
         tracing_data_, std::move(e2e_receiver));
+#else
+    auto tracing_receiver =
+        tracing::CreateTracingGenericGetNewSamplesCallback<F>(tracing_data_, std::forward<F>(receiver));
+#endif
 
     const auto get_new_samples_result = binding_->GetNewSamples(std::move(tracing_receiver), guard_factory);
     if (!get_new_samples_result.has_value())

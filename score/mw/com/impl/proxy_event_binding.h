@@ -13,7 +13,9 @@
 #ifndef SCORE_MW_COM_IMPL_PROXY_EVENT_BINDING_H
 #define SCORE_MW_COM_IMPL_PROXY_EVENT_BINDING_H
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 #include "score/mw/com/impl/e2e/e2e_result.h"
+#endif
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
 #include "score/mw/com/impl/sample_reference_tracker.h"
 #include "score/mw/com/impl/scoped_event_receive_handler.h"
@@ -135,20 +137,33 @@ class ProxyEventBinding
     /// \param binding_ptr Type of the binding-specific sample pointer.
     /// \param reference_guard Reference counting guard managing the count of SamplePtrs that are alive.
     /// \param raw_check_outcome Outcome of the binding's own E2E check for this sample. Leave at default for
-    ///                          bindings/events without E2E.
+    ///                          bindings/events without E2E. Only available if E2E support is enabled
+    ///                          (experimental_enable_e2e_protection).
     /// \return Binding-independent SamplePtr instance.
     template <typename BindingSamplePtr>
     static SamplePtr<void> MakeSamplePtr(BindingSamplePtr&& binding_ptr,
-                                         SampleReferenceGuard reference_guard,
-                                         const e2e::RawCheckOutcome raw_check_outcome = {}) noexcept;
+                                         SampleReferenceGuard reference_guard
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+                                         ,
+                                         const e2e::RawCheckOutcome raw_check_outcome = {}
+#endif
+                                         ) noexcept;
 };
 
 template <typename BindingSamplePtr>
 inline SamplePtr<void> ProxyEventBinding::MakeSamplePtr(BindingSamplePtr&& binding_ptr,
-                                                        SampleReferenceGuard reference_guard,
-                                                        const e2e::RawCheckOutcome raw_check_outcome) noexcept
+                                                        SampleReferenceGuard reference_guard
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+                                                        ,
+                                                        const e2e::RawCheckOutcome raw_check_outcome
+#endif
+                                                        ) noexcept
 {
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
     return SamplePtr<void>{std::forward<BindingSamplePtr>(binding_ptr), std::move(reference_guard), raw_check_outcome};
+#else
+    return SamplePtr<void>{std::forward<BindingSamplePtr>(binding_ptr), std::move(reference_guard)};
+#endif
 }
 
 }  // namespace score::mw::com::impl

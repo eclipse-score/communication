@@ -15,7 +15,9 @@
 
 #include "score/mw/com/impl/bindings/lola/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/bindings/mock_binding/sample_allocatee_ptr.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/bindings/someip/sample_allocatee_ptr.h"
+#endif
 #include "score/mw/com/impl/sample_allocatee_tracker.h"
 
 #include <score/blank.hpp>
@@ -31,6 +33,17 @@
 
 namespace score::mw::com::impl
 {
+
+/// \brief All binding specific SampleAllocateePtr types a binding independent SampleAllocateePtr can hold.
+/// \details Alternatives of optional features are appended at the end, so that the indices of the other alternatives
+/// (which are mirrored by the Rust bindings) do not depend on whether the feature is enabled.
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
+using SampleAllocateePtrBindingVariant = std::
+    variant<score::cpp::blank, lola::SampleAllocateePtr, mock_binding::SampleAllocateePtr, someip::SampleAllocateePtr>;
+#else
+using SampleAllocateePtrBindingVariant =
+    std::variant<score::cpp::blank, lola::SampleAllocateePtr, mock_binding::SampleAllocateePtr>;
+#endif
 
 /// \brief Pointer to a data sample allocated by the Communication Management implementation (mimics std::unique_ptr)
 ///
@@ -183,11 +196,7 @@ class SampleAllocateePtr
 
     // We don't use the pimpl idiom because it would require dynamic memory allocation (that we want to avoid)
     // Stores either the LoLa pointer or the Mock Binding pointer (which handles void safely)
-    std::variant<score::cpp::blank,
-                 lola::SampleAllocateePtr,
-                 someip::SampleAllocateePtr,
-                 mock_binding::SampleAllocateePtr>
-        internal_;
+    SampleAllocateePtrBindingVariant internal_;
     /// \brief Guard that tracks this allocation's lifetime in the SampleAllocateeTracker.
     /// Stored in an optional to handle both cases default-constructed SampleAllocateePtr (which don't track any
     /// allocation) and allocated SampleAllocateePtr (which are tracked).
@@ -240,10 +249,12 @@ void SampleAllocateePtr<SampleType>::reset() noexcept
         [](lola::SampleAllocateePtr& internal_ptr) noexcept -> void {
             internal_ptr.reset();
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](someip::SampleAllocateePtr& internal_ptr) noexcept -> void {
             internal_ptr.reset();
         },
+#endif
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](mock_binding::SampleAllocateePtr& internal_ptr) noexcept -> void {
             internal_ptr.reset(nullptr);
@@ -293,10 +304,12 @@ auto SampleAllocateePtr<SampleType>::Get() const noexcept -> pointer
         [](const lola::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
             return static_cast<SampleType*>(internal_ptr.get());
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const someip::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
             return static_cast<SampleType*>(internal_ptr.get());
         },
+#endif
         // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
         // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
         // the function replaces the managed object"
@@ -321,10 +334,12 @@ SampleAllocateePtr<SampleType>::operator bool() const noexcept
         [](const lola::SampleAllocateePtr& internal_ptr) noexcept -> bool {
             return static_cast<bool>(internal_ptr);
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const someip::SampleAllocateePtr& internal_ptr) noexcept -> bool {
             return static_cast<bool>(internal_ptr);
         },
+#endif
         // Suppress "AUTOSAR C++14 A7-1-7" rule finding. This rule states: "Each
         // expression statement and identifier declaration shall be placed on a
         // separate line.". Following line statement is fine, this happens due to
@@ -361,10 +376,12 @@ typename std::add_lvalue_reference<SampleType>::type SampleAllocateePtr<SampleTy
         [](const lola::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
             return *static_cast<SampleType*>(internal_ptr.get());
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const someip::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
             return *static_cast<SampleType*>(internal_ptr.get());
         },
+#endif
         // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
         // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
         // the function replaces the managed object"
@@ -397,10 +414,12 @@ auto SampleAllocateePtr<SampleType>::operator->() const noexcept -> pointer
         [](const lola::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
             return static_cast<SampleType*>(internal_ptr.get());
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const someip::SampleAllocateePtr& internal_ptr) noexcept -> ReturnType {
             return static_cast<SampleType*>(internal_ptr.get());
         },
+#endif
         // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
         // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
         // the function replaces the managed object"
@@ -472,11 +491,7 @@ class SampleAllocateePtrView
         return std::get_if<T>(&ptr_.internal_);
     }
 
-    const std::variant<score::cpp::blank,
-                       lola::SampleAllocateePtr,
-                       someip::SampleAllocateePtr,
-                       mock_binding::SampleAllocateePtr>&
-    GetUnderlyingVariant() const noexcept
+    const SampleAllocateePtrBindingVariant& GetUnderlyingVariant() const noexcept
     {
         return ptr_.internal_;
     }
@@ -492,11 +507,7 @@ class SampleAllocateePtrMutableView
   public:
     explicit SampleAllocateePtrMutableView(SampleAllocateePtr<SampleType>& ptr) : ptr_{ptr} {}
 
-    std::variant<score::cpp::blank,
-                 lola::SampleAllocateePtr,
-                 someip::SampleAllocateePtr,
-                 mock_binding::SampleAllocateePtr>&
-    GetUnderlyingVariant() noexcept
+    SampleAllocateePtrBindingVariant& GetUnderlyingVariant() noexcept
     {
         // Suppress "AUTOSAR C++14 A9-3-1", The rule states: "Member functions shall not return non-const “raw” pointers
         // or references to private or protected data owned by the class.". This method returns a reference to the

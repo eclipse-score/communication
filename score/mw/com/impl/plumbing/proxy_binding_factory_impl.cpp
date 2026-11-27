@@ -13,7 +13,9 @@
 #include "score/mw/com/impl/plumbing/proxy_binding_factory_impl.h"
 
 #include "score/mw/com/impl/bindings/lola/proxy.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/bindings/someip/proxy.h"
+#endif
 #include "score/mw/com/impl/plumbing/binding_factory_error.h"
 
 #include <score/overload.hpp>
@@ -51,6 +53,7 @@ Result<std::unique_ptr<ProxyBinding>> ProxyBindingFactoryImpl::Create(const Hand
             }
             return proxy_creation_result;
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         // coverity[autosar_cpp14_a7_1_7_violation]
         [handle](const SomeIpServiceInstanceDeployment&) noexcept -> ReturnType {
             auto proxy_creation_result = someip::Proxy::Create(handle);
@@ -60,6 +63,7 @@ Result<std::unique_ptr<ProxyBinding>> ProxyBindingFactoryImpl::Create(const Hand
             }
             return proxy_creation_result;
         },
+#endif
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return MakeUnexpected(BindingFactoryErrorCode::kUnsupportedBindingType);

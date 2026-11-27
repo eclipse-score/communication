@@ -13,7 +13,9 @@
 #ifndef SCORE_MW_COM_TYPES_H
 #define SCORE_MW_COM_TYPES_H
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 #include "score/mw/com/impl/e2e/e2e_result.h"
+#endif
 #include "score/mw/com/impl/methods/method_signature_element_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_allocatee_ptr.h"
 #include "score/mw/com/impl/plumbing/sample_ptr.h"
@@ -88,6 +90,7 @@ using SubscriptionState = ::score::mw::com::impl::SubscriptionState;
 template <typename SampleType>
 using SamplePtr = impl::SamplePtr<SampleType>;
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 /// \api
 /// \brief Result of the E2E checks done for a received sample. Retrievable via SamplePtr::GetE2EResult().
 using E2EResult = impl::e2e::E2EResult;
@@ -107,6 +110,7 @@ using HistoricalHealthStatus = impl::e2e::HistoricalHealthStatus;
 /// \api
 /// \brief Aggregated E2E result for applications that do not need E2E detail.
 using E2ESummary = impl::e2e::Summary;
+#endif
 
 /// Carries a reference to the allocated memory that will hold the data that is to be sent to the receivers after having
 /// been filled by the sending application.

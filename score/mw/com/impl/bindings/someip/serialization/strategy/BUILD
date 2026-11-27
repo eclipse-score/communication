@@ -13,7 +13,10 @@
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
+load("//score/mw/com/flags:flags.bzl", "SOMEIP_ENABLED_ONLY")
 
+# The unit tests in this package depend on the libraries below and are therefore skipped together with them if SOME/IP
+# support is disabled.
 cc_library(
     name = "someip_strategy",
     srcs = [
@@ -29,6 +32,7 @@ cc_library(
         "someip_wire_format.h",
     ],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         "@score_baselibs//score/language/futurecpp",
@@ -43,6 +47,7 @@ cc_library(
     name = "someip_strategy_test_fixtures",
     testonly = True,
     hdrs = ["someip_strategy_test_fixtures.h"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         ":someip_strategy",

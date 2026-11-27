@@ -16,7 +16,9 @@
 
 #include "score/mw/com/impl/bindings/lola/runtime.h"
 #include "score/mw/com/impl/bindings/lola/tracing/tracing_runtime.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/bindings/someip/runtime.h"
+#endif
 
 #include <score/overload.hpp>
 #include <score/utility.hpp>
@@ -53,6 +55,7 @@ score::mw::com::impl::BindingRuntimeFactory::CreateBindingRuntimes(
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(pair.second, "Failed to emplace lola runtime binding");
     }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
     // A SOME/IP binding runtime is needed as soon as the configuration contains a SOME/IP service, because
     // impl::ServiceDiscovery resolves a binding runtime for every offered/searched instance and asserts if it finds
     // none.
@@ -63,5 +66,6 @@ score::mw::com::impl::BindingRuntimeFactory::CreateBindingRuntimes(
         const auto pair = result.emplace(BindingType::kSomeIp, std::move(someip_runtime));
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(pair.second, "Failed to emplace someip runtime binding");
     }
+#endif
     return result;
 }

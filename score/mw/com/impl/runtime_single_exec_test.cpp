@@ -115,6 +115,7 @@ std::vector<std::string_view> GetEventNameListFromHandle(const HandleType& handl
                            });
             return event_names;
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         [](const SomeIpServiceTypeDeployment& deployment) -> ReturnType {
             ReturnType event_names;
             std::transform(deployment.events_.cbegin(),
@@ -125,6 +126,7 @@ std::vector<std::string_view> GetEventNameListFromHandle(const HandleType& handl
                            });
             return event_names;
         },
+#endif
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return {};
         });

@@ -19,6 +19,15 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit")
 load("//bazel/rules:expand_template.bzl", "expand_template")
 load("//bazel/tools:json_schema_validator.bzl", "validate_json_schema_test")
 load("//quality/unit_testing:unit_testing.bzl", "cc_unit_test")
+load(
+    "//score/mw/com/flags:flags.bzl",
+    "E2E_ENABLED_ONLY",
+    "FLATBUFFERS_ENABLED_ONLY",
+    "SOMEIP_ENABLED_ONLY",
+    "if_e2e_enabled",
+    "if_flatbuffers_enabled",
+    "if_someip_enabled",
+)
 load("//score/mw/com/impl/configuration/converter:json_to_flatbuffer_rule.bzl", "json_to_flatbuffer")
 
 unit(
@@ -49,10 +58,7 @@ generate_cpp(
     name = "mw_com_config_fbs",
     output = "mw_com_config_generated.h",
     schema = "mw_com_config.fbs",
-    target_compatible_with = select({
-        "//score/mw/com/flags:flatbuffers_enabled": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
+    target_compatible_with = FLATBUFFERS_ENABLED_ONLY,
     visibility = ["//score/mw/com/impl/configuration:__subpackages__"],
 )
 
@@ -68,10 +74,7 @@ expand_template(
     name = "mw_com_config_generated_h",
     out = "mw_com_config_generated_patched.h",
     substitutions = {"VerifyVector(B())": "VerifyVector(this->B())"},
-    target_compatible_with = select({
-        "//score/mw/com/flags:flatbuffers_enabled": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
+    target_compatible_with = FLATBUFFERS_ENABLED_ONLY,
     template = ":mw_com_config_fbs",
     visibility = ["//score/mw/com/impl/configuration:__subpackages__"],
 )
@@ -184,10 +187,9 @@ cc_library(
         ":lola_service_instance_deployment",
         ":quality_type",
         ":service_type_deployment",
-        ":someip_service_instance_deployment",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/quality/compiler_warnings",
-    ],
+    ] + if_someip_enabled([":someip_service_instance_deployment"]),
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
@@ -195,50 +197,47 @@ cc_library(
     deps = [
         ":configuration_local",
         ":i_configuration_parsing_strategy",
+        "//score/mw/com/flags:someip_feature",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
 
 # ConfigurationFlatbufferParsingStrategy parses FlatBuffer-encoded (see mw_com_config.fbs) configuration files.
-# It is unconditionally buildable, but only functional when the (experimental) FlatBuffers configuration flag is
-# enabled: with the flag off, its Parse() overloads log a fatal error and terminate, and no FlatBuffers dependency
-# is linked in (see the two selects below).
+# It is only buildable when the (experimental) FlatBuffers configuration flag is enabled; without the flag the
+# target is incompatible and skipped, so no FlatBuffers dependency is ever linked in. Dependents must therefore
+# reference it via if_flatbuffers_enabled().
 cc_library(
     name = "configuration_flatbuffer_parsing_strategy",
-    srcs = ["configuration_flatbuffer_parsing_strategy.cpp"] + select({
-        "//score/mw/com/flags:flatbuffers_enabled": [":mw_com_config_generated_h"],
-        "//conditions:default": [],
-    }),
+    srcs = [
+        "configuration_flatbuffer_parsing_strategy.cpp",
+        ":mw_com_config_generated_h",
+    ],
     hdrs = ["configuration_flatbuffer_parsing_strategy.h"],
     implementation_deps = [
         ":config_validate",
         ":lola_service_instance_deployment",
         ":quality_type",
         ":service_type_deployment",
-        ":someip_service_instance_deployment",
-        ":someip_service_type_deployment",
+        "@score_baselibs//score/filesystem",
+        "@score_baselibs//score/flatbuffers:flatbufferscpp",
+        "@score_baselibs//score/flatbuffers:flatbufferutils",
         "@score_baselibs//score/mw/log",
         "@score_baselibs//score/quality/compiler_warnings",
-    ] + select({
-        "//score/mw/com/flags:flatbuffers_enabled": [
-            "@score_baselibs//score/filesystem",
-            "@score_baselibs//score/flatbuffers:flatbufferscpp",
-            "@score_baselibs//score/flatbuffers:flatbufferutils",
-        ],
-        "//conditions:default": [],
-    }),
-    local_defines = select({
-        "//score/mw/com/flags:flatbuffers_enabled": ["SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED"],
-        "//conditions:default": [],
-    }),
+    ] + if_someip_enabled([
+        ":someip_service_instance_deployment",
+        ":someip_service_type_deployment",
+    ]),
     tags = ["FFI"],
+    target_compatible_with = FLATBUFFERS_ENABLED_ONLY,
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
     ],
     deps = [
         ":configuration_local",
         ":i_configuration_parsing_strategy",
+        "//score/mw/com/flags:e2e_feature",
+        "//score/mw/com/flags:someip_feature",
         "@score_baselibs//score/language/futurecpp",
     ],
 )
@@ -267,13 +266,15 @@ cc_library(
     hdrs = ["config_parser.h"],
     implementation_deps = [
         ":configuration_json_parsing_strategy",
-    ],
+        "@score_baselibs//score/mw/log",
+    ] + if_flatbuffers_enabled([":configuration_flatbuffer_parsing_strategy"]),
     tags = ["FFI"],
     visibility = [
         "//score/mw/com/impl/configuration:__subpackages__",
     ],
     deps = [
         ":configuration_local",
+        "//score/mw/com/flags:flatbuffers_feature",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/futurecpp",
     ],
@@ -464,6 +465,7 @@ cc_library(
     srcs = ["someip_service_element_id.cpp"],
     hdrs = ["someip_service_element_id.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
 )
 
 cc_library(
@@ -471,6 +473,7 @@ cc_library(
     srcs = ["someip_service_id.cpp"],
     hdrs = ["someip_service_id.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
 )
 
 cc_library(
@@ -478,6 +481,7 @@ cc_library(
     srcs = ["someip_event_id.cpp"],
     hdrs = ["someip_event_id.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [":someip_service_element_id"],
 )
 
@@ -486,6 +490,7 @@ cc_library(
     srcs = ["someip_field_id.cpp"],
     hdrs = ["someip_field_id.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [":someip_service_element_id"],
 )
 
@@ -494,6 +499,7 @@ cc_library(
     srcs = ["someip_method_id.cpp"],
     hdrs = ["someip_method_id.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [":someip_service_element_id"],
 )
 
@@ -502,6 +508,7 @@ cc_library(
     srcs = ["someip_service_type_deployment.cpp"],
     hdrs = ["someip_service_type_deployment.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [
         ":binding_service_type_deployment",
         ":someip_event_id",
@@ -520,6 +527,7 @@ cc_library(
         "@score_baselibs//score/language/safecpp/safe_math",
     ],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = ["//score/mw/com/impl/bindings/someip:__pkg__"],
     deps = ["@score_baselibs//score/json"],
 )
@@ -533,6 +541,7 @@ cc_library(
         "@score_baselibs//score/mw/log",
     ],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     visibility = ["//score/mw/com/impl:__subpackages__"],
     deps = [
         "@score_baselibs//score/json",
@@ -545,6 +554,7 @@ cc_library(
     srcs = ["someip_field_instance_deployment.cpp"],
     hdrs = ["someip_field_instance_deployment.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [
         ":configuration_common_resources",
         ":someip_event_instance_deployment",
@@ -556,6 +566,7 @@ cc_library(
     srcs = ["someip_service_instance_deployment.cpp"],
     hdrs = ["someip_service_instance_deployment.h"],
     tags = ["FFI"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [
         ":configuration_common_resources",
         ":someip_event_instance_deployment",
@@ -604,12 +615,12 @@ cc_library(
         ":lola_service_instance_deployment",
         ":quality_type",
         ":service_identifier_type",
-        ":someip_service_instance_deployment",
+        "//score/mw/com/flags:someip_feature",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:error",
         "//score/mw/com/impl:instance_specifier",
         "@score_baselibs//score/language/futurecpp",
-    ],
+    ] + if_someip_enabled([":someip_service_instance_deployment"]),
 )
 
 cc_library(
@@ -621,10 +632,10 @@ cc_library(
     deps = [
         ":configuration_common_resources",
         ":lola_service_instance_id",
-        ":someip_service_instance_id",
+        "//score/mw/com/flags:someip_feature",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/futurecpp",
-    ],
+    ] + if_someip_enabled([":someip_service_instance_id"]),
 )
 
 cc_library(
@@ -638,9 +649,9 @@ cc_library(
     deps = [
         ":configuration_common_resources",
         ":lola_service_type_deployment",
-        ":someip_service_type_deployment",
+        "//score/mw/com/flags:someip_feature",
         "@score_baselibs//score/json",
-    ],
+    ] + if_someip_enabled([":someip_service_type_deployment"]),
 )
 
 cc_library(
@@ -667,12 +678,12 @@ cc_library(
     tags = ["FFI"],
     deps = [
         ":configuration_common_resources",
-        ":e2e_event_type_deployment",
+        "//score/mw/com/flags:e2e_feature",
         "//score/mw/com/impl:binding_type",
         "//score/mw/com/impl:service_element_type",
         "@score_baselibs//score/json",
         "@score_baselibs//score/language/safecpp/safe_math",
-    ],
+    ] + if_e2e_enabled([":e2e_event_type_deployment"]),
 )
 
 cc_library(
@@ -680,6 +691,7 @@ cc_library(
     srcs = ["e2e_event_type_deployment.cpp"],
     hdrs = ["e2e_event_type_deployment.h"],
     tags = ["FFI"],
+    target_compatible_with = E2E_ENABLED_ONLY,
     deps = ["@score_baselibs//score/language/safecpp/safe_math"],
 )
 
@@ -725,10 +737,24 @@ cc_library(
     ],
 )
 
+# A valid JSON configuration with the extension of a FlatBuffer. Without the FlatBuffers configuration flag, the
+# extension must be rejected by config_parser instead of falling back to the JSON parser, which would accept it.
+expand_template(
+    name = "json_content_with_bin_extension",
+    testonly = True,
+    out = "json_content_with_bin_extension.bin",
+    template = "example/mw_com_config.json",
+)
+
 cc_unit_test(
     name = "config_parser_test",
     srcs = ["config_parser_test.cpp"],
-    data = ["example/mw_com_config.json"],
+    data = [
+        "example/mw_com_config.json",
+        ":json_content_with_bin_extension",
+    ] + if_flatbuffers_enabled([
+        "//score/mw/com/impl/configuration/converter:mw_com_config",
+    ]),
     features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
@@ -736,8 +762,9 @@ cc_unit_test(
     deps = [
         ":config_parser",
         ":configuration_json_parsing_strategy",
+        "//score/mw/com/flags:flatbuffers_feature",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-    ],
+    ] + if_flatbuffers_enabled([":configuration_flatbuffer_parsing_strategy"]),
 )
 
 # Runs the shared tests with ConfigurationJsonParsingStrategy and, if the FlatBuffers configuration flag is enabled,
@@ -748,30 +775,22 @@ cc_unit_test(
     data = [
         "example/mw_com_config.json",
         "//score/mw/com/impl/configuration/test/parsing_strategy_configs:test_configs_json",
-    ] + select({
-        "//score/mw/com/flags:flatbuffers_enabled": [
-            "//score/mw/com/impl/configuration/converter:mw_com_config",
-            "//score/mw/com/impl/configuration/test/parsing_strategy_configs:test_configs_bin",
-        ],
-        "//conditions:default": [],
-    }),
+    ] + if_flatbuffers_enabled([
+        "//score/mw/com/impl/configuration/converter:mw_com_config",
+        "//score/mw/com/impl/configuration/test/parsing_strategy_configs:test_configs_bin",
+    ]),
     features = [
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
-    local_defines = select({
-        "//score/mw/com/flags:flatbuffers_enabled": ["SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED"],
-        "//conditions:default": [],
-    }),
     deps = [
-        ":configuration_flatbuffer_parsing_strategy",
         ":configuration_json_parsing_strategy",
+        "//score/mw/com/flags:flatbuffers_feature",
         "@score_baselibs//score/language/futurecpp:futurecpp_test_support",
-    ],
+    ] + if_flatbuffers_enabled([":configuration_flatbuffer_parsing_strategy"]),
 )
 
-# Only buildable when the FlatBuffers configuration flag is enabled: ConfigurationFlatbufferParsingStrategy is
-# unimplemented (LogFatal-and-abort) otherwise, so there is nothing meaningful to test.
+# Only buildable when the FlatBuffers configuration flag is enabled, as is the strategy under test.
 cc_unit_test(
     name = "configuration_flatbuffer_parsing_strategy_test",
     srcs = [
@@ -786,10 +805,7 @@ cc_unit_test(
         # These tests catch exceptions instead of using gtest EXPECT_DEATH so we disable aborts_upon_exception.
         "-aborts_upon_exception",
     ],
-    target_compatible_with = select({
-        "//score/mw/com/flags:flatbuffers_enabled": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
+    target_compatible_with = FLATBUFFERS_ENABLED_ONLY,
     deps = [
         ":configuration_flatbuffer_parsing_strategy",
         "@score_baselibs//score/flatbuffers:flatbufferscpp",
@@ -959,6 +975,7 @@ cc_unit_test(
 cc_unit_test(
     name = "someip_service_instance_deployment_test",
     srcs = ["someip_service_instance_deployment_test.cpp"],
+    target_compatible_with = SOMEIP_ENABLED_ONLY,
     deps = [
         ":someip_service_instance_deployment",
     ],

@@ -10,12 +10,16 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
+#if defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
 #include "score/mw/com/impl/configuration/configuration_flatbuffer_parsing_strategy.h"
+#endif
 #include "score/mw/com/impl/configuration/configuration_json_parsing_strategy.h"
 
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
+#endif
 #include "score/quality/compiler_warnings/warnings.h"
 
 #include <score/assert_support.hpp>
@@ -89,13 +93,15 @@ std::string GetPath(const std::string& relative_path)
     }
 }
 
-Configuration ParseFile(const Strategy strategy, const std::string& relative_path_without_extension)
+Configuration ParseFile([[maybe_unused]] const Strategy strategy, const std::string& relative_path_without_extension)
 {
+#if defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
     if (strategy == Strategy::kFlatbuffer)
     {
         return configuration::ConfigurationFlatbufferParsingStrategy{}.Parse(
             GetPath(relative_path_without_extension + ".bin"));
     }
+#endif
     return configuration::ConfigurationJsonParsingStrategy{}.Parse(GetPath(relative_path_without_extension + ".json"));
 }
 
@@ -219,11 +225,6 @@ TEST_P(ConfigurationParsingStrategyTest, ParseExampleJson)
     ASSERT_NE(lola_service_type_deployment, nullptr);
     EXPECT_EQ(lola_service_type_deployment->service_id_, 1234);
     EXPECT_EQ(lola_service_type_deployment->events_.at("CurrentPressureFrontLeft"), 20);
-    ASSERT_EQ(lola_service_type_deployment->e2e_events_.size(), 1U);
-    const auto& e2e_event_deployment = lola_service_type_deployment->e2e_events_.at("CurrentPressureFrontLeft");
-    EXPECT_EQ(e2e_event_deployment.profile_, E2EProfile::kP4);
-    EXPECT_EQ(e2e_event_deployment.data_id_, 58U);
-    EXPECT_EQ(e2e_event_deployment.max_delta_counter_, 2U);
     EXPECT_EQ(lola_service_type_deployment->fields_.at("CurrentTemperatureFrontLeft"), 30);
     EXPECT_EQ(lola_service_type_deployment->methods_.at("SetPressure"), 40);
 
@@ -244,6 +245,40 @@ TEST_P(ConfigurationParsingStrategyTest, ParseExampleJson)
 
     EXPECT_EQ(config.GetGlobalConfiguration().GetShmSizeCalcMode(), ShmSizeCalculationMode::kSimulation);
 }
+
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+TEST_P(ConfigurationParsingStrategyTest, ParseE2EEventDeployment)
+{
+    // Given a JSON which configures an E2E protection for an event of a service type
+
+    // When parsing the JSON
+    const auto config = Parse(GetParam(), "e2e_event");
+
+    // Then the service type deployment holds the configured E2E deployment of the event
+    const auto& service_type_deployment =
+        config
+            .GetServiceTypeDeployment(make_ServiceIdentifierType("/score/ncar/services/TirePressureService", 12U, 34U))
+            .value()
+            .get();
+    const auto* const lola_service_type_deployment =
+        std::get_if<LolaServiceTypeDeployment>(&service_type_deployment.binding_info_);
+    ASSERT_NE(lola_service_type_deployment, nullptr);
+    ASSERT_EQ(lola_service_type_deployment->e2e_events_.size(), 1U);
+    const auto& e2e_event_deployment = lola_service_type_deployment->e2e_events_.at("CurrentPressureFrontLeft");
+    EXPECT_EQ(e2e_event_deployment.profile_, E2EProfile::kP4);
+    EXPECT_EQ(e2e_event_deployment.data_id_, 58U);
+    EXPECT_EQ(e2e_event_deployment.max_delta_counter_, 2U);
+}
+#else
+TEST_P(ConfigurationParsingStrategyTest, E2EConfigurationWithoutE2ESupportWillDie)
+{
+    // Given a JSON which configures an E2E protection for an event, but E2E support is disabled in this build
+
+    // When parsing the JSON
+    // That the application will terminate instead of silently running without the configured protection
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "e2e_event"));
+}
+#endif
 
 TEST_P(ConfigurationParsingStrategyTest, InvalidPathWillDie)
 {
@@ -279,6 +314,7 @@ TEST_P(ConfigurationParsingStrategyTest, NoServiceTypesWillDie)
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "no_service_types"));
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 TEST_P(ConfigurationParsingStrategyTest, ParseSomeIpBinding)
 {
     // Given a JSON which configures a service type and a service instance with a SOME/IP binding
@@ -319,6 +355,16 @@ TEST_P(ConfigurationParsingStrategyTest, ParseSomeIpBinding)
     EXPECT_EQ(event_instance_deployment.GetNumberOfSampleSlots().value(), 50U);
     EXPECT_EQ(event_instance_deployment.max_subscribers_.value(), 5U);
 }
+#else
+TEST_P(ConfigurationParsingStrategyTest, SomeIpBindingWithoutSomeIpSupportWillDie)
+{
+    // Given a JSON which configures a SOME/IP binding, but SOME/IP support is disabled in this build
+
+    // When parsing the JSON
+    // That the application will terminate instead of silently running without the configured binding
+    SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "someip_binding"));
+}
+#endif
 
 TEST_P(ConfigurationParsingStrategyTest, NoServiceNameForServiceType)
 {
@@ -1688,6 +1734,7 @@ TEST_P(ConfigurationParsingStrategyTest, MultipleDeploymentsPerServiceInstanceWi
     SCORE_LANGUAGE_FUTURECPP_EXPECT_CONTRACT_VIOLATED(Parse(GetParam(), "multiple_deployments_per_instance"));
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 TEST_P(ConfigurationParsingStrategyTest, MaximumNestingParsesEveryLevel)
 {
     // Given a JSON which populates every level of the configuration with more than one entry: two service types
@@ -1776,5 +1823,6 @@ TEST_P(ConfigurationParsingStrategyTest, MaximumNestingParsesEveryLevel)
     EXPECT_TRUE(tracing_config.IsServiceElementTracingEnabled(traced_event, pressure_instance_specifier.ToString()));
     EXPECT_FALSE(tracing_config.IsServiceElementTracingEnabled(untraced_event, pressure_instance_specifier.ToString()));
 }
+#endif
 }  // namespace
 }  // namespace score::mw::com::impl

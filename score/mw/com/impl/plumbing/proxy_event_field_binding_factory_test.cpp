@@ -14,9 +14,11 @@
 #include "score/mw/com/impl/bindings/lola/proxy.h"
 #include "score/mw/com/impl/bindings/lola/test/proxy_event_test_resources.h"
 #include "score/mw/com/impl/bindings/mock_binding/proxy.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/bindings/someip/element_fq_id.h"
 #include "score/mw/com/impl/bindings/someip/proxy.h"
 #include "score/mw/com/impl/bindings/someip/proxy_event.h"
+#endif
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_id.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
@@ -24,8 +26,10 @@
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_instance_id.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
+#endif
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 #include "score/mw/com/impl/handle_type.h"
 #include "score/mw/com/impl/instance_identifier.h"
@@ -77,6 +81,7 @@ const LolaServiceTypeDeployment kLolaServiceTypeDeployment{
     {{kDummyEventName, kDummyEventId}, {kDummyGenericProxyEventName, kDummyGenericProxyId}},
     {{kDummyFieldName, kDummyFieldId}}};
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 constexpr SomeIpServiceId kSomeIpServiceId{2U};
 constexpr SomeIpServiceElementId kSomeIpEventId{15U};
 constexpr SomeIpServiceElementId kSomeIpFieldId{16U};
@@ -89,6 +94,7 @@ const SomeIpServiceInstanceDeployment kSomeIpServiceInstanceDeployment{
     SomeIpServiceInstanceId{kSomeIpInstanceId},
     {{kDummyEventName, kSomeIpEventInstanceDeployment}},
     {{kDummyFieldName, SomeIpFieldInstanceDeployment{kSomeIpEventInstanceDeployment}}}};
+#endif
 
 constexpr auto kQualityType = QualityType::kASIL_B;
 ConfigurationStore kConfigStoreAsilB{kInstanceSpecifier,
@@ -219,6 +225,7 @@ TEST_P(ProxyServiceElementBindingFactoryParamaterisedFixture, CannotConstructEve
     EXPECT_FALSE(unit.has_value());
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 class SomeIpProxyEventBindingFactoryFixture : public ::testing::Test
 {
   protected:
@@ -313,5 +320,6 @@ TEST_F(SomeIpProxyEventBindingFactoryFixture, GenericSomeIpEventRemainsUnsupport
     // Then creation fails
     EXPECT_FALSE(result.has_value());
 }
+#endif
 
 }  // namespace score::mw::com::impl

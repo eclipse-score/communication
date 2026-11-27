@@ -13,7 +13,9 @@
 #ifndef SCORE_MW_COM_IMPL_PLUMBING_SAMPLE_PTR_H
 #define SCORE_MW_COM_IMPL_PLUMBING_SAMPLE_PTR_H
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 #include "score/mw/com/impl/e2e/e2e_result.h"
+#endif
 #include "score/mw/com/impl/sample_reference_tracker.h"
 
 #include "score/mw/com/impl/bindings/lola/sample_ptr.h"
@@ -54,14 +56,22 @@ class SamplePtr final
     /// \param reference_guard Reference counting guard managing the count of SamplePtrs that are alive.
     /// \param raw_check_outcome Per-sample outcome of the binding's own E2E check. The binding cannot set the summary
     ///                          or historical health; ProxyEventBase completes the E2EResult before the sample reaches
-    ///                          the application.
+    ///                          the application. Only available if E2E support is enabled
+    ///                          (experimental_enable_e2e_protection).
     template <typename BindingSamplePtrType>
     SamplePtr(BindingSamplePtrType&& binding_sample_ptr,
-              SampleReferenceGuard reference_guard,
-              const e2e::RawCheckOutcome raw_check_outcome = {})
+              SampleReferenceGuard reference_guard
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+              ,
+              const e2e::RawCheckOutcome raw_check_outcome = {}
+#endif
+              )
         : binding_sample_ptr_{std::forward<BindingSamplePtrType>(binding_sample_ptr)},
-          reference_guard_{std::move(reference_guard)},
+          reference_guard_{std::move(reference_guard)}
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+          ,
           e2e_result_{raw_check_outcome.data_integrity, raw_check_outcome.sequence}
+#endif
     {
     }
 
@@ -84,11 +94,16 @@ class SamplePtr final
     // coverity[autosar_cpp14_a13_3_1_violation]
     SamplePtr(SamplePtr<SampleType>&& other) noexcept
         : binding_sample_ptr_{std::move(other.binding_sample_ptr_)},
-          reference_guard_{std::move(other.reference_guard_)},
+          reference_guard_{std::move(other.reference_guard_)}
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+          ,
           e2e_result_{other.e2e_result_}
+#endif
     {
         other.binding_sample_ptr_ = score::cpp::blank{};
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
         other.e2e_result_ = e2e::E2EResult{};
+#endif
     }
     SamplePtr& operator=(const SamplePtr<SampleType>&) = delete;
     SamplePtr& operator=(SamplePtr<SampleType>&& other) & noexcept = default;
@@ -166,11 +181,13 @@ class SamplePtr final
         return get();
     }
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
     /// \brief Returns the E2E result associated with this received sample.
     [[nodiscard]] e2e::E2EResult GetE2EResult() const
     {
         return e2e_result_;
     }
+#endif
 
     /// \brief deref underlying managed object.
     ///
@@ -226,7 +243,9 @@ class SamplePtr final
 
         swap(binding_sample_ptr_, other.binding_sample_ptr_);
         swap(reference_guard_, other.reference_guard_);
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
         swap(e2e_result_, other.e2e_result_);
+#endif
     }
 
     /// \brief Swaps the managed objects of *this and another SamplePtr object other, even if other has a
@@ -239,7 +258,9 @@ class SamplePtr final
         using std::swap;
         swap(binding_sample_ptr_, other.binding_sample_ptr_);
         swap(reference_guard_, other.reference_guard_);
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
         swap(e2e_result_, other.e2e_result_);
+#endif
     }
 
     void Reset(SamplePtr other = nullptr) noexcept
@@ -256,6 +277,7 @@ class SamplePtr final
 
     std::variant<score::cpp::blank, lola::SamplePtr, mock_binding::SamplePtr> binding_sample_ptr_;
     SampleReferenceGuard reference_guard_;
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
     e2e::E2EResult e2e_result_{};
 
     // Suppress "AUTOSAR C++14 A11-3-1" rule finding.
@@ -267,6 +289,7 @@ class SamplePtr final
     {
         e2e_result_ = result;
     }
+#endif
 
     // Suppress "AUTOSAR C++14 A11-3-1", The rule states: "Friend declarations shall not be used".
     // Design decision: needed so that the interim rebind ctor above can access the private members of a

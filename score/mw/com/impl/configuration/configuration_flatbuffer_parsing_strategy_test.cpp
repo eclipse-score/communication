@@ -112,6 +112,9 @@ TEST_F(ConfigurationFlatbufferParsingStrategyFixture, OptionalScalarsDistinguish
     EXPECT_EQ(config.GetGlobalConfiguration().GetApplicationId().value(), 0U);
 }
 
+constexpr std::uint32_t kExpectedE2EDataId{58U};
+constexpr std::uint8_t kExpectedE2EMaxDeltaCounter{2U};
+
 // Required scalars of mw_com_config.fbs. FlatBuffers cannot mark scalars as required, so they are declared
 // "= null": an omitted one must terminate (like the JSON parser does) instead of silently reading back as the
 // type's default (0 for ids/versions, the first enum value for asil-level/binding).
@@ -123,6 +126,9 @@ enum class RequiredScalar : std::uint8_t
     kServiceTypeBinding,
     kServiceId,
     kEventId,
+    kE2EProfile,
+    kE2EDataId,
+    kE2EMaxDeltaCounter,
     kFieldId,
     kMethodId,
     kServiceInstanceVersionMajor,
@@ -131,8 +137,15 @@ enum class RequiredScalar : std::uint8_t
     kServiceInstanceBinding,
 };
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+constexpr bool kE2EEnabled{true};
+#else
+constexpr bool kE2EEnabled{false};
+#endif
+
 // Builds a minimal valid configuration (one service type with an event, a field and a method, and one service
-// instance of it), leaving out only the given required scalar.
+// instance of it), leaving out only the given required scalar. The event is E2E protected only if E2E support is
+// enabled, since a build without it rejects E2E configurations.
 std::vector<std::uint8_t> BuildConfigurationWithout(const RequiredScalar omitted)
 {
     ::flatbuffers::FlatBufferBuilder fbb{};
@@ -151,11 +164,33 @@ std::vector<std::uint8_t> BuildConfigurationWithout(const RequiredScalar omitted
     };
 
     const auto event_name = fbb.CreateString("Event");
+    ::flatbuffers::Offset<fbs::E2EEventConfig> e2e_config{};
+    if (kE2EEnabled)
+    {
+        fbs::E2EEventConfigBuilder e2e{fbb};
+        if (omitted != RequiredScalar::kE2EProfile)
+        {
+            e2e.add_profile(fbs::E2EProfile::P04);
+        }
+        if (omitted != RequiredScalar::kE2EDataId)
+        {
+            e2e.add_dataId(kExpectedE2EDataId);
+        }
+        if (omitted != RequiredScalar::kE2EMaxDeltaCounter)
+        {
+            e2e.add_maxDeltaCounter(kExpectedE2EMaxDeltaCounter);
+        }
+        e2e_config = e2e.Finish();
+    }
     fbs::ServiceTypeEventBuilder event{fbb};
     event.add_eventName(event_name);
     if (omitted != RequiredScalar::kEventId)
     {
         event.add_eventId(1U);
+    }
+    if (kE2EEnabled)
+    {
+        event.add_e2e(e2e_config);
     }
     const auto events = fbb.CreateVector(std::vector<::flatbuffers::Offset<fbs::ServiceTypeEvent>>{event.Finish()});
 
@@ -246,6 +281,17 @@ TEST_F(ConfigurationFlatbufferParsingStrategyFixture, ConfigurationWithAllRequir
     const auto& deployment = config.GetServiceInstanceDeployment(instance_specifier).value().get();
     EXPECT_EQ(deployment.asilLevel_, QualityType::kASIL_QM);
     EXPECT_EQ(deployment.service_, make_ServiceIdentifierType("/test/Service", 1U, 0U));
+
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+    const auto& service_type_deployment =
+        config.GetServiceTypeDeployment(make_ServiceIdentifierType("/test/Service", 1U, 0U)).value().get();
+    const auto* const lola_service_type_deployment =
+        std::get_if<LolaServiceTypeDeployment>(&service_type_deployment.binding_info_);
+    ASSERT_NE(lola_service_type_deployment, nullptr);
+    ASSERT_EQ(lola_service_type_deployment->e2e_events_.size(), 1U);
+    EXPECT_EQ(lola_service_type_deployment->e2e_events_.at("Event"),
+              (E2EEventTypeDeployment{E2EProfile::kP4, kExpectedE2EDataId, kExpectedE2EMaxDeltaCounter}));
+#endif
 }
 
 class RequiredScalarTest : public ::testing::TestWithParam<RequiredScalar>
@@ -260,19 +306,31 @@ TEST_P(RequiredScalarTest, MissingRequiredScalarWillDie)
         ConfigurationFlatbufferParsingStrategy{}.Parse(score::cpp::span<const std::uint8_t>{buffer}));
 }
 
+std::vector<RequiredScalar> GetRequiredScalars()
+{
+    std::vector<RequiredScalar> required_scalars{RequiredScalar::kServiceTypeVersionMajor,
+                                                 RequiredScalar::kServiceTypeVersionMinor,
+                                                 RequiredScalar::kServiceTypeBinding,
+                                                 RequiredScalar::kServiceId,
+                                                 RequiredScalar::kEventId,
+                                                 RequiredScalar::kFieldId,
+                                                 RequiredScalar::kMethodId,
+                                                 RequiredScalar::kServiceInstanceVersionMajor,
+                                                 RequiredScalar::kServiceInstanceVersionMinor,
+                                                 RequiredScalar::kServiceInstanceAsilLevel,
+                                                 RequiredScalar::kServiceInstanceBinding};
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+    // The E2E configuration is only part of the configuration if E2E support is enabled.
+    required_scalars.insert(
+        required_scalars.end(),
+        {RequiredScalar::kE2EProfile, RequiredScalar::kE2EDataId, RequiredScalar::kE2EMaxDeltaCounter});
+#endif
+    return required_scalars;
+}
+
 INSTANTIATE_TEST_SUITE_P(ConfigurationFlatbufferParsingStrategy,
                          RequiredScalarTest,
-                         ::testing::Values(RequiredScalar::kServiceTypeVersionMajor,
-                                           RequiredScalar::kServiceTypeVersionMinor,
-                                           RequiredScalar::kServiceTypeBinding,
-                                           RequiredScalar::kServiceId,
-                                           RequiredScalar::kEventId,
-                                           RequiredScalar::kFieldId,
-                                           RequiredScalar::kMethodId,
-                                           RequiredScalar::kServiceInstanceVersionMajor,
-                                           RequiredScalar::kServiceInstanceVersionMinor,
-                                           RequiredScalar::kServiceInstanceAsilLevel,
-                                           RequiredScalar::kServiceInstanceBinding));
+                         ::testing::ValuesIn(GetRequiredScalars()));
 
 struct QueueSizes
 {

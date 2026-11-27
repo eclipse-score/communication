@@ -18,8 +18,10 @@
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
+#endif
 #include "score/mw/com/impl/configuration/tracing_configuration.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/service_element_type.h"
@@ -66,10 +68,12 @@ constexpr auto kEventsKey = "events"sv;
 constexpr auto kEventNameKey = "eventName"sv;
 constexpr auto kEventIdKey = "eventId"sv;
 constexpr auto kE2EKey = "e2e"sv;
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 constexpr auto kE2EProfileKey = "profile"sv;
 constexpr auto kE2EDataIdKey = "dataId"sv;
 constexpr auto kE2EMaxDeltaCounterKey = "maxDeltaCounter"sv;
 constexpr auto kE2EP4Profile = "P04"sv;
+#endif
 constexpr auto kFieldsKey = "fields"sv;
 constexpr auto kFieldNameKey = "fieldName"sv;
 constexpr auto kFieldIdKey = "fieldId"sv;
@@ -602,6 +606,7 @@ auto ParsePermissionChecks(const score::json::Object& deployment_map) -> std::st
     return kFilePermissionsOnEmpty;
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseSomeIpEventInstanceDeployment(const score::json::Object& json_map, SomeIpServiceInstanceDeployment& service)
@@ -708,6 +713,7 @@ auto ParseSomeIpServiceInstanceDeployment(const score::json::Object& json_map) -
 
     return service;
 }
+#endif
 
 auto ParseLolaServiceInstanceDeployment(const score::json::Object& json_map) -> LolaServiceInstanceDeployment
 {
@@ -830,11 +836,18 @@ auto ParseServiceInstanceDeployments(const score::json::Object& json_map,
             }
             else if (bindingValue == kSomeIpBinding)
             {
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
                 // Return Value not needed in this context
                 score::cpp::ignore = deployments.emplace_back(service,
                                                               ParseSomeIpServiceInstanceDeployment(deployment_map),
                                                               asil_level.value(),
                                                               instance_specifier);
+#else
+                score::mw::log::LogFatal("lola")
+                    << "SOME/IP binding configured, but SOME/IP support is disabled. Enable it with "
+                       "--config=someip (//score/mw/com/flags:experimental_enable_someip_binding).";
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+#endif
             }
             else
             {
@@ -897,6 +910,7 @@ auto ParseServiceInstances(const score::json::Object& object, TracingConfigurati
     return service_instance_deployments;
 }
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseE2EEventTypeDeployment(const score::json::Object& event_object) -> std::optional<E2EEventTypeDeployment>
@@ -930,6 +944,7 @@ auto ParseE2EEventTypeDeployment(const score::json::Object& event_object) -> std
 
     return E2EEventTypeDeployment{E2EProfile::kP4, data_id_casted.value(), max_delta_counter_casted.value()};
 }
+#endif
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
@@ -969,6 +984,7 @@ void ParseEventTypeDeployments(const score::json::Object& json_map, BindingServi
                                                           "Configuration corrupted, check with json schema");
         EmplaceOrFatal(service.events_, event_name_casted.value().get(), event_id_casted.value(), "An event");
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
         const auto e2e_event_deployment = ParseE2EEventTypeDeployment(event_object);
         if (e2e_event_deployment.has_value())
         {
@@ -977,6 +993,16 @@ void ParseEventTypeDeployments(const score::json::Object& json_map, BindingServi
                            e2e_event_deployment.value(),
                            "An E2E event deployment");
         }
+#else
+        if (event_object.find(kE2EKey) != event_object.cend())
+        {
+            score::mw::log::LogFatal("lola")
+                << "E2E configuration of event" << event_name_casted.value().get()
+                << "found, but E2E support is disabled. Enable it with "
+                   "--config=e2e (//score/mw/com/flags:experimental_enable_e2e_protection).";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+#endif
     }
 }
 
@@ -1081,6 +1107,7 @@ auto ParseLoLaServiceTypeDeployments(const score::json::Object& json_map) -> Lol
     return lola;
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
 auto ParseSomeIpServiceTypeDeployments(const score::json::Object& json_map) -> SomeIpServiceTypeDeployment
@@ -1099,6 +1126,7 @@ auto ParseSomeIpServiceTypeDeployments(const score::json::Object& json_map) -> S
     ValidateUniqueServiceElementIds(someip);
     return someip;
 }
+#endif
 
 // See Note 1
 // coverity[autosar_cpp14_a15_5_3_violation]
@@ -1133,8 +1161,15 @@ auto ParseServiceTypeDeployment(const score::json::Object& json_map) -> ServiceT
         }
         else if (value == kSomeIpBinding)
         {
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
             SomeIpServiceTypeDeployment someip_deployment = ParseSomeIpServiceTypeDeployments(binding_map);
             return ServiceTypeDeployment{someip_deployment};
+#else
+            score::mw::log::LogFatal("lola")
+                << "SOME/IP binding configured, but SOME/IP support is disabled. Enable it with "
+                   "--config=someip (//score/mw/com/flags:experimental_enable_someip_binding).";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+#endif
         }
         else
         {

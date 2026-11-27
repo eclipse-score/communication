@@ -25,10 +25,11 @@ namespace score::mw::com::impl::configuration
 
 /// \brief Parses FlatBuffer-encoded (see mw_com_config.fbs) mw::com configuration files into a Configuration object.
 ///
-/// This class is only functional when mw::com is built with the (experimental) FlatBuffers configuration flag
-/// enabled (--config=flatbuffers, see //score/mw/com/flags:experimental_enable_flatbuffers_configuration). When
-/// built without the flag, both Parse() overloads log a fatal error and terminate, so the class always exists and
-/// links, but the FlatBuffers dependencies are only ever linked in when the flag is enabled.
+/// This class is only built when the (experimental) FlatBuffers configuration flag is enabled (--config=flatbuffers,
+/// see //score/mw/com/flags:experimental_enable_flatbuffers_configuration). Without the flag, the
+/// :configuration_flatbuffer_parsing_strategy target is incompatible, so dependents must only reference it under
+/// if_flatbuffers_enabled() (see //score/mw/com/flags:flags.bzl) and guard their use of it with
+/// SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED.
 class ConfigurationFlatbufferParsingStrategy final : public IConfigurationParsingStrategy
 {
   public:

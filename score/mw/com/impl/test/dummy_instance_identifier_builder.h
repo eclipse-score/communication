@@ -18,8 +18,10 @@
 #include "score/mw/com/impl/configuration/service_identifier_type.h"
 #include "score/mw/com/impl/configuration/service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
+#endif
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
@@ -53,6 +55,7 @@ class DummyInstanceIdentifierBuilder
     std::unique_ptr<ServiceInstanceDeployment> instance_deployment_;
 };
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 class SomeIpDummyInstanceIdentifierBuilder
 {
   public:
@@ -68,6 +71,7 @@ class SomeIpDummyInstanceIdentifierBuilder
     InstanceSpecifier instance_specifier_;
     std::unique_ptr<ServiceInstanceDeployment> instance_deployment_;
 };
+#endif
 
 }  // namespace score::mw::com::impl
 

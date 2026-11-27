@@ -12,22 +12,16 @@
  ********************************************************************************/
 #include "score/mw/com/impl/configuration/configuration_flatbuffer_parsing_strategy.h"
 
-#include "score/mw/log/logging.h"
-
-#include <score/assert.hpp>
-
-#include <exception>
-
-#if defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
-
 #include "score/mw/com/impl/configuration/config_validate.h"
 
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/quality_type.h"
 #include "score/mw/com/impl/configuration/service_type_deployment.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
+#endif
 #include "score/mw/com/impl/configuration/tracing_configuration.h"
 #include "score/mw/com/impl/instance_specifier.h"
 #include "score/mw/com/impl/service_element_type.h"
@@ -38,6 +32,7 @@
 
 #include "score/filesystem/path.h"
 #include "score/flatbuffers/load_buffer.hpp"
+#include "score/mw/log/logging.h"
 
 #include "flatbuffers/verifier.h"
 
@@ -201,6 +196,22 @@ auto ParseStrictPermissions(fbs::PermissionChecks permission_checks) -> bool
             return false;  // LCOV_EXCL_LINE defensive programming: SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD never returns
     }
 }
+
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+auto ParseE2EProfile(fbs::E2EProfile profile) -> E2EProfile
+{
+    switch (profile)
+    {
+        case fbs::E2EProfile::P04:
+            return E2EProfile::kP4;
+        default:
+            score::mw::log::LogFatal("lola") << "Unsupported E2E profile in POC configuration. Terminating.";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+            return E2EProfile::kP4;  // LCOV_EXCL_LINE defensive programming: SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD never
+                                     // returns
+    }
+}
+#endif
 
 auto ParseAllowedUser(const ::flatbuffers::Vector<std::uint32_t>* qm_ids,
                       const ::flatbuffers::Vector<std::uint32_t>* b_ids)
@@ -437,6 +448,7 @@ auto ParseLolaServiceInstanceDeployment(const fbs::ServiceInstanceBinding& deplo
     return service;
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 auto ParseSomeIpEventInstanceDeployment(const fbs::ServiceInstanceBinding& deployment,
                                         SomeIpServiceInstanceDeployment& service) -> void
 {
@@ -503,6 +515,7 @@ auto ParseSomeIpServiceInstanceDeployment(const fbs::ServiceInstanceBinding& dep
 
     return service;
 }
+#endif
 
 auto ParseServiceInstanceDeployments(const fbs::ServiceInstance& service_instance,
                                      TracingConfiguration& tracing_configuration,
@@ -525,8 +538,15 @@ auto ParseServiceInstanceDeployments(const fbs::ServiceInstance& service_instanc
                     service, ParseLolaServiceInstanceDeployment(*deployment), asil_level, instance_specifier);
                 break;
             case fbs::Binding::SOMEIP:
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
                 score::cpp::ignore = deployments.emplace_back(
                     service, ParseSomeIpServiceInstanceDeployment(*deployment), asil_level, instance_specifier);
+#else
+                score::mw::log::LogFatal("lola")
+                    << "SOME/IP binding configured, but SOME/IP support is disabled. Enable it with "
+                       "--config=someip (//score/mw/com/flags:experimental_enable_someip_binding).";
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+#endif
                 break;
             default:  // LCOV_EXCL_LINE defensive programming
                 score::mw::log::LogFatal("lola") << "Unknown binding provided. Required argument.";  // LCOV_EXCL_LINE
@@ -575,6 +595,20 @@ auto ParseServiceInstances(const fbs::Configuration& configuration, TracingConfi
     return service_instance_deployments;
 }
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+auto ParseE2EEventTypeDeployment(const fbs::ServiceTypeEvent& event) -> std::optional<E2EEventTypeDeployment>
+{
+    const auto* e2e = event.e2e();
+    if (e2e == nullptr)
+    {
+        return std::nullopt;
+    }
+    return E2EEventTypeDeployment{ParseE2EProfile(RequireValue(e2e->profile(), "e2e.profile")),
+                                  RequireValue(e2e->dataId(), "e2e.dataId"),
+                                  RequireValue(e2e->maxDeltaCounter(), "e2e.maxDeltaCounter")};
+}
+#endif
+
 template <typename BindingServiceTypeDeployment>
 void ParseEventTypeDeployments(const fbs::ServiceTypeBinding& binding, BindingServiceTypeDeployment& service)
 {
@@ -589,6 +623,22 @@ void ParseEventTypeDeployments(const fbs::ServiceTypeBinding& binding, BindingSe
         auto event_name = CopyString(event->eventName(), "eventName");
         const auto event_id = NarrowOrFatal<typename BindingServiceTypeDeployment::EventIdMapping::mapped_type>(
             RequireValue(event->eventId(), "eventId"), "eventId");
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
+        const auto e2e_event_deployment = ParseE2EEventTypeDeployment(*event);
+        if (e2e_event_deployment.has_value())
+        {
+            EmplaceOrFatal(service.e2e_events_, event_name, e2e_event_deployment.value(), "An E2E event deployment");
+        }
+#else
+        if (event->e2e() != nullptr)
+        {
+            score::mw::log::LogFatal("lola")
+                << "E2E configuration of event" << event_name
+                << "found, but E2E support is disabled. Enable it with "
+                   "--config=e2e (//score/mw/com/flags:experimental_enable_e2e_protection).";
+            SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+        }
+#endif
         EmplaceOrFatal(service.events_, std::move(event_name), event_id, "An event");
     }
 }
@@ -640,6 +690,7 @@ auto ParseLoLaServiceTypeDeployments(const fbs::ServiceTypeBinding& binding) -> 
     return lola;
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 auto ParseSomeIpServiceTypeDeployments(const fbs::ServiceTypeBinding& binding) -> SomeIpServiceTypeDeployment
 {
     SomeIpServiceTypeDeployment someip{
@@ -650,6 +701,7 @@ auto ParseSomeIpServiceTypeDeployments(const fbs::ServiceTypeBinding& binding) -
     ValidateUniqueServiceElementIds(someip);
     return someip;
 }
+#endif
 
 auto ParseServiceTypeDeployment(const fbs::ServiceType& service_type) -> ServiceTypeDeployment
 {
@@ -662,7 +714,15 @@ auto ParseServiceTypeDeployment(const fbs::ServiceType& service_type) -> Service
             case fbs::Binding::SHM:
                 return ServiceTypeDeployment{ParseLoLaServiceTypeDeployments(*binding)};
             case fbs::Binding::SOMEIP:
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
                 return ServiceTypeDeployment{ParseSomeIpServiceTypeDeployments(*binding)};
+#else
+                score::mw::log::LogFatal("lola")
+                    << "SOME/IP binding configured, but SOME/IP support is disabled. Enable it with "
+                       "--config=someip (//score/mw/com/flags:experimental_enable_someip_binding).";
+                SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
+                break;
+#endif
             default:  // LCOV_EXCL_LINE defensive programming
                 score::mw::log::LogFatal("lola")
                     << "No unknown binding provided. Required argument.";  // LCOV_EXCL_LINE
@@ -795,38 +855,3 @@ Configuration ConfigurationFlatbufferParsingStrategy::Parse(score::cpp::span<con
 }
 
 }  // namespace score::mw::com::impl::configuration
-
-#else  // !defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)
-
-namespace score::mw::com::impl::configuration
-{
-namespace
-{
-
-[[noreturn]] auto FlatbuffersConfigurationDisabled() -> void
-{
-    ::score::mw::log::LogFatal("lola")
-        << "mw::com was built without FlatBuffers configuration support "
-           "(--config=flatbuffers / //score/mw/com/flags:experimental_enable_flatbuffers_configuration). "
-           "Terminating.";
-    SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD(false);
-    // LCOV_EXCL_START defensive programming: SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD above never returns.
-    std::terminate();
-    // LCOV_EXCL_STOP
-}
-
-}  // namespace
-
-Configuration ConfigurationFlatbufferParsingStrategy::Parse(const std::string_view /* path */) const
-{
-    FlatbuffersConfigurationDisabled();
-}
-
-Configuration ConfigurationFlatbufferParsingStrategy::Parse(score::cpp::span<const std::uint8_t> /* buffer */) const
-{
-    FlatbuffersConfigurationDisabled();
-}
-
-}  // namespace score::mw::com::impl::configuration
-
-#endif  // defined(SCORE_MW_COM_FLATBUFFERS_CONFIGURATION_ENABLED)

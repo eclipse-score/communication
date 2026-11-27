@@ -219,7 +219,7 @@ Within **Known Issues**:
 - Include active local patch/workaround notes when the repo ships with patched external dependencies, especially for SDK, OS, Bazel-module, or ruleset compatibility.
 
 ### 5b) Document public API changes in Upgrade Instructions
-- Diff the public API surface lock file(s) between the origin tag and the release commit (for example `git diff <origin>..<release> -- score/mw/com/api_surface.lock.json`; locate others via `git ls-files | grep -i surface`).
+- Diff the public API surface lock file(s) between the origin tag and the release commit (for example `git diff <origin>..<release> -- score/mw/com/api_surface.lock.json`; locate others via `git ls-files | grep -i surface`). The lock file is the API of the default configuration; the API of experimental features is not locked and must not be documented as stable.
 - Under "Upgrade Instructions" (after the backward-compatibility sentence), add a "Public API changes" subsection grouped as **Added**, **Deprecated/Removed**, and **Signature changes** (including `noexcept`, parameter-passing and constructor changes).
 - State the migration path for deprecated/removed symbols and the caller impact of signature changes.
 - Attribute changes to PRs via `git log <origin>..<release> -- <lock file>`, and verify the PR numbers; mark inferred attributions as such.

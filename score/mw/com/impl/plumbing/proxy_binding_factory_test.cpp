@@ -131,6 +131,7 @@ TEST_F(ProxyBindingFactoryCreateFixture, CanCreateLoLaProxy)
     EXPECT_NE(created_binding_, nullptr);
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 TEST_F(ProxyBindingFactoryCreateFixture, CanCreateSomeipProxy)
 {
     // TODO: verify ids
@@ -156,6 +157,7 @@ TEST_F(ProxyBindingFactoryCreateFixture, CanCreateSomeipProxy)
     created_binding_ = std::move(create_result).value();
     EXPECT_NE(created_binding_, nullptr);
 }
+#endif
 
 TEST_F(ProxyBindingFactoryCreateFixture, CannotCreateBlank)
 {

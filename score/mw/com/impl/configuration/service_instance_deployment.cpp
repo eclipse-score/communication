@@ -91,10 +91,12 @@ auto areCompatible(const ServiceInstanceDeployment& lhs, const ServiceInstanceDe
            const LolaServiceInstanceDeployment& rhs_binding) noexcept {
             return areCompatible(lhs_binding, rhs_binding);
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         [](const SomeIpServiceInstanceDeployment& lhs_binding,
            const SomeIpServiceInstanceDeployment& rhs_binding) noexcept {
             return areCompatible(lhs_binding, rhs_binding);
         },
+#endif
         [](const auto&, const auto&) noexcept {
             return false;
         });
@@ -138,9 +140,11 @@ score::json::Object ServiceInstanceDeployment::Serialize() const
         [&json_object](const LolaServiceInstanceDeployment& deployment) {
             json_object[kBindingInfoKey] = deployment.Serialize();
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         [&json_object](const SomeIpServiceInstanceDeployment& deployment) {
             json_object[kBindingInfoKey] = deployment.Serialize();
         },
+#endif
         [](const score::cpp::blank&) noexcept {});
     std::visit(visitor, bindingInfo_);
 
@@ -164,11 +168,13 @@ BindingType ServiceInstanceDeployment::GetBindingType() const
         [](const LolaServiceInstanceDeployment&) noexcept {
             return BindingType::kLoLa;
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         // FP: only one statement in this line
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const SomeIpServiceInstanceDeployment&) noexcept {
             return BindingType::kSomeIp;
         },
+#endif
         // FP: only one statement in this line
         // coverity[autosar_cpp14_a7_1_7_violation]
         [](const score::cpp::blank&) noexcept {

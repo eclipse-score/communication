@@ -18,7 +18,9 @@
 #include "score/mw/com/impl/configuration/lola_method_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_instance_deployment.h"
 #include "score/mw/com/impl/configuration/lola_service_type_deployment.h"
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 #include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
+#endif
 #include "score/mw/com/impl/configuration/test/configuration_store.h"
 
 #include "score/json/any.h"
@@ -550,6 +552,7 @@ TEST_F(ConfigurationFixture, HasLolaServiceDeploymentReturnsFalseIfNoLolaService
     EXPECT_FALSE(result.value());
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 TEST_F(ConfigurationFixture, HasSomeIpServiceDeploymentReturnsTrueIfSomeIpServiceTypeDeploymentExists)
 {
     // Given a configuration containing a SomeIpServiceTypeDeployment
@@ -592,6 +595,7 @@ TEST_F(ConfigurationFixture, HasLolaServiceDeploymentReturnsFalseForASomeIpOnlyC
     ASSERT_TRUE(result.has_value());
     EXPECT_FALSE(result.value());
 }
+#endif
 
 TEST_F(ConfigurationFixture, GetListOfNamesOfConfiguredServicesReturnsCorrectServiceNames)
 {

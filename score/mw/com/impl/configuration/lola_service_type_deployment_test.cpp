@@ -46,6 +46,7 @@ TEST_F(LolaServiceTypeDeploymentFixture, CanCreateFromSerializedObject)
     ExpectLolaServiceTypeDeploymentObjectsEqual(reconstructed_unit, unit);
 }
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 TEST(LolaServiceTypeDeploymentTest, SerializesAndDeserializesE2EEventDeployment)
 {
     // Given a LolaServiceTypeDeployment with a POC E2E event deployment
@@ -63,6 +64,7 @@ TEST(LolaServiceTypeDeploymentTest, SerializesAndDeserializesE2EEventDeployment)
     EXPECT_EQ(reconstructed_unit.e2e_events_.at(kDummyEventName),
               (E2EEventTypeDeployment{E2EProfile::kP4, 0x1234563AU, 2U}));
 }
+#endif
 
 using LolaServiceTypeDeploymentGetServiceElementFixture = ConfigurationStructsFixture;
 TEST_F(LolaServiceTypeDeploymentGetServiceElementFixture, ReturnsEventIdThatExistsInDeployment)

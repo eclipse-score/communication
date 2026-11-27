@@ -13,12 +13,7 @@
                     "events": [
                         {
                             "eventName": "CurrentPressureFrontLeft",
-                            "eventId": 20,
-                            "e2e": {
-                                "profile": "P04",
-                                "dataId": 58,
-                                "maxDeltaCounter": 2
-                            }
+                            "eventId": 20
                         }
                     ],
                     "fields": [

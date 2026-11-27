@@ -29,6 +29,7 @@ SHARED_CONFIGS = [
     "duplicate_type_field_id",
     "duplicate_type_field_name",
     "duplicate_type_method_name",
+    "e2e_event",
     "empty_deployment_instances",
     "empty_instance_specifier",
     "empty_service_elements",

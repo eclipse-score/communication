@@ -13,7 +13,6 @@
 #include "score/mw/com/impl/plumbing/skeleton_event_binding_factory_impl.h"
 
 #include "score/mw/com/impl/bindings/lola/skeleton_event.h"
-#include "score/mw/com/impl/bindings/someip/skeleton_event.h"
 #include "score/mw/com/impl/plumbing/skeleton_service_element_binding_factory_impl.h"
 
 #include <optional>
@@ -37,7 +36,7 @@ auto SkeletonEventBindingFactoryImpl::Create(const InstanceIdentifier& identifie
     const std::optional<FieldTagsStore> empty_field_tags_store{};
     return CreateSkeletonEventOrField<SkeletonEventBinding,
                                       lola::SkeletonEvent,
-                                      someip::SkeletonEvent,
+                                      detail::SomeIpSkeletonEventBinding,
                                       ServiceElementType::EVENT>(
         identifier, parent_binding, event_name, sample_type_size_info, empty_field_tags_store);
 }

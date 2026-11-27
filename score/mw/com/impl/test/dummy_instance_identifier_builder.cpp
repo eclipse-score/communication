@@ -109,6 +109,7 @@ InstanceIdentifier DummyInstanceIdentifierBuilder::CreateBlankBindingInstanceIde
     return make_InstanceIdentifier(*instance_deployment_, type_deployment_);
 }
 
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
 SomeIpDummyInstanceIdentifierBuilder::SomeIpDummyInstanceIdentifierBuilder()
     : service_instance_deployment_{},
       service_type_deployment_{0x0},
@@ -127,5 +128,6 @@ InstanceIdentifier SomeIpDummyInstanceIdentifierBuilder::CreateValidSomeipInstan
         type_, service_instance_deployment_, QualityType::kASIL_QM, instance_specifier_);
     return make_InstanceIdentifier(*instance_deployment_, type_deployment_);
 }
+#endif
 
 }  // namespace score::mw::com::impl

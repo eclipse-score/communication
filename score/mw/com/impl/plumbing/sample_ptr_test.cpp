@@ -100,11 +100,13 @@ TYPED_TEST(SamplePtrGenericTypeTest, CanBeDefaultConstructed)
 
     SamplePtr<TypeParam> unit{};
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
     const auto e2e_result = unit.GetE2EResult();
     EXPECT_EQ(e2e_result.data_integrity, e2e::DataIntegrityStatus::kDisabled);
     EXPECT_EQ(e2e_result.sequence, e2e::SequenceStatus::kDisabled);
     EXPECT_EQ(e2e_result.historical_health, e2e::HistoricalHealthStatus::kDisabled);
     EXPECT_EQ(e2e_result.summary, e2e::Summary::kDisabled);
+#endif
 }
 
 TYPED_TEST(SamplePtrGenericTypeTest, CanBeNullptrConstructed)
@@ -386,6 +388,7 @@ TYPED_TEST(SamplePtrGenericTypeTest, MovingSamplePtrWillMoveSampleReferenceGuard
     EXPECT_EQ(tracker.GetNumAvailableSamples(), max_num_samples - 1);
 }
 
+#if defined(SCORE_MW_COM_E2E_PROTECTION_ENABLED)
 TEST(SamplePtr, RawCheckOutcomeProvidedAtConstructionIsCarriedThroughRebindToTypedSamplePtr)
 {
     // Given a type-erased SamplePtr constructed with the outcome of the binding's E2E check
@@ -401,6 +404,7 @@ TEST(SamplePtr, RawCheckOutcomeProvidedAtConstructionIsCarriedThroughRebindToTyp
     EXPECT_EQ(typed.GetE2EResult().sequence, e2e::SequenceStatus::kErrorRepeated);
     EXPECT_EQ(typed.GetE2EResult().summary, e2e::Summary::kDisabled);
 }
+#endif
 
 TEST_F(LolaForwardingSamplePtrTest, GreaterThanReturnsTrueWhenForwardedLolaSampleIsNewer)
 {

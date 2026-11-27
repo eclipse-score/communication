@@ -53,6 +53,7 @@ std::vector<std::string_view> GetEventNameList(const InstanceIdentifier& identif
             }
             return event_names;
         },
+#if defined(SCORE_MW_COM_SOMEIP_BINDING_ENABLED)
         [](const SomeIpServiceTypeDeployment& deployment) -> ReturnType {
             ReturnType event_names;
             for (const auto& event : deployment.events_)
@@ -61,6 +62,7 @@ std::vector<std::string_view> GetEventNameList(const InstanceIdentifier& identif
             }
             return event_names;
         },
+#endif
         [](const score::cpp::blank&) noexcept -> ReturnType {
             return {};
         });
