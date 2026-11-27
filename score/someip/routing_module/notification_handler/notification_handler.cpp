@@ -111,6 +111,7 @@ CommandResult NotificationHandler::AddRemoteService(const routing_control_protoc
     RemoteService& remote_service = entry->second;
     if (!remote_service.lola_offered)
     {
+        // COV_JUSTIFIED_START notification-handler-offer-service-failure
         if (!remote_service.lola_skeleton->OfferService().has_value())
         {
             score::mw::log::LogError(kLogContext)
@@ -118,6 +119,7 @@ CommandResult NotificationHandler::AddRemoteService(const routing_control_protoc
                 << "instance" << score::mw::log::LogHex16{command.instance};
             return CommandResult::kRejected;
         }
+        // COV_JUSTIFIED_STOP
         remote_service.lola_offered = true;
     }
     remote_service.udp_local_port = command.local_port;
@@ -237,6 +239,7 @@ std::optional<NotificationHandler::RemoteService> NotificationHandler::CreateLol
 {
     auto lola_specifier =
         score::mw::com::InstanceSpecifier::Create(LolaInstanceSpecifier(command.service, command.instance));
+    // COV_JUSTIFIED_START notification-handler-invalid-lola-specifier
     if (!lola_specifier.has_value())
     {
         score::mw::log::LogError(kLogContext)
@@ -244,6 +247,7 @@ std::optional<NotificationHandler::RemoteService> NotificationHandler::CreateLol
             << score::mw::log::LogHex16{command.instance};
         return std::nullopt;
     }
+    // COV_JUSTIFIED_STOP
     std::vector<std::string> lola_event_names{};
     lola_event_names.reserve(command.events.size());
     for (const std::uint16_t someip_event : command.events)
@@ -274,7 +278,7 @@ std::optional<NotificationHandler::RemoteService> NotificationHandler::CreateLol
     for (const std::uint16_t someip_event : command.events)
     {
         const auto lola_event = lola_events.find(LolaEventName(someip_event));
-        if (lola_event != lola_events.end())
+        if (lola_event != lola_events.end())  // COV_JUSTIFIED notification-handler-lola-event-map-miss
         {
             remote_service.someip_events.emplace(someip_event, RemoteEvent{&lola_event->second, false});
         }
@@ -299,7 +303,8 @@ NotificationHandler::RemoteServices::iterator NotificationHandler::FindReceivePa
          ++entry)
     {
         const RemoteService& remote_service = entry->second;
-        if (remote_service.lola_offered && (remote_service.udp_local_port == udp_local_port) &&
+        if (remote_service.lola_offered &&  // COV_JUSTIFIED notification-handler-unoffered
+            (remote_service.udp_local_port == udp_local_port) &&
             SameEndpoint(remote_service.udp_remote_endpoint, udp_sender))
         {
             return entry;
@@ -313,7 +318,8 @@ NotificationHandler::RemoteEvent* NotificationHandler::FindLolaOfferedEvent(cons
 {
     const auto entry =
         remote_services_.find(SomeipServiceInstance{service_instance.service, service_instance.instance});
-    if ((entry == remote_services_.end()) || (!entry->second.lola_offered))
+    if ((entry == remote_services_.end()) ||
+        (!entry->second.lola_offered))  // COV_JUSTIFIED notification-handler-unoffered
     {
         return nullptr;
     }
@@ -381,15 +387,17 @@ void NotificationHandler::ForwardToLola(const std::uint16_t udp_local_port,
             DropReason::kCopyFailed, "copying the payload from the UDP packet failed", header, someip_instance);
         return;
     }
+    // COV_JUSTIFIED_START handler-send-failure
     if (!lola_event.Send(std::move(lola_sample).value()).has_value())
     {
         LogDroppedNotification(DropReason::kSendFailed, "sending the LoLa sample failed", header, someip_instance);
     }
+    // COV_JUSTIFIED_STOP
 }
 
 void NotificationHandler::StopReceivePath(RemoteService& remote_service) noexcept
 {
-    if (remote_service.lola_offered)
+    if (remote_service.lola_offered)  // COV_JUSTIFIED notification-handler-unoffered
     {
         remote_service.lola_skeleton->StopOfferService();
         remote_service.lola_offered = false;

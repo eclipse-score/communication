@@ -19,7 +19,6 @@
 #include "score/mw/com/runtime_configuration.h"
 #include "score/mw/log/logging.h"
 
-#include <dlfcn.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -34,6 +33,11 @@ namespace
 using score::someip::routing_module::RoutingBridge;
 
 constexpr auto kLogContext{"SRTM"};
+#if defined(__QNXNTO__)
+constexpr char kModulePath[]{"/opt/someip_routing/bin/mods-someip-routing.so"};
+#else
+constexpr char kModulePath[]{"/opt/someip_routing/bin/linux_routing_module"};
+#endif
 
 std::optional<RoutingBridge>& Bridge() noexcept
 {
@@ -41,33 +45,22 @@ std::optional<RoutingBridge>& Bridge() noexcept
     return bridge;
 }
 
-/// Path of the hosting binary or loaded module.
+/// Installed path of the platform-specific routing module binary.
 std::string ModulePath()
 {
-    Dl_info info{};
-    if ((::dladdr(&Bridge(), &info) == 0) || (info.dli_fname == nullptr))
-    {
-        return {};
-    }
-    return info.dli_fname;
+    // TODO: module path is needed to discover logging and mw_com config.
+    // currently this is a static path, but it may need to be discovered dynamically
+    // or somehow injected through configuration in the future.
+    return kModulePath;
 }
 
 }  // namespace
 
-extern "C" void someip_routing_prepare_logging(void)
+namespace score::someip::routing_module::detail
 {
-    const std::string config_directory = score::someip::routing_module::ModuleConfigDirectory(ModulePath());
-    // mw::log reads its configuration on the first log, by default relative to the hosting executable.
-    // TODO: check the way on how the config paths are detected once this is deployed on an actual target.
-    static_cast<void>(::setenv("MW_LOG_CONFIG_FILE", (config_directory + "/logging.json").c_str(), 0));
-    score::mw::log::LogInfo(kLogContext) << "Initializing routing module logging";
-}
 
-extern "C" int someip_routing_start(void)
+int StartRoutingModuleFromConfig(const std::string& lola_config) noexcept
 {
-    const std::string config_directory = score::someip::routing_module::ModuleConfigDirectory(ModulePath());
-    const std::string lola_config = config_directory + "/mw_com_config.json";
-    // mw::com terminates the host process if its configuration cannot be read.
     if (::access(lola_config.c_str(), R_OK) != 0)
     {
         score::mw::log::LogError(kLogContext) << "LoLa configuration" << lola_config << "not readable";
@@ -84,10 +77,31 @@ extern "C" int someip_routing_start(void)
     {
         bridge.reset();
         const int error = started.error().GetOsDependentErrorCode();
+        // COV_JUSTIFIED_START routing-bridge-entry-eio-fallback
         return (error != 0) ? error : EIO;
+        // COV_JUSTIFIED_STOP
     }
     score::mw::log::LogInfo(kLogContext) << "Routing module started with LoLa configuration" << lola_config;
     return 0;
+}
+
+}  // namespace score::someip::routing_module::detail
+
+extern "C" void someip_routing_prepare_logging(void)
+{
+    const std::string config_directory = score::someip::routing_module::ModuleConfigDirectory(ModulePath());
+    // mw::log reads its configuration on the first log, by default relative to the hosting executable.
+    // TODO: check the way on how the config paths are detected once this is deployed on an actual target.
+    static_cast<void>(::setenv("MW_LOG_CONFIG_FILE", (config_directory + "/logging.json").c_str(), 0));
+    score::mw::log::LogInfo(kLogContext) << "Initializing routing module logging";
+}
+
+extern "C" int someip_routing_start(void)
+{
+    const std::string config_directory = score::someip::routing_module::ModuleConfigDirectory(ModulePath());
+    const std::string lola_config = config_directory + "/mw_com_config.json";
+    // mw::com terminates the host process if its configuration cannot be read.
+    return score::someip::routing_module::detail::StartRoutingModuleFromConfig(lola_config);
 }
 
 extern "C" void someip_routing_stop(void)

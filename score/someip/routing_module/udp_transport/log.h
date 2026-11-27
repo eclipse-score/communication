@@ -56,7 +56,7 @@ static inline int someip_log_limiter_check(someip_log_limiter* limiter, uint64_t
 {
     struct timespec now = {0, 0};
     uint64_t now_ns = limiter->last_log_ns;
-    if (clock_gettime(CLOCK_MONOTONIC, &now) == 0)
+    if (clock_gettime(CLOCK_MONOTONIC, &now) == 0)  // COV_JUSTIFIED log-limiter-clock-failure
     {
         now_ns = (uint64_t)now.tv_sec * 1000000000ULL + (uint64_t)now.tv_nsec;
     }

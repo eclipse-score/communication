@@ -1,0 +1,1 @@
+genhtml bazel-out/_coverage/_coverage_report.dat --output-directory coverage-html

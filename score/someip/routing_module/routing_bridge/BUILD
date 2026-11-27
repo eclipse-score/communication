@@ -75,12 +75,16 @@ cc_shared_library(
 
 cc_unit_test(
     name = "routing_bridge_test",
-    srcs = ["routing_bridge_test.cpp"],
+    srcs = [
+        "routing_bridge_test.cpp",
+        "routing_log_adapter_test_helper.c",
+    ],
     tags = ["exclusive"],
     deps = [
         ":routing_bridge",
         ":routing_bridge_entry",
         ":routing_log_adapter",
+        "//score/message_passing",
         "//score/message_passing:mock",
         "//score/mw/com",
         "//score/someip/routing_module/lola_mapping",

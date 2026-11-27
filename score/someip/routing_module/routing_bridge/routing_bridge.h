@@ -60,6 +60,13 @@ class RoutingBridge final
 /// Directory of the configuration files of the module at module_path: <prefix>/etc for <prefix>/bin/<module>.
 [[nodiscard]] std::string ModuleConfigDirectory(std::string_view module_path);
 
+namespace detail
+{
+
+[[nodiscard]] int StartRoutingModuleFromConfig(const std::string& lola_config) noexcept;
+
+}  // namespace detail
+
 }  // namespace score::someip::routing_module
 
 #endif  // SCORE_SOMEIP_ROUTING_MODULE_ROUTING_BRIDGE_ROUTING_BRIDGE_H

@@ -34,6 +34,7 @@
 #include <fstream>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace
@@ -97,6 +98,8 @@ constexpr std::uint16_t kUnknownEvent{0x8003U};
 constexpr std::uint16_t kUdpLocalPort{30501U};
 constexpr std::uint16_t kUdpRemotePort{30502U};
 constexpr std::size_t kLolaSampleSlots{4U};
+constexpr std::string_view kServiceTypeName{"/someip/service"};
+constexpr std::string_view kOtherServiceTypeName{"/someip/other_service"};
 const Endpoint kUdpSender{routing_control_protocol::Ipv4Address{10U, 0U, 3U, 2U}, kUdpRemotePort};
 
 /// LoLa's shared memory and discovery paths are global, so concurrent runs of this test use distinct services.
@@ -106,10 +109,25 @@ std::uint16_t Service()
     return service;
 }
 
-std::string LolaServiceInstanceJson(const std::uint16_t instance)
+std::uint16_t OtherService()
 {
-    return R"({"instanceSpecifier": ")" + LolaInstanceSpecifier(Service(), instance) +
-           R"(", "serviceTypeName": "/someip/service", "version": {"major": 1, "minor": 0}, "instances": [{"instanceId": )" +
+    return static_cast<std::uint16_t>(Service() + 1U);
+}
+
+std::string LolaServiceTypeJson(const std::uint16_t service, const std::string_view service_type_name)
+{
+    return R"({"serviceTypeName": ")" + std::string{service_type_name} +
+           R"(", "version": {"major": 1, "minor": 0}, "bindings": [{"binding": "SHM", "serviceId": )" +
+           std::to_string(service) + R"(, "events": [{"eventName": ")" + LolaEventName(kEvent) +
+           R"(", "eventId": 1}, {"eventName": ")" + LolaEventName(kOtherEvent) + R"(", "eventId": 2}]}]})";
+}
+
+std::string LolaServiceInstanceJson(const std::uint16_t service,
+                                    const std::string_view service_type_name,
+                                    const std::uint16_t instance)
+{
+    return R"({"instanceSpecifier": ")" + LolaInstanceSpecifier(service, instance) + R"(", "serviceTypeName": ")" +
+           std::string{service_type_name} + R"(", "version": {"major": 1, "minor": 0}, "instances": [{"instanceId": )" +
            std::to_string(instance) +
            R"(, "asil-level": "QM", "binding": "SHM", "events": [)"
            R"({"eventName": ")" +
@@ -126,23 +144,22 @@ std::string WriteLolaConfig()
         (test_tmpdir != nullptr) ? std::filesystem::path{test_tmpdir} : std::filesystem::temp_directory_path();
     const std::filesystem::path path =
         directory / ("notification_handler_test_" + std::to_string(::getpid()) + ".json");
-    std::ofstream{path}
-        << R"({"serviceTypes": [{"serviceTypeName": "/someip/service", "version": {"major": 1, "minor": 0}, )"
-           R"("bindings": [{"binding": "SHM", "serviceId": )"
-        << Service() << R"(, "events": [{"eventName": ")" << LolaEventName(kEvent)
-        << R"(", "eventId": 1}, {"eventName": ")" << LolaEventName(kOtherEvent) << R"(", "eventId": 2}]}]}], )"
-        << R"("serviceInstances": [)" << LolaServiceInstanceJson(kConfiguredInstance) << ", "
-        << LolaServiceInstanceJson(kOtherConfiguredInstance) << "]}";
+    std::ofstream{path} << R"({"serviceTypes": [)" << LolaServiceTypeJson(Service(), kServiceTypeName) << ", "
+                        << LolaServiceTypeJson(OtherService(), kOtherServiceTypeName) << R"(], "serviceInstances": [)"
+                        << LolaServiceInstanceJson(Service(), kServiceTypeName, kConfiguredInstance) << ", "
+                        << LolaServiceInstanceJson(Service(), kServiceTypeName, kOtherConfiguredInstance) << ", "
+                        << LolaServiceInstanceJson(OtherService(), kOtherServiceTypeName, kConfiguredInstance) << "]}";
     return path.string();
 }
 
 routing_control_protocol::Message RemoteService(const std::uint16_t instance,
                                                 const std::uint16_t udp_local_port = kUdpLocalPort,
-                                                const std::uint16_t udp_remote_port = kUdpRemotePort)
+                                                const std::uint16_t udp_remote_port = kUdpRemotePort,
+                                                const std::uint16_t service = Service())
 {
     routing_control_protocol::Message message{};
     message.opcode = routing_control_protocol::Opcode::kAddRemoteService;
-    message.service = Service();
+    message.service = service;
     message.instance = instance;
     message.local_port = udp_local_port;
     message.remote_port = udp_remote_port;
@@ -351,6 +368,22 @@ TEST_F(NotificationHandlerTest, RejectsRemoteServicesWhoseUdpRouteIsUsedByAnothe
               CommandResult::kApplied);
     EXPECT_EQ(FindLolaOffers(kOtherConfiguredInstance), 1U);
     EXPECT_EQ(handler_.AddRemoteService(RemoteService(kConfiguredInstance)), CommandResult::kApplied);
+}
+
+TEST_F(NotificationHandlerTest, StopsSearchingReceiveRoutesAtTheNextServiceId)
+{
+    Trace("RoutingModule.CR_RoutingModule_UniqueReceiveRoute",
+          "two configured service IDs with a remote instance offered for the lower service ID",
+          "another instance of the lower service ID is added with a distinct receive route",
+          "the higher service ID does not cause a route collision and the new instance is offered");
+    ASSERT_EQ(handler_.AddRemoteService(RemoteService(kConfiguredInstance)), CommandResult::kApplied);
+    ASSERT_EQ(handler_.AddRemoteService(
+                  RemoteService(kConfiguredInstance, kUdpLocalPort + 1U, kUdpRemotePort + 1U, OtherService())),
+              CommandResult::kApplied);
+
+    EXPECT_EQ(
+        handler_.AddRemoteService(RemoteService(kOtherConfiguredInstance, kUdpLocalPort + 2U, kUdpRemotePort + 2U)),
+        CommandResult::kApplied);
 }
 
 TEST_F(NotificationHandlerTest, StopsTheLolaOfferOfRemovedRemoteServices)

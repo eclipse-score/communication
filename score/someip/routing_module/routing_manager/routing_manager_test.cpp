@@ -392,6 +392,22 @@ TEST_F(RoutingManagerTest, RejectsSecondClientWhileTheDaemonIsConnected)
     manager_.ProcessPendingCommands();
 }
 
+TEST_F(RoutingManagerTest, IgnoresDisconnectFromClientWithoutAcceptedMarker)
+{
+    Trace("RoutingModule.CR_RoutingModule_SingleController",
+          "a connected SD daemon and a second client with no accepted user-data marker",
+          "the second client is rejected and then disconnects",
+          "the rejected client's disconnect does not remove routing state");
+    StartAndConnectDaemon();
+
+    const auto second = connect_(other_client_);
+    ASSERT_FALSE(second.has_value());
+    EXPECT_CALL(handler_, RemoveAll()).Times(0);
+
+    disconnect_(other_client_);
+    manager_.ProcessPendingCommands();
+}
+
 TEST_F(RoutingManagerTest, AcceptsNewDaemonAfterDisconnect)
 {
     Trace("RoutingModule.CR_RoutingModule_SingleController",

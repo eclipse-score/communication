@@ -20,6 +20,7 @@
 #include "score/message_passing/mock/server_connection_mock.h"
 #include "score/message_passing/mock/server_factory_mock.h"
 #include "score/message_passing/mock/server_mock.h"
+#include "score/message_passing/server_factory.h"
 #include "score/mw/com/runtime.h"
 #include "score/mw/com/types.h"
 #include "score/mw/log/logging.h"
@@ -42,6 +43,8 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+extern "C" void someip_routing_log_with_unknown_severity(void);
 
 namespace
 {
@@ -337,6 +340,52 @@ TEST(RoutingBridgeEntryTest, RejectsStartupWhenLoLaConfigurationIsMissing)
     EXPECT_EQ(error, ENOENT);
 }
 
+TEST(RoutingBridgeEntryTest, StartsAndStopsWithReadableLoLaConfiguration)
+{
+    const int result = detail::StartRoutingModuleFromConfig(WriteLolaConfig());
+    ASSERT_EQ(result, 0);
+
+    someip_routing_poll();
+    const std::array<unsigned char, 4U> sender_ip{127U, 0U, 0U, 1U};
+    const std::vector<std::uint8_t> empty_datagram{};
+    someip_routing_datagram(kUdpLocalPort,
+                            sender_ip.data(),
+                            kUdpSender.port,
+                            &empty_datagram,
+                            static_cast<unsigned int>(empty_datagram.size()));
+    someip_routing_stop();
+}
+
+TEST_F(RoutingBridgeTest, ReturnsAddressInUseWhenControlServerIsAlreadyActive)
+{
+    score::message_passing::ServerFactory active_server_factory{};
+    RoutingBridge active_bridge{active_server_factory};
+    ASSERT_TRUE(active_bridge.Start().has_value());
+
+    const int error = detail::StartRoutingModuleFromConfig(WriteLolaConfig());
+    someip_routing_stop();
+
+    EXPECT_EQ(error, EADDRINUSE);
+}
+
+TEST(RoutingBridgeEntryTest, PreparesLoggingFromTheFixedModulePath)
+{
+    const char* const current_config = std::getenv("MW_LOG_CONFIG_FILE");
+    const std::optional<std::string> previous_config =
+        (current_config == nullptr) ? std::nullopt : std::optional<std::string>{current_config};
+    ASSERT_EQ(::unsetenv("MW_LOG_CONFIG_FILE"), 0);
+
+    someip_routing_prepare_logging();
+
+    const char* const configured_path = std::getenv("MW_LOG_CONFIG_FILE");
+    const std::string configured_config = (configured_path == nullptr) ? std::string{} : configured_path;
+    const int restore_result = previous_config.has_value() ? ::setenv("MW_LOG_CONFIG_FILE", previous_config->c_str(), 1)
+                                                           : ::unsetenv("MW_LOG_CONFIG_FILE");
+
+    EXPECT_EQ(restore_result, 0);
+    EXPECT_EQ(configured_config, "/opt/someip_routing/bin/../etc/logging.json");
+}
+
 TEST(RoutingLoggingTest, FormatsAndMapsCLogSeveritiesToMwLog)
 {
     ::testing::StrictMock<score::mw::log::RecorderMock> recorder{};
@@ -355,6 +404,11 @@ TEST(RoutingLoggingTest, FormatsAndMapsCLogSeveritiesToMwLog)
         EXPECT_CALL(recorder, StopRecord(handle)).Times(1);
         someip_log(level.first, "port %u", 42U);
     }
+    EXPECT_CALL(recorder, StartRecord("SRTM", score::mw::log::LogLevel::kDebug)).WillOnce(Return(handle));
+    EXPECT_CALL(recorder, LogStringView(handle, "unknown severity")).Times(1);
+    EXPECT_CALL(recorder, StopRecord(handle)).Times(1);
+    someip_routing_log_with_unknown_severity();
+
     const std::string long_message(300U, 'x');
     EXPECT_CALL(recorder, StartRecord("SRTM", score::mw::log::LogLevel::kError)).WillOnce(Return(handle));
     EXPECT_CALL(recorder, LogStringView(handle, std::string(255U, 'x'))).Times(1);

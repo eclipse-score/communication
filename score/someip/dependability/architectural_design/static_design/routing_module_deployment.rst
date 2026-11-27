@@ -1,14 +1,15 @@
 Routing Module Deployment
 =========================
 
-On QNX, deploy ``mods-someip-routing.so`` under ``<prefix>/bin`` and load it with ``mount -T io-sock``. The module
-runs inside io-sock and refuses unloading because it has no coordinated kernel-thread shutdown. On Linux, deploy and
-run ``linux_routing_module`` under ``<prefix>/bin``; SIGINT and SIGTERM stop the standalone process.
+Install the routing application under ``/opt/someip_routing``. On QNX, load
+``/opt/someip_routing/bin/mods-someip-routing.so`` with ``mount -T io-sock``. The module runs inside io-sock and refuses
+unloading because it has no coordinated kernel-thread shutdown. On Linux, run
+``/opt/someip_routing/bin/linux_routing_module``; SIGINT and SIGTERM stop the standalone process.
 
-Both deployments use ``<prefix>/etc/mw_com_config.json`` and an mw::log configuration file:
+Both deployments use ``/opt/someip_routing/etc/mw_com_config.json`` and an mw::log configuration file:
 
-- The configuration directory is ``<prefix>/etc`` for a binary installed as ``<prefix>/bin/<binary>``
-  (``ModuleConfigDirectory()``); the module finds its own path with ``dladdr()``.
+- ``ModulePath()`` returns the installed Linux executable or QNX module path under ``/opt/someip_routing/bin``;
+  ``ModuleConfigDirectory()`` resolves the sibling ``etc`` directory.
 - ``MW_LOG_CONFIG_FILE`` is set to ``logging.json`` in that directory unless already set, since mw::log otherwise
   looks next to the hosting executable. Logging configuration is process-wide and must be set before mw::log is first
   initialized. The module initializes mw::log before starting the transport.
