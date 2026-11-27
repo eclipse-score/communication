@@ -1,0 +1,590 @@
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+@startuml
+
+' ---------------------------------------------------------------------------
+' Modelling conventions
+' ---------------------------------------------------------------------------
+' * Scope: user facing public API of the mw_com SEooC; reference for the FMEA
+'   (failure_modes.trlc).
+' * Abstract model: only semantic operations. Special members, operators and
+'   base classes (*Base, Interface<Trait>) are folded in; copy / move /
+'   ownership is stated in the class note.
+' * Lifecycle: Create() constructs a Proxy / Skeleton. Destruction (C++
+'   destructor) is behaviour, not an operation, and is not modelled here; what
+'   happens on destruction (e.g. a Skeleton stops offering its service) belongs
+'   in sequence diagrams. Service elements live and die with their owning
+'   Proxy / Skeleton (composition).
+'   Provisional: not modelling destruction is not final and may change, e.g.
+'   if the FMEA needs a destructor operation to anchor its destruction
+'   failure modes.
+'   Release() on sample management pointers hands the sample slot / memory
+'   back to mw::com (C++ destructor / reset).
+' * Only the InstanceSpecifier variant of Create / FindService is modelled.
+' * One class per variant with a distinct API (ProxyMethod per
+'   specialization, field per tag; identical APIs merged).
+' * Template parameters are in the quoted label; a parameter pack is one name
+'   (ArgTypes).
+' * Stereotypes: <<datatype>> value type described by its note, <<struct>>
+'   plain aggregate, <<callback>> user callable, <<tag>> field tag,
+'   <<free_functions>> namespace functions, <<type-erased>> C++ void
+'   instantiation of a template modelled as its own class (type-erased
+'   callbacks keep <<callback>> and are named TypeErased<Template>).
+' * Type erasure: UML has no void / pointer types; untyped sample memory is the
+'   <<datatype>> UntypedSampleMemory. C++ void instantiation (e.g.
+'   SampleAllocateePtr<void>) is modelled as a distinctly named
+'   class (TypeErased<Template>) with a
+'   <<bind>> <SampleType -> UntypedSampleMemory> dependency to its template.
+' ---------------------------------------------------------------------------
+
+namespace score::mw::com {
+
+    ' =======================================================================
+    ' Runtime
+    ' =======================================================================
+    namespace mw_com::binding_independent::runtime <<unit>> {
+
+        class "runtime" as mw_com_binding_independent_runtime_runtime <<free_functions>> {
+            +InitializeRuntime(in configuration : RuntimeConfiguration)
+        }
+
+        class "RuntimeConfiguration" as mw_com_binding_independent_runtime_RuntimeConfiguration <<datatype>>
+
+        note bottom of mw_com_binding_independent_runtime_RuntimeConfiguration
+          Holds the path of the mw::com configuration file used by the runtime.
+          * Ownership: copyable and movable.
+        end note
+
+        ' --- relationships inside runtime ---
+        mw_com_binding_independent_runtime_runtime ..> mw_com_binding_independent_runtime_RuntimeConfiguration : <<use>>
+    }
+
+    ' =======================================================================
+    ' Service Discovery
+    ' =======================================================================
+    namespace mw_com::binding_independent::service_discovery <<unit>> {
+
+        class "FindServiceHandle" as mw_com_binding_independent_service_discovery_FindServiceHandle <<datatype>>
+
+        note bottom of mw_com_binding_independent_service_discovery_FindServiceHandle
+          Opaque token of one StartFindService search.
+          * Created only by mw::com (no default construction by the user).
+          * Ownership: copyable and movable.
+        end note
+
+        class "FindServiceHandler<ServiceHandleType>" as mw_com_binding_independent_service_discovery_FindServiceHandler <<callback>> {
+            +Invoke(in handles : ServiceHandleContainer, in handle : FindServiceHandle)
+        }
+
+        class "ServiceHandleContainer<ServiceHandleType>" as mw_com_binding_independent_service_discovery_ServiceHandleContainer <<datatype>>
+
+        note bottom of mw_com_binding_independent_service_discovery_ServiceHandleContainer
+          Ordered sequence (std::vector) of the service handles returned by
+          FindService* and handed to a FindServiceHandler.
+        end note
+
+        ' --- relationships inside service_discovery ---
+        mw_com_binding_independent_service_discovery_FindServiceHandler ..> mw_com_binding_independent_service_discovery_FindServiceHandle : <<use>>
+        mw_com_binding_independent_service_discovery_FindServiceHandler ..> mw_com_binding_independent_service_discovery_ServiceHandleContainer : <<use>>
+    }
+
+    ' =======================================================================
+    ' Sample Management Pointers
+    ' =======================================================================
+    namespace mw_com::binding_independent::sample_management_pointers <<unit>> {
+
+        class "SamplePtr<SampleType>" as mw_com_binding_independent_sample_management_pointers_SamplePtr {
+            +ReadSample() : SampleType[0..1]
+            +Release()
+        }
+
+        note bottom of mw_com_binding_independent_sample_management_pointers_SamplePtr
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "SampleAllocateePtr<SampleType>" as mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr {
+            +WriteSample(in sample : SampleType[1])
+            +Release()
+        }
+
+        note bottom of mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "UntypedSampleMemory" as mw_com_binding_independent_sample_management_pointers_UntypedSampleMemory <<datatype>>
+
+        note bottom of mw_com_binding_independent_sample_management_pointers_UntypedSampleMemory
+          Untyped memory region of one sample slot (C++: void* / const void*).
+        end note
+
+        class "TypeErasedSamplePtr" as mw_com_binding_independent_sample_management_pointers_TypeErasedSamplePtr <<type-erased>> {
+            +ReadSample() : UntypedSampleMemory[0..1]
+            +Release()
+        }
+
+        note bottom of mw_com_binding_independent_sample_management_pointers_TypeErasedSamplePtr
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "TypeErasedSampleAllocateePtr" as mw_com_binding_independent_sample_management_pointers_TypeErasedSampleAllocateePtr <<type-erased>> {
+            +WriteSample(in sample : UntypedSampleMemory[1])
+            +Release()
+        }
+
+        note bottom of mw_com_binding_independent_sample_management_pointers_TypeErasedSampleAllocateePtr
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "MethodReturnTypePtr<SignatureElement>" as mw_com_binding_independent_sample_management_pointers_MethodReturnTypePtr {
+            +WriteSample(in sample : SignatureElement[1])
+            +Release()
+        }
+
+        note bottom of mw_com_binding_independent_sample_management_pointers_MethodReturnTypePtr
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "MethodInArgTypePtr<SignatureElement>" as mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtr {
+            +WriteSample(in sample : SignatureElement[1])
+            +Release()
+        }
+
+        note bottom of mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtr
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "MethodInArgTypePtrs" as mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtrs <<datatype>>
+
+        note bottom of mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtrs
+          The group of in arg pointers returned by ProxyMethod::Allocate(): exactly one
+          MethodInArgTypePtr per argument of the method signature, in the order of the
+          argument list. The group is heterogeneous, as every pointer refers to the type
+          of its corresponding argument, and its size is fixed by the method signature.
+        end note
+
+        ' --- relationships inside sample_management_pointers ---
+        mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtrs o-- "1..* {ordered}" mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtr
+        mw_com_binding_independent_sample_management_pointers_TypeErasedSamplePtr ..> mw_com_binding_independent_sample_management_pointers_SamplePtr : <<bind>> <SampleType -> UntypedSampleMemory>
+        mw_com_binding_independent_sample_management_pointers_TypeErasedSampleAllocateePtr ..> mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr : <<bind>> <SampleType -> UntypedSampleMemory>
+        mw_com_binding_independent_sample_management_pointers_TypeErasedSamplePtr ..> mw_com_binding_independent_sample_management_pointers_UntypedSampleMemory : <<use>>
+        mw_com_binding_independent_sample_management_pointers_TypeErasedSampleAllocateePtr ..> mw_com_binding_independent_sample_management_pointers_UntypedSampleMemory : <<use>>
+    }
+
+    ' =======================================================================
+    ' Proxy And Service Elements
+    ' =======================================================================
+    namespace mw_com::binding_independent::proxy_and_service_elements <<unit>> {
+
+        class "Proxy<Interface>" as mw_com_binding_independent_proxy_and_service_elements_Proxy {
+            +Create(in handle : HandleType) : Result<Proxy>
+            +FindService(in specifier : InstanceSpecifier) : Result<ServiceHandleContainer<HandleType>>
+            +StartFindService(in handler : FindServiceHandler, in specifier : InstanceSpecifier) : Result<FindServiceHandle>
+            +StopFindService(in handle : FindServiceHandle) : Result
+        }
+
+        note bottom of mw_com_binding_independent_proxy_and_service_elements_Proxy
+          Bound by the user as AsProxy<TheInterface>, where TheInterface is the
+          service interface class template written by the user. Proxy derives from
+          TheInterface<ProxyTrait>, which declares the service elements shown below.
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "ProxyEvent<SampleType>" as mw_com_binding_independent_proxy_and_service_elements_ProxyEvent {
+            +Subscribe(in max_sample_count : Integer) : Result
+            +Unsubscribe()
+            +SetReceiveHandler(in handler : EventReceiveHandler) : Result
+            +UnsetReceiveHandler() : Result
+            +GetNewSamples(in receiver : SampleReceiver, in max_num_samples : Integer) : Result<Integer>
+        }
+
+        note bottom of mw_com_binding_independent_proxy_and_service_elements_ProxyEvent
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "ProxyFieldWithNotifier<FieldType>" as mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier {
+            +Subscribe(in max_sample_count : Integer) : Result
+            +Unsubscribe()
+            +SetReceiveHandler(in handler : EventReceiveHandler) : Result
+            +UnsetReceiveHandler() : Result
+            +GetNewSamples(in receiver : SampleReceiver, in max_num_samples : Integer) : Result<Integer>
+        }
+
+        note bottom of mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "ProxyFieldWithGetter<FieldType>" as mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithGetter {
+            +Get() : Result<MethodReturnTypePtr>
+        }
+
+        note bottom of mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithGetter
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "ProxyFieldWithSetter<FieldType>" as mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithSetter {
+            +Set(in new_field_value : FieldType) : Result<MethodReturnTypePtr>
+        }
+
+        note bottom of mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithSetter
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "ProxyMethodWithInArgs<ArgTypes>" as mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgs {
+            +Allocate() : Result<MethodInArgTypePtrs>
+            +Invoke(in args : MethodInArgTypePtr[1..*]) : Result
+        }
+
+        note bottom of mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgs
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "ProxyMethodWithInArgsAndReturn<ReturnType, ArgTypes>" as mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgsAndReturn {
+            +Allocate() : Result<MethodInArgTypePtrs>
+            +Invoke(in args : MethodInArgTypePtr[1..*]) : Result<MethodReturnTypePtr>
+        }
+
+        note bottom of mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgsAndReturn
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "ProxyMethodWithReturnType<ReturnType>" as mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithReturnType {
+            +Invoke() : Result<MethodReturnTypePtr>
+        }
+
+        note bottom of mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithReturnType
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "ProxyMethodWithoutInArgsOrReturn" as mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithoutInArgsOrReturn {
+            +Invoke() : Result
+        }
+
+        note bottom of mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithoutInArgsOrReturn
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "EventReceiveHandler" as mw_com_binding_independent_proxy_and_service_elements_EventReceiveHandler <<callback>> {
+            +Invoke()
+        }
+
+        class "SampleReceiver<SampleType>" as mw_com_binding_independent_proxy_and_service_elements_SampleReceiver <<callback>> {
+            +Invoke(in sample : SamplePtr)
+        }
+
+        class "WithGetter" as mw_com_binding_independent_proxy_and_service_elements_WithGetter <<tag>>
+
+        class "WithSetter" as mw_com_binding_independent_proxy_and_service_elements_WithSetter <<tag>>
+
+        class "WithNotifier" as mw_com_binding_independent_proxy_and_service_elements_WithNotifier <<tag>>
+
+        ' --- relationships inside proxy_and_service_elements ---
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyEvent
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithGetter
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithSetter
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgs
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgsAndReturn
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithReturnType
+        mw_com_binding_independent_proxy_and_service_elements_Proxy *-- mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithoutInArgsOrReturn
+
+        mw_com_binding_independent_proxy_and_service_elements_ProxyEvent ..> mw_com_binding_independent_proxy_and_service_elements_EventReceiveHandler : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_ProxyEvent ..> mw_com_binding_independent_proxy_and_service_elements_SampleReceiver : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier ..> mw_com_binding_independent_proxy_and_service_elements_EventReceiveHandler : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier ..> mw_com_binding_independent_proxy_and_service_elements_SampleReceiver : <<use>>
+
+        mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier ..> mw_com_binding_independent_proxy_and_service_elements_WithNotifier : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithGetter ..> mw_com_binding_independent_proxy_and_service_elements_WithGetter : <<use>>
+        mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithSetter ..> mw_com_binding_independent_proxy_and_service_elements_WithSetter : <<use>>
+    }
+
+    ' =======================================================================
+    ' Skeleton And Service Elements
+    ' =======================================================================
+    namespace mw_com::binding_independent::skeleton_and_service_elements <<unit>> {
+
+        class "Skeleton<Interface>" as mw_com_binding_independent_skeleton_and_service_elements_Skeleton {
+            +Create(in specifier : InstanceSpecifier) : Result<Skeleton>
+            +OfferService() : Result
+            +StopOfferService()
+        }
+
+        note bottom of mw_com_binding_independent_skeleton_and_service_elements_Skeleton
+          Bound by the user as AsSkeleton<TheInterface>, where TheInterface is the
+          service interface class template written by the user. Skeleton derives from
+          TheInterface<SkeletonTrait>, which declares the service elements shown below.
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "SkeletonEvent<SampleType>" as mw_com_binding_independent_skeleton_and_service_elements_SkeletonEvent {
+            +Allocate() : Result<SampleAllocateePtr>
+            +Send(in sample : SampleAllocateePtr) : Result
+        }
+
+        note bottom of mw_com_binding_independent_skeleton_and_service_elements_SkeletonEvent
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "SkeletonFieldWithNotifierOrGetter<FieldType>" as mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter {
+            +Allocate() : Result<SampleAllocateePtr>
+            +Update(in sample : SampleAllocateePtr) : Result
+        }
+
+        note bottom of mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter
+          A field declares WithNotifier or WithGetter, optionally combined with each
+          other and with WithSetter.
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "SkeletonFieldWithSetter<FieldType>" as mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithSetter {
+            +Allocate() : Result<SampleAllocateePtr>
+            +Update(in sample : SampleAllocateePtr) : Result
+            +RegisterSetHandler(in handler : SetHandler) : Result
+        }
+
+        note bottom of mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithSetter
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "SkeletonMethod<ReturnType, ArgTypes>" as mw_com_binding_independent_skeleton_and_service_elements_SkeletonMethod {
+            +RegisterHandler(in handler : MethodHandler) : Result
+        }
+
+        note bottom of mw_com_binding_independent_skeleton_and_service_elements_SkeletonMethod
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "SetHandler<FieldType>" as mw_com_binding_independent_skeleton_and_service_elements_SetHandler <<callback>> {
+            +Invoke(inout new_value : FieldType)
+        }
+
+        class "MethodHandler<ReturnType, ArgTypes>" as mw_com_binding_independent_skeleton_and_service_elements_MethodHandler <<callback>> {
+            +Invoke(out return_value : ReturnType, in args : ArgTypes[1..*])
+        }
+
+        note bottom of mw_com_binding_independent_skeleton_and_service_elements_MethodHandler
+          MethodHandler callable passed to SkeletonMethod::RegisterHandler().
+          Its signature follows the method
+          signature category, mirroring the ProxyMethod* classes above:
+            ReturnType(ArgTypes...)  ->  Invoke(out return_value, in args)
+            ReturnType()             ->  Invoke(out return_value)
+            void(ArgTypes...)        ->  Invoke(in args)
+            void()                   ->  Invoke()
+        end note
+
+        ' --- relationships inside skeleton_and_service_elements ---
+        mw_com_binding_independent_skeleton_and_service_elements_Skeleton *-- mw_com_binding_independent_skeleton_and_service_elements_SkeletonEvent
+        mw_com_binding_independent_skeleton_and_service_elements_Skeleton *-- mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter
+        mw_com_binding_independent_skeleton_and_service_elements_Skeleton *-- mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithSetter
+        mw_com_binding_independent_skeleton_and_service_elements_Skeleton *-- mw_com_binding_independent_skeleton_and_service_elements_SkeletonMethod
+
+        mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithSetter ..> mw_com_binding_independent_skeleton_and_service_elements_SetHandler : <<use>>
+        mw_com_binding_independent_skeleton_and_service_elements_SkeletonMethod ..> mw_com_binding_independent_skeleton_and_service_elements_MethodHandler : <<use>>
+    }
+
+    ' =======================================================================
+    ' Generic Proxy And Service Elements
+    ' =======================================================================
+    namespace mw_com::binding_independent::generic_proxy_and_service_elements <<unit>> {
+
+        class "GenericProxy" as mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy {
+            +Create(in handle : HandleType) : Result<GenericProxy>
+            +FindService(in specifier : InstanceSpecifier) : Result<ServiceHandleContainer<HandleType>>
+            +StartFindService(in handler : FindServiceHandler, in specifier : InstanceSpecifier) : Result<FindServiceHandle>
+            +StopFindService(in handle : FindServiceHandle) : Result
+        }
+
+        note bottom of mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "GenericProxyEvent" as mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent {
+            +Subscribe(in max_sample_count : Integer) : Result
+            +Unsubscribe()
+            +SetReceiveHandler(in handler : EventReceiveHandler) : Result
+            +UnsetReceiveHandler() : Result
+            +GetNewSamples(in receiver : TypeErasedSampleReceiver, in max_num_samples : Integer) : Result<Integer>
+        }
+
+        note bottom of mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent
+          * Ownership: created and owned by GenericProxy; neither copyable nor movable.
+        end note
+
+        class "TypeErasedSampleReceiver" as mw_com_binding_independent_generic_proxy_and_service_elements_TypeErasedSampleReceiver <<callback>> {
+            +Invoke(in sample : TypeErasedSamplePtr)
+        }
+
+        ' --- relationships inside generic_proxy_and_service_elements ---
+        mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy *-- mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent
+        mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent ..> mw_com_binding_independent_generic_proxy_and_service_elements_TypeErasedSampleReceiver : <<use>>
+    }
+
+    ' =======================================================================
+    ' Generic Skeleton And Service Elements
+    ' =======================================================================
+    namespace mw_com::binding_independent::generic_skeleton_and_service_elements <<unit>> {
+
+        class "GenericSkeleton" as mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeleton {
+            +Create(in specifier : InstanceSpecifier, in service_elements : GenericSkeletonServiceElementInfo) : Result<GenericSkeleton>
+            +OfferService() : Result
+            +StopOfferService()
+        }
+
+        note bottom of mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeleton
+          * Ownership: moveable only and not copyable.
+        end note
+
+        class "GenericSkeletonEvent" as mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonEvent {
+            +Allocate() : Result<TypeErasedSampleAllocateePtr>
+            +Send(in sample : TypeErasedSampleAllocateePtr) : Result
+        }
+
+        note bottom of mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonEvent
+          * Ownership: created and owned by GenericSkeleton; moveable only and not copyable.
+        end note
+
+        class "GenericSkeletonServiceElementInfo" as mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonServiceElementInfo <<struct>>
+
+        class "EventInfo" as mw_com_binding_independent_generic_skeleton_and_service_elements_EventInfo <<datatype>>
+
+        note bottom of mw_com_binding_independent_generic_skeleton_and_service_elements_EventInfo
+          Describes one event to be created by GenericSkeleton::Create():
+          name (must exist in the configuration and be unique) and
+          data_type_meta_info.
+          * Ownership: copyable and movable.
+        end note
+
+        class "DataTypeMetaInfo" as mw_com_binding_independent_generic_skeleton_and_service_elements_DataTypeMetaInfo <<datatype>>
+
+        note bottom of mw_com_binding_independent_generic_skeleton_and_service_elements_DataTypeMetaInfo
+          Size and alignment of the event sample data type. The alignment must be a
+          power of two and the size a multiple of the alignment, otherwise
+          GenericSkeleton::Create() fails.
+          * Ownership: copyable and movable.
+        end note
+
+        ' --- relationships inside generic_skeleton_and_service_elements ---
+        mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeleton *-- mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonEvent
+        mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeleton ..> mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonServiceElementInfo : <<use>>
+        mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonServiceElementInfo o-- "0..*" mw_com_binding_independent_generic_skeleton_and_service_elements_EventInfo : events {readOnly}
+        mw_com_binding_independent_generic_skeleton_and_service_elements_EventInfo *-- "1" mw_com_binding_independent_generic_skeleton_and_service_elements_DataTypeMetaInfo : data_type_meta_info
+    }
+
+    ' =======================================================================
+    ' Service Instance Identifiers
+    ' =======================================================================
+    namespace mw_com::service_instance_identifiers <<unit>> {
+
+        class "InstanceSpecifier" as mw_com_service_instance_identifiers_InstanceSpecifier {
+            +Create(in specifier : String) : Result<InstanceSpecifier>
+        }
+
+        note bottom of mw_com_service_instance_identifiers_InstanceSpecifier
+          Identifies an application port; maps the design to the deployment.
+          * Ownership: copyable and movable.
+        end note
+
+        class "HandleType" as mw_com_service_instance_identifiers_HandleType <<datatype>>
+
+        note bottom of mw_com_service_instance_identifiers_HandleType
+          Opaque token of one found service instance.
+          * Ownership: copyable and movable.
+        end note
+    }
+
+    ' =======================================================================
+    ' Errors
+    ' =======================================================================
+    namespace mw_com::errors <<unit>> {
+
+        class "Result<T>" as mw_com_errors_Result <<datatype>>
+
+        note bottom of mw_com_errors_Result
+          Abstracts score::cpp::expected<T, score::os::Error> (success value of type T)
+          resp. score::cpp::expected_blank<score::os::Error>.
+          Marks an operation as fallible: it may report an score::os::Error to the caller
+          instead of / in addition to its nominal result.
+        end note
+    }
+
+    ' =======================================================================
+    ' Elements without a single owning unit
+    ' =======================================================================
+
+    ' TODO external type, reference to the corresponding SEooC
+    class "Path" as score_filesystem_Path <<datatype>>
+
+    note bottom of score_filesystem_Path
+      Types defined outside mw::com, modelled without content so that the
+      operations referencing them are complete:
+        Path -> score::filesystem::Path
+    end note
+}
+
+' ===========================================================================
+' Relationships between units
+' ===========================================================================
+
+' Runtime
+mw_com_binding_independent_runtime_RuntimeConfiguration ..> score_filesystem_Path : <<use>>
+
+' Service discovery and service instance identification
+mw_com_binding_independent_service_discovery_ServiceHandleContainer o-- "0..*" mw_com_service_instance_identifiers_HandleType
+
+' Typed API -> service instance identification and service discovery
+mw_com_binding_independent_proxy_and_service_elements_Proxy ..> mw_com_service_instance_identifiers_InstanceSpecifier : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_Proxy ..> mw_com_service_instance_identifiers_HandleType : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_Proxy ..> mw_com_binding_independent_service_discovery_FindServiceHandle : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_Proxy ..> mw_com_binding_independent_service_discovery_FindServiceHandler : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_Proxy ..> mw_com_binding_independent_service_discovery_ServiceHandleContainer : <<use>>
+mw_com_binding_independent_skeleton_and_service_elements_Skeleton ..> mw_com_service_instance_identifiers_InstanceSpecifier : <<use>>
+
+' Typed API -> sample and method signature element pointers handed out to /
+' taken from the user by the service elements
+mw_com_binding_independent_proxy_and_service_elements_ProxyEvent ..> mw_com_binding_independent_sample_management_pointers_SamplePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithNotifier ..> mw_com_binding_independent_sample_management_pointers_SamplePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithGetter ..> mw_com_binding_independent_sample_management_pointers_MethodReturnTypePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyFieldWithSetter ..> mw_com_binding_independent_sample_management_pointers_MethodReturnTypePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgs ..> mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgs ..> mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtrs : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgsAndReturn ..> mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgsAndReturn ..> mw_com_binding_independent_sample_management_pointers_MethodInArgTypePtrs : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithInArgsAndReturn ..> mw_com_binding_independent_sample_management_pointers_MethodReturnTypePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_ProxyMethodWithReturnType ..> mw_com_binding_independent_sample_management_pointers_MethodReturnTypePtr : <<use>>
+mw_com_binding_independent_skeleton_and_service_elements_SkeletonEvent ..> mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr : <<use>>
+mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter ..> mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr : <<use>>
+mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithSetter ..> mw_com_binding_independent_sample_management_pointers_SampleAllocateePtr : <<use>>
+mw_com_binding_independent_proxy_and_service_elements_SampleReceiver ..> mw_com_binding_independent_sample_management_pointers_SamplePtr : <<use>>
+
+' Typed API -> field tags: a variant can only be used when its tag is declared.
+' The proxy side tags live in the proxy unit, so only the skeleton side crosses
+' a unit boundary.
+mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter ..> mw_com_binding_independent_proxy_and_service_elements_WithNotifier : <<use>> {or}
+mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithNotifierOrGetter ..> mw_com_binding_independent_proxy_and_service_elements_WithGetter : <<use>> {or}
+mw_com_binding_independent_skeleton_and_service_elements_SkeletonFieldWithSetter ..> mw_com_binding_independent_proxy_and_service_elements_WithSetter : <<use>>
+
+' Generic API -> service instance identification and service discovery
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy ..> mw_com_service_instance_identifiers_InstanceSpecifier : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy ..> mw_com_service_instance_identifiers_HandleType : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy ..> mw_com_binding_independent_service_discovery_FindServiceHandle : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy ..> mw_com_binding_independent_service_discovery_FindServiceHandler : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxy ..> mw_com_binding_independent_service_discovery_ServiceHandleContainer : <<use>>
+mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeleton ..> mw_com_service_instance_identifiers_InstanceSpecifier : <<use>>
+
+' Generic API -> sample pointers, handlers and type erased data types
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent ..> mw_com_binding_independent_sample_management_pointers_TypeErasedSamplePtr : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_GenericProxyEvent ..> mw_com_binding_independent_proxy_and_service_elements_EventReceiveHandler : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_TypeErasedSampleReceiver ..> mw_com_binding_independent_sample_management_pointers_TypeErasedSamplePtr : <<use>>
+mw_com_binding_independent_generic_proxy_and_service_elements_TypeErasedSampleReceiver ..> mw_com_binding_independent_proxy_and_service_elements_SampleReceiver : <<bind>> <SampleType -> UntypedSampleMemory>
+mw_com_binding_independent_generic_skeleton_and_service_elements_GenericSkeletonEvent ..> mw_com_binding_independent_sample_management_pointers_TypeErasedSampleAllocateePtr : <<use>>
+
+@enduml

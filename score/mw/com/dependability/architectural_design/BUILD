@@ -15,6 +15,8 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "architectural_d
 architectural_design(
     name = "software_architectural_design",
     dynamic = [],
+    package = "mw_com_api",
+    public_api = ["static_design/public_api.puml"],
     static = [
         "static_design/overall.puml",
         "static_design/binding_independent.puml",
