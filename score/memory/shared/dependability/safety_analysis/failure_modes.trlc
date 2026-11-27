@@ -76,6 +76,14 @@ section "factory_resources" {
                  version = 1
                  safety = ScoreReq.Asil.B
             }
+
+            ScoreReq.FailureMode CreateShmObjectDoesNotRegisterMemoryBoundsCorrectly {
+                 guidewords = [ ScoreReq.Guideword.Corrupted ]
+                 description = "Creation of the shared memory object does not register the memory bounds correctly. Therefore, the bounds checking mechanism does not work correctly."
+                 failureeffect = "This can lead to consumer processes accessing invalid/uninitialized data."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
         }
 
         section "Open" {
@@ -128,34 +136,159 @@ section "allocator_pointer" {
     section "OffsetPtr" {
 
         section "DoPointerArithmetic" {
-            // ToDo
+            // No failure modes defined for DoPointerArithmetic, as it is basically only incrementing/decrementing the
+            // offset part of the OffsetPtr. In this context no visible failure effects can come up as only an internal/
+            // private member is changed. Failure effects only can take place later, when the OffsetPtr is dereferenced.
+            // Thus, the failure modes for dereferencing the OffsetPtr are defined in the section "DoPointerTargetAccess".
+            //
+            // We also explicitly left out sequence-diagrams for DoPointerArithmetic related APIs, as they are internal
+            // implementations not interacting with other components.
         }
 
         section "DoPointerTargetAccess" {
-            // ToDo
+
+            ScoreReq.FailureMode TargetAccessDoneWithoutCheckingBounds {
+                 guidewords = [ ScoreReq.Guideword.Corrupted ]
+                 description = "Dereferencing the OffsetPtr or retrieving a raw pointer without checking bounds, although bounds checking is enabled."
+                 failureeffect = "This can lead to a data access (read/write) at an invalid memory location, which can lead to consumer processes reading invalid or corrupting valid data."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
+
+            ScoreReq.FailureMode TargetAccessDoneCheckingWrongBounds {
+                 guidewords = [ ScoreReq.Guideword.Corrupted ]
+                 description = "Dereferencing the OffsetPtr, while bounds checking is enabled, but using wrong bounds."
+                 failureeffect = "This can lead to consumer processes reading invalid or corrupting valid data."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
+
+            // Note: We explicitly left out a failure mode for dereferencing the OffsetPtr with wrong pointer value (TargetAccessDoneCheckingWrongPointerValue)
+            // here, because it ends up in being a check with wrong bounds, which is addressed above. If one checks the
+            // FTA for TargetAccessDoneCheckingWrongBounds, one can see, that there is a branch, which deals with the case of a wrong pointer value.
+
         }
 
         section "IsValid" {
-            // ToDo
+
+            ScoreReq.FailureMode OffsetPtrIsValidReturnsTrueForInvalidPointer {
+                 guidewords = [ ScoreReq.Guideword.Corrupted ]
+                 description = "The validity check returns true for an OffsetPtr, although it isn't valid, which means it doesn't point to a valid object."
+                 failureeffect = "This can lead to a data access (read/write) at an invalid memory location, which can lead to consumer processes reading invalid or corrupting valid data."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
+
+            // Note: For the opposite case, where IsValid returns false for a valid OffsetPtr, we don't define a failure mode here,
+            // as this would only lead to a LossOfFunction, which is not safety critical.
+            // @ToDo: Check whether this is correct, or whether we need to define a failure mode for this case as well (AoU?).
         }
 
         section "EnableOffsetPtrBoundsChecking" {
-            // ToDo
+
+            ScoreReq.FailureMode BoundsCheckingNotEnabledAfterEnableOffsetPtrBoundsCheckingCall {
+                 guidewords = [ ScoreReq.Guideword.Corrupted ]
+                 description = "Enabling of bounds-checking for OffsetPtr does not enable bounds-checking as expected."
+                 failureeffect = "If enabling fails, it can lead to a data access (read/write) at an invalid memory location, which can lead to consumer processes reading invalid or corrupting valid data."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
+
+            ScoreReq.FailureMode EnableOffsetPtrBoundsCheckingCallDoesReturnTheWrongPreviousState {
+                 guidewords = [ ScoreReq.Guideword.Corrupted ]
+                 description = "Enabling of bounds-checking for OffsetPtr returns the wrong previous state for bounds-checking."
+                 failureeffect = """Users of the EnableOffsetPtrBoundsChecking API can make wrong assumptions about the current state of bounds-checking.
+                 They can falsely assume, that bounds-checking wasn't enabled before they called the API and thus might to leave out re-enabling it after their change.
+                 This can lead to a data access (read/write) at an invalid memory location, which can lead to consumer processes reading invalid or corrupting valid data."""
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
         }
     }
 
     section "PolymorphicOffsetPtrAllocator" {
 
         section "allocate" {
-            // ToDo
+
+            ScoreReq.FailureMode AllocatorAllocatesFromWrongMemoryResource {
+                 guidewords = [ ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.UnintendedFunction ]
+                 description = "PolymorphicOffsetPtrAllocator allocates from a wrong memory resource, which is not the one, which was passed to the allocator during construction."
+                 failureeffect = "The memory claimed by the allocator from the wrong memory resource is then not available for the intended users, which can lead to a loss of function for these users."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
+
+            ScoreReq.FailureMode AllocatorAllocatesAlreadyAllocatedMemory {
+                 guidewords = [ ScoreReq.Guideword.Corrupted]
+                 description = "PolymorphicOffsetPtrAllocator allocates previously allocated memory, which has not yet been deallocated."
+                 failureeffect = "The memory allocated multiple times by the allocator can lead to several activities writing to the same memory, which can lead to unexpected/corrupted data being read and written."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
+
+            ScoreReq.FailureMode AllocatorAllocatesLessMemory {
+                 guidewords = [ ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.UnintendedFunction, ScoreReq.Guideword.Corrupted ]
+                 description = "PolymorphicOffsetPtrAllocator allocates less memory than requested."
+                 failureeffect = """The caller of the allocator can assume that the allocated memory is of the requested size so he will access memory behind the allocated region,
+                 which can lead to unexpected/corrupted data being read and written."""
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
+
+            ScoreReq.FailureMode AllocatorAllocatesMoreMemory {
+                 guidewords = [ ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.UnintendedFunction ]
+                 description = "PolymorphicOffsetPtrAllocator allocates more memory than requested."
+                 failureeffect = """The additional memory claimed by the allocator is then not available for the intended users,
+                 which can lead to a loss of function for these users."""
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
+
+            ScoreReq.FailureMode AllocatorAllocatesUnalignedMemory {
+                 guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+                 description = "PolymorphicOffsetPtrAllocator allocates unaligned memory."
+                 failureeffect = "UB: The allocated memory is not aligned to the requested alignment, which can lead to undefined behavior when accessing the allocated memory."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
         }
 
         section "deallocate" {
-            // ToDo
+
+            // The following failure modes for deallocation are commented out right now, because in our implementation
+            // (SharedMemoryResource with monotonic bump allocation) deallocation is not supported.
+            // If we change the implementation to support deallocation, we need to define these failure modes.
+            /*
+            ScoreReq.FailureMode AllocatorDeallocatesLessMemoryThanRequested {
+                 guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+                 description = "PolymorphicOffsetPtrAllocator deallocates less memory than requested."
+                 failureeffect = "Further calls to allocate memory from the allocator can lead to a loss of function for the users, as the memory is not available for them."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
+
+            ScoreReq.FailureMode AllocatorDeallocatesMoreMemoryThanRequested {
+                 guidewords = [ ScoreReq.Guideword.Corrupted ]
+                 description = "PolymorphicOffsetPtrAllocator deallocates more memory than requested."
+                 failureeffect = "Memory still in use by the users can be deallocated, which can lead to unexpected/corrupted data being read and written."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
+
+            ScoreReq.FailureMode AllocatorDeallocatesFromWrongMemoryResource {
+                 guidewords = [ ScoreReq.Guideword.Corrupted ]
+                 description = "PolymorphicOffsetPtrAllocator deallocates more memory than requested."
+                 failureeffect = "Memory still in use by the users can be deallocated, which can lead to unexpected/corrupted data being read and written."
+                 version = 1
+                 safety = ScoreReq.Asil.B
+            }
+            */
         }
 
         section "getMemoryResourceProxy" {
-            // ToDo
+
+            // this API has been removed from public_api.puml as it was never intended to be public.
+            // whether we will make it private in code right now or deprecate it is under consideration.
         }
     }
 }

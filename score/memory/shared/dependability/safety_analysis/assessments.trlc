@@ -45,3 +45,12 @@ ScoreReq.RootCauseAssessment SharedMemoryResourcePointsToAddressReturnedFromMmap
     rationale   = "Component req. assures, that a SharedMemoryResource always points to the address returned by mmap()"
     version     = 1
 }
+
+ScoreReq.RootCauseAssessment OffsetPtrBoundsCheckingEnablingIssues {
+    root_causes = [MemoryShared.RC_BoundsCheckingFlagConcurrentlyChanged, MemoryShared.RC_BoundsCheckingDisabledByOtherPartInApplication]
+    measures    = [TogglingOfBoundsChecking]
+    safety      = ScoreReq.Asil.B
+    rationale   = """The AoU 'TogglingOfBoundsChecking' ensures, that the EnableOffsetPtrBoundsChecking() API is used
+    correctly and that the user synchronizes concurrent calls to it."""
+    version     = 1
+}

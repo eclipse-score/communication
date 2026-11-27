@@ -305,9 +305,10 @@ ScoreReq.CompReq OffsetPtrChecksTargetWithinObject {
 }
 
 ScoreReq.CompReq OffsetPtrCopyKeepsBounds {
-    description = """When bounds checking is enabled, the shared memory library shall verify on every dereference of an OffsetPtr located outside any shared memory object
-    that was copied, while bounds checking was enabled, from an OffsetPtr located in a shared memory object, and on every retrieval of a raw pointer from it,
-    that the complete target location lies within the bounds of the shared memory object from which the OffsetPtr was originally copied."""
+    description = """For an OffsetPtr residing outside any shared memory object, that was copied from another OffsetPtr residing within a
+    shared memory object while bounds checking was disabled, the following verification has to be done, when dereferencing it or retrieving
+    a raw pointer from it: The complete target location lies within the bounds of the shared memory object from which the OffsetPtr was
+    originally copied from."""
     safety = ScoreReq.Asil.B
     derived_from = [MemoryShared.FEAT_PointerBoundsChecking@1]
     version = 1

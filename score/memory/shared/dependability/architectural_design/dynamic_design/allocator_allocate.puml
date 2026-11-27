@@ -28,7 +28,7 @@ proxy <-- registry: return : MemoryRegionBounds [0..1]
 deactivate registry
 alt Bounds check fails
     proxy -> proxy : terminate()
-    == Bounds check failed - Terminate ==
+    == Bounds check failed - Process Terminated ==
 else Bounds check passes
     proxy -> resource : allocate(size, alignment)
     proxy <-- resource : return : Pointer
