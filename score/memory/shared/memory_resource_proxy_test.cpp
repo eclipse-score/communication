@@ -19,6 +19,7 @@
 #include "score/memory/shared/shared_memory_test_resources.h"
 
 #include "gtest/gtest.h"
+#include <array>
 #include <cstddef>
 #include <new>
 
@@ -179,6 +180,44 @@ TEST_F(BoundCheckedMemoryResourceProxyTest, OutOfBoundsAllocationSucceedsWhenBou
 
     // When allocating memory, program does not die.
     EXPECT_NE(proxy.allocate(42U), nullptr);
+}
+
+TEST_F(BoundCheckedMemoryResourceProxyTest, CustomMemoryResourceIdCanBeInjectedInMyBoundedMemoryResource)
+{
+    // Given an explicit memory resource ID
+    constexpr MemoryResourceRegistry::MemoryResourceIdentifier custom_id{9999U};
+
+    // When constructing a MyBoundedMemoryResource with an explicit ID
+    MyBoundedMemoryResource custom_resource{200U, true, custom_id};
+
+    // Then the resource has the injected ID
+    EXPECT_EQ(custom_resource.getMemoryResourceId(), custom_id);
+    EXPECT_EQ(MemoryResourceRegistry::getInstance().at(custom_id), &custom_resource);
+}
+
+TEST_F(BoundCheckedMemoryResourceProxyTest, CustomMemoryResourceIdCanBeInjectedWithMemoryRange)
+{
+    // Given an explicit memory resource ID and a memory range
+    constexpr MemoryResourceRegistry::MemoryResourceIdentifier custom_id{8888U};
+    std::array<std::uint8_t, 500U> buffer{};
+    const std::pair<void*, void*> range{buffer.data(), buffer.data() + buffer.size()};
+
+    // When constructing a MyBoundedMemoryResource with a memory range and an explicit ID
+    MyBoundedMemoryResource custom_resource{range, true, custom_id};
+
+    // Then the resource has the injected ID
+    EXPECT_EQ(custom_resource.getMemoryResourceId(), custom_id);
+    EXPECT_EQ(MemoryResourceRegistry::getInstance().at(custom_id), &custom_resource);
+}
+
+TEST_F(BoundCheckedMemoryResourceProxyTest, DefaultConstructorUsesAutoIncrementingId)
+{
+    // When constructing two resources without explicit IDs
+    MyBoundedMemoryResource resource1{200U, false};
+    MyBoundedMemoryResource resource2{200U, false};
+
+    // Then the IDs are auto-incremented
+    EXPECT_EQ(resource2.getMemoryResourceId(), resource1.getMemoryResourceId() + 1U);
 }
 
 using BoundCheckedMemoryResourceManagerDeathTest = BoundCheckedMemoryResourceProxyTest;

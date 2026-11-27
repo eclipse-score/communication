@@ -15,15 +15,19 @@
 namespace score::memory::shared::test
 {
 
-MyBoundedSharedMemoryResource::MyBoundedSharedMemoryResource(const std::size_t memory_resource_size,
-                                                             const bool register_resource_with_registry)
-    : resource_{memory_resource_size, register_resource_with_registry}
+MyBoundedSharedMemoryResource::MyBoundedSharedMemoryResource(
+    const std::size_t memory_resource_size,
+    const bool register_resource_with_registry,
+    const std::optional<MemoryResourceRegistry::MemoryResourceIdentifier> memory_resource_id)
+    : resource_{memory_resource_size, register_resource_with_registry, memory_resource_id}
 {
 }
 
-MyBoundedSharedMemoryResource::MyBoundedSharedMemoryResource(const std::pair<void*, void*> memory_range,
-                                                             const bool register_resource_with_registry)
-    : resource_{memory_range, register_resource_with_registry}
+MyBoundedSharedMemoryResource::MyBoundedSharedMemoryResource(
+    const std::pair<void*, void*> memory_range,
+    const bool register_resource_with_registry,
+    const std::optional<MemoryResourceRegistry::MemoryResourceIdentifier> memory_resource_id)
+    : resource_{memory_range, register_resource_with_registry, memory_resource_id}
 {
 }
 

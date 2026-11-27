@@ -15,10 +15,13 @@
 
 #include "score/memory/shared/managed_memory_resource.h"
 #include "score/memory/shared/memory_resource_proxy.h"
+#include "score/memory/shared/memory_resource_registry.h"
 #include "score/memory/shared/pointer_arithmetic_util.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
+#include <utility>
 
 namespace score::memory::shared::test
 {
@@ -30,13 +33,25 @@ class MyBoundedMemoryResource final : public ManagedMemoryResource
   public:
     /// \brief Construct MyBoundedMemoryResource which owns the underlying memory region (i.e. will create and free it
     /// within the lifecyle of this class)
-    MyBoundedMemoryResource(const std::size_t memory_resource_size = 200U,
-                            const bool register_resource_with_registry = true);
+    /// \param memory_resource_size size of the memory resource
+    /// \param register_resource_with_registry whether to register this resource with the MemoryResourceRegistry
+    /// \param memory_resource_id optional explicit memory resource ID. If not provided, an auto-incrementing ID is
+    /// used.
+    MyBoundedMemoryResource(
+        const std::size_t memory_resource_size = 200U,
+        const bool register_resource_with_registry = true,
+        const std::optional<MemoryResourceRegistry::MemoryResourceIdentifier> memory_resource_id = std::nullopt);
 
     /// \brief Construct MyBoundedMemoryResource using an underlying memory region owned by the caller (i.e. will not be
     /// created or freed within the lifecyle of this class)
-    MyBoundedMemoryResource(const std::pair<void*, void*> memory_range,
-                            const bool register_resource_with_registry = true);
+    /// \param memory_range pair of begin and end pointers for the memory region
+    /// \param register_resource_with_registry whether to register this resource with the MemoryResourceRegistry
+    /// \param memory_resource_id optional explicit memory resource ID. If not provided, an auto-incrementing ID is
+    /// used.
+    MyBoundedMemoryResource(
+        const std::pair<void*, void*> memory_range,
+        const bool register_resource_with_registry = true,
+        const std::optional<MemoryResourceRegistry::MemoryResourceIdentifier> memory_resource_id = std::nullopt);
 
     ~MyBoundedMemoryResource() final;
 

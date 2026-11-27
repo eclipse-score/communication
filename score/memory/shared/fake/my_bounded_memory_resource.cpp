@@ -43,18 +43,23 @@ std::uint64_t MyBoundedMemoryResource::instanceId = 0U;
 std::size_t MyBoundedMemoryResource::memoryResourceProxyAllocationSize_{
     CalculateAlignedSize(sizeof(MemoryResourceProxy), alignof(std::max_align_t))};
 
-MyBoundedMemoryResource::MyBoundedMemoryResource(const std::size_t memory_resource_size,
-                                                 const bool register_resource_with_registry)
+MyBoundedMemoryResource::MyBoundedMemoryResource(
+    const std::size_t memory_resource_size,
+    const bool register_resource_with_registry,
+    const std::optional<MemoryResourceRegistry::MemoryResourceIdentifier> memory_resource_id)
     : MyBoundedMemoryResource{AllocateMemoryRange(memory_resource_size + memoryResourceProxyAllocationSize_),
-                              register_resource_with_registry}
+                              register_resource_with_registry,
+                              memory_resource_id}
 {
     should_free_memory_on_destruction_ = true;
 }
 
 /// \brief Construct MyBoundedMemoryResource using an underlying memory region owned by the caller (i.e. will not be
 /// created or freed within the lifecyle of this class)
-MyBoundedMemoryResource::MyBoundedMemoryResource(const std::pair<void*, void*> memory_range,
-                                                 const bool register_resource_with_registry)
+MyBoundedMemoryResource::MyBoundedMemoryResource(
+    const std::pair<void*, void*> memory_range,
+    const bool register_resource_with_registry,
+    const std::optional<MemoryResourceRegistry::MemoryResourceIdentifier> memory_resource_id)
     // Suppress "AUTOSAR C++14 M5-2-8" rule finding:  An object with integer type or pointer to void type shall not
     // be converted to an object with pointer type.
     // Rationale : fresh allocated memory needs to be converted to the type that shall be stored in it
@@ -65,7 +70,7 @@ MyBoundedMemoryResource::MyBoundedMemoryResource(const std::pair<void*, void*> m
           static_cast<std::size_t>(SubtractPointersBytes(memory_range.second, memory_range.first))},
       already_allocated_bytes_{0U},
       deallocatedMemory_{0U},
-      memoryResourceId_{instanceId++},
+      memoryResourceId_{memory_resource_id.value_or(instanceId++)},
       manager_{nullptr},
       should_free_memory_on_destruction_{false}
 {
