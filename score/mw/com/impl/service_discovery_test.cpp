@@ -26,6 +26,8 @@
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/service_discovery_client_mock.h"
 
+#include "score/concurrency/atomic_indirector.h"
+#include "score/concurrency/atomic_mock.h"
 #include "score/result/result.h"
 
 #include <score/utility.hpp>
@@ -36,6 +38,7 @@
 
 #include <chrono>
 #include <future>
+#include <limits>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -82,6 +85,9 @@ class DestructorNotifier
 class ServiceDiscoveryTest : public Test
 {
   protected:
+    using FindServiceHandleUid = std::size_t;
+    using MockedAtomicServiceDiscovery = detail::ServiceDiscoveryImpl<concurrency::AtomicIndirectorMock>;
+
     void SetUp() override
     {
         ON_CALL(runtime_, GetBindingRuntime(_)).WillByDefault(Return(&lola_runtime_));
@@ -91,6 +97,19 @@ class ServiceDiscoveryTest : public Test
         ON_CALL(service_discovery_client_, StartFindService(_, _, _)).WillByDefault(Return(Result<void>{}));
 
         ON_CALL(service_discovery_client_, StopFindService(_)).WillByDefault(Return(Result<void>{}));
+    }
+
+    void TearDown() override
+    {
+        unit_with_mocked_atomics_.reset();
+        concurrency::AtomicIndirectorMock<FindServiceHandleUid>::SetMockObject(nullptr);
+    }
+
+    ServiceDiscoveryTest& WithServiceDiscoveryUsingMockedAtomics() noexcept
+    {
+        concurrency::AtomicIndirectorMock<FindServiceHandleUid>::SetMockObject(&find_service_handle_uid_atomic_mock_);
+        unit_with_mocked_atomics_ = std::make_unique<MockedAtomicServiceDiscovery>(runtime_);
+        return *this;
     }
 
     ServiceDiscoveryTest& WithAServiceContainingOneInstances() noexcept
@@ -155,7 +174,10 @@ class ServiceDiscoveryTest : public Test
 
     InstanceSpecifier instance_specifier_{InstanceSpecifier::Create(std::string{"/bla/blub/specifier"}).value()};
 
+    concurrency::AtomicMock<FindServiceHandleUid> find_service_handle_uid_atomic_mock_;
+
     std::unique_ptr<ServiceDiscovery> unit_ = std::make_unique<ServiceDiscovery>(runtime_);
+    std::unique_ptr<MockedAtomicServiceDiscovery> unit_with_mocked_atomics_{};
 };
 
 using ServiceDiscoveryFindServiceInstanceSpecifierFixture = ServiceDiscoveryTest;
@@ -286,6 +308,51 @@ TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathTest, FindServiceTermina
         { score::cpp::ignore = unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_); }, ".*");
 }
 
+TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathTest, StartFindServiceTerminatesOnFindServiceHandleOverflow)
+{
+    // Given a ServiceDiscoveryClient and a service which contains 1 instance
+    WithAServiceContainingOneInstances();
+    WithServiceDiscoveryUsingMockedAtomics();
+
+    // and given atomic fetch_add returns the maximum uid
+    EXPECT_CALL(find_service_handle_uid_atomic_mock_, fetch_add(1U, _))
+        .Times(AnyNumber())
+        .WillRepeatedly(Return(std::numeric_limits<std::size_t>::max()));
+
+    // When StartFindService is called
+    // Then the overflow guard terminates
+    EXPECT_DEATH(
+        {
+            score::cpp::ignore =
+                unit_with_mocked_atomics_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
+        },
+        ".*");
+}
+
+TEST_F(ServiceDiscoveryFindServiceInstanceSpecifierDeathTest, StartFindServiceTerminatesIfGeneratedHandleIsNotUnique)
+{
+    // Given a ServiceDiscoveryClient and a service which contains 1 instance
+    WithAServiceContainingOneInstances();
+    WithServiceDiscoveryUsingMockedAtomics();
+
+    // and given atomic fetch_add returns the same uid for two consecutive calls
+    EXPECT_CALL(find_service_handle_uid_atomic_mock_, fetch_add(1U, _)).Times(AnyNumber()).WillRepeatedly(Return(0U));
+
+    // and given an initial StartFindService call storing handle 0 in the internal map
+    const auto first_start_result =
+        unit_with_mocked_atomics_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
+    ASSERT_TRUE(first_start_result.has_value());
+
+    // When StartFindService is called again
+    // Then the uniqueness assertion terminates
+    EXPECT_DEATH(
+        {
+            score::cpp::ignore =
+                unit_with_mocked_atomics_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
+        },
+        ".*");
+}
+
 using ServiceDiscoveryFindServiceInstanceIdentifierFixture = ServiceDiscoveryTest;
 TEST_F(ServiceDiscoveryFindServiceInstanceIdentifierFixture, FindServiceReturnsHandleIfBindingReturnsNoError)
 {
@@ -412,6 +479,57 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
     auto result = unit_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
 
     // Then error from StartFindService binding call is returned.
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), start_find_service_error);
+}
+
+TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
+       StartFindServiceUsingMockedAtomicsCoversBindingFailurePathWithSuccessfulStop)
+{
+    // Given a ServiceDiscovery with mocked atomics and a service containing one instance
+    WithAServiceContainingOneInstances();
+    WithServiceDiscoveryUsingMockedAtomics();
+
+    EXPECT_CALL(find_service_handle_uid_atomic_mock_, fetch_add(1U, _)).Times(AnyNumber()).WillRepeatedly(Return(0U));
+
+    // and given StartFindService on the binding fails for that instance
+    const auto start_find_service_error = ComErrc::kBindingFailure;
+    ON_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
+        .WillByDefault(Return(Unexpected{start_find_service_error}));
+
+    // and StopFindService succeeds
+    ON_CALL(service_discovery_client_, StopFindService(_)).WillByDefault(Return(Result<void>{}));
+
+    // When StartFindService with InstanceSpecifier is called
+    auto result = unit_with_mocked_atomics_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
+
+    // Then error from the failing StartFindService binding call is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), start_find_service_error);
+}
+
+TEST_F(ServiceDiscoveryStartFindServiceInstanceSpecifierFixture,
+       StartFindServiceUsingMockedAtomicsCoversBindingFailurePathWithFailingStop)
+{
+    // Given a ServiceDiscovery with mocked atomics and a service containing one instance
+    WithAServiceContainingOneInstances();
+    WithServiceDiscoveryUsingMockedAtomics();
+
+    EXPECT_CALL(find_service_handle_uid_atomic_mock_, fetch_add(1U, _)).Times(AnyNumber()).WillRepeatedly(Return(0U));
+
+    // and given StartFindService on the binding fails for that instance
+    const auto start_find_service_error = ComErrc::kBindingFailure;
+    ON_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
+        .WillByDefault(Return(Unexpected{start_find_service_error}));
+
+    // and StopFindService also fails
+    const auto stop_find_service_error = ComErrc::kCommunicationLinkError;
+    ON_CALL(service_discovery_client_, StopFindService(_)).WillByDefault(Return(Unexpected{stop_find_service_error}));
+
+    // When StartFindService with InstanceSpecifier is called
+    auto result = unit_with_mocked_atomics_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
+
+    // Then error from the failing StartFindService binding call is returned
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), start_find_service_error);
 }
@@ -619,6 +737,59 @@ TEST_F(ServiceDiscoveryStartFindServiceInstanceIdentifierFixture,
     EXPECT_EQ(result.error(), start_find_service_error);
 }
 
+TEST_F(ServiceDiscoveryStartFindServiceInstanceIdentifierFixture,
+       StartFindServiceWithInstanceIdentifierUsingMockedAtomicsCoversFailurePathWithSuccessfulStop)
+{
+    // Given a ServiceDiscovery with mocked atomics and one configured instance
+    WithAServiceContainingOneInstances();
+    WithServiceDiscoveryUsingMockedAtomics();
+
+    EXPECT_CALL(find_service_handle_uid_atomic_mock_, fetch_add(1U, _)).Times(AnyNumber()).WillRepeatedly(Return(0U));
+
+    // and given StartFindService on the binding fails for that instance
+    const auto start_find_service_error = ComErrc::kBindingFailure;
+    ON_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
+        .WillByDefault(Return(Unexpected{start_find_service_error}));
+
+    // and StopFindService succeeds
+    ON_CALL(service_discovery_client_, StopFindService(_)).WillByDefault(Return(Result<void>{}));
+
+    // When StartFindService with InstanceIdentifier is called
+    auto result = unit_with_mocked_atomics_->StartFindService([](auto, auto) noexcept {},
+                                                              config_stores_[0].GetInstanceIdentifier());
+
+    // Then error from StartFindService binding call is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), start_find_service_error);
+}
+
+TEST_F(ServiceDiscoveryStartFindServiceInstanceIdentifierFixture,
+       StartFindServiceWithInstanceIdentifierUsingMockedAtomicsCoversFailurePathWithFailingStop)
+{
+    // Given a ServiceDiscovery with mocked atomics and one configured instance
+    WithAServiceContainingOneInstances();
+    WithServiceDiscoveryUsingMockedAtomics();
+
+    EXPECT_CALL(find_service_handle_uid_atomic_mock_, fetch_add(1U, _)).Times(AnyNumber()).WillRepeatedly(Return(0U));
+
+    // and given StartFindService on the binding fails for that instance
+    const auto start_find_service_error = ComErrc::kBindingFailure;
+    ON_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
+        .WillByDefault(Return(Unexpected{start_find_service_error}));
+
+    // and StopFindService also fails
+    const auto stop_find_service_error = ComErrc::kCommunicationLinkError;
+    ON_CALL(service_discovery_client_, StopFindService(_)).WillByDefault(Return(Unexpected{stop_find_service_error}));
+
+    // When StartFindService with InstanceIdentifier is called
+    auto result = unit_with_mocked_atomics_->StartFindService([](auto, auto) noexcept {},
+                                                              config_stores_[0].GetInstanceIdentifier());
+
+    // Then error from StartFindService binding call is returned
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), start_find_service_error);
+}
+
 TEST_F(ServiceDiscoveryStartFindServiceInstanceIdentifierFixture, StartFindServiceForwardsCorrectHandler)
 {
     WithAServiceContainingTwoInstances();
@@ -739,6 +910,34 @@ TEST_F(ServiceDiscoveryStopFindServiceFixture, StopFindServiceCallsBindingSpecif
     auto stop_result = unit_->StopFindService(start_result.value());
     ASSERT_FALSE(stop_result.has_value());
     EXPECT_EQ(stop_result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(ServiceDiscoveryStopFindServiceFixture,
+       StopFindServiceUsingMockedAtomicsReturnsErrorWhenBindingStopFindServiceFails)
+{
+    // Given a ServiceDiscovery with mocked atomics and one configured instance
+    WithAServiceContainingOneInstances();
+    WithServiceDiscoveryUsingMockedAtomics();
+
+    EXPECT_CALL(find_service_handle_uid_atomic_mock_, fetch_add(1U, _)).Times(AnyNumber()).WillRepeatedly(Return(0U));
+
+    FindServiceHandle handle_1{make_FindServiceHandle(0)};
+    EXPECT_CALL(service_discovery_client_, StartFindService(_, _, config_stores_[0].GetEnrichedInstanceIdentifier()))
+        .WillOnce(DoAll(SaveArg<0>(&handle_1), Return(Result<void>{})));
+
+    const auto stop_error = ComErrc::kBindingFailure;
+    EXPECT_CALL(service_discovery_client_, StopFindService(Eq(ByRef(handle_1))))
+        .WillOnce(Return(Unexpected{stop_error}));
+
+    // When StartFindService succeeds and StopFindService is called
+    auto start_result = unit_with_mocked_atomics_->StartFindService([](auto, auto) noexcept {}, instance_specifier_);
+    ASSERT_TRUE(start_result.has_value());
+
+    auto stop_result = unit_with_mocked_atomics_->StopFindService(start_result.value());
+
+    // Then StopFindService returns the binding error
+    ASSERT_FALSE(stop_result.has_value());
+    EXPECT_EQ(stop_result.error(), stop_error);
 }
 
 TEST_F(ServiceDiscoveryStopFindServiceFixture, StopFindServiceWillDestroyRegisteredFindServiceHandler)
@@ -903,6 +1102,30 @@ TEST_F(ServiceDiscoveryDestructorFixture, DestructorWillNotTerminateWhenStopFind
 
     // When we explicitly trigger the ServiceDiscovery destructor
     unit_.reset();
+
+    // Then it does not terminate
+}
+
+TEST_F(ServiceDiscoveryDestructorFixture,
+       DestructorWillNotTerminateWhenStopFindServiceFailsOnShutdownUsingMockedAtomics)
+{
+    // Given a ServiceDiscovery with mocked atomics and one configured instance
+    WithAServiceContainingOneInstances();
+    WithServiceDiscoveryUsingMockedAtomics();
+
+    EXPECT_CALL(find_service_handle_uid_atomic_mock_, fetch_add(1U, _)).Times(AnyNumber()).WillRepeatedly(Return(0U));
+
+    // Expecting that StopFindService is called on shutdown and returns an error
+    const auto error_code = ComErrc::kBindingFailure;
+    EXPECT_CALL(service_discovery_client_, StopFindService(_)).WillOnce(Return(Unexpected{error_code}));
+
+    // given that StartFindService is called
+    auto handle = unit_with_mocked_atomics_->StartFindService([](auto, auto) noexcept {},
+                                                              config_stores_[0].GetInstanceIdentifier());
+    ASSERT_TRUE(handle.has_value());
+
+    // When we explicitly trigger the mocked-atomic ServiceDiscovery destructor
+    unit_with_mocked_atomics_.reset();
 
     // Then it does not terminate
 }

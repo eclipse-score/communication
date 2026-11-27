@@ -1033,6 +1033,7 @@ cc_library(
         ":instance_identifier",
         ":instance_specifier",
         ":runtime_interfaces",
+        "@score_baselibs//score/concurrency:atomic_indirector",
         "@score_baselibs//score/result",
     ],
 )
@@ -1243,6 +1244,7 @@ cc_unit_test(
         ":service_discovery_client_mock",
         "//score/mw/com/impl/bindings/lola:runtime_mock",
         "//score/mw/com/impl/configuration/test:configuration_store",
+        "@score_baselibs//score/concurrency:atomic_indirector_mock_binding",
         "@score_baselibs//score/language/futurecpp",
         "@score_baselibs//score/mw/log",
     ],

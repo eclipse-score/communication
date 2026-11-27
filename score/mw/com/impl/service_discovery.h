@@ -23,6 +23,7 @@
 #include "score/mw/com/impl/instance_identifier.h"
 #include "score/mw/com/impl/instance_specifier.h"
 
+#include "score/concurrency/atomic_indirector.h"
 #include "score/result/result.h"
 
 #include <atomic>
@@ -33,16 +34,19 @@
 
 namespace score::mw::com::impl
 {
-
-class ServiceDiscovery final : public IServiceDiscovery
+namespace detail
 {
+template <template <class> class AtomicIndirectorType = concurrency::AtomicIndirectorReal>
+class ServiceDiscoveryImpl final : public IServiceDiscovery
+{
+
   public:
-    explicit ServiceDiscovery(IRuntime&);
-    ServiceDiscovery(const ServiceDiscovery&) noexcept = delete;
-    ServiceDiscovery& operator=(const ServiceDiscovery&) noexcept = delete;
-    ServiceDiscovery(ServiceDiscovery&&) noexcept = delete;
-    ServiceDiscovery& operator=(ServiceDiscovery&&) noexcept = delete;
-    ~ServiceDiscovery() noexcept override;
+    explicit ServiceDiscoveryImpl(IRuntime&);
+    ServiceDiscoveryImpl(const ServiceDiscoveryImpl&) noexcept = delete;
+    ServiceDiscoveryImpl& operator=(const ServiceDiscoveryImpl&) noexcept = delete;
+    ServiceDiscoveryImpl(ServiceDiscoveryImpl&&) noexcept = delete;
+    ServiceDiscoveryImpl& operator=(ServiceDiscoveryImpl&&) noexcept = delete;
+    ~ServiceDiscoveryImpl() noexcept override;
 
     [[nodiscard]] Result<void> OfferService(InstanceIdentifier) override;
     [[nodiscard]] Result<void> StopOfferService(InstanceIdentifier) override;
@@ -120,6 +124,10 @@ class ServiceDiscovery final : public IServiceDiscovery
     std::unordered_map<FindServiceHandle, std::shared_ptr<FindServiceHandler<HandleType>>> user_callbacks_;
     std::unordered_multimap<FindServiceHandle, EnrichedInstanceIdentifier> handle_to_instances_;
 };
+
+}  // namespace detail
+
+using ServiceDiscovery = detail::ServiceDiscoveryImpl<>;
 
 }  // namespace score::mw::com::impl
 
