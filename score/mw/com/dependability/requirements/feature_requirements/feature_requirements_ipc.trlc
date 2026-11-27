@@ -318,3 +318,31 @@ ScoreReq.FeatReq FEAT_ErrorHandling {
     derived_from = [ Communication.ASR_ErrorHandling@1 ]
     version = 1
 }
+
+ScoreReq.FeatReq FEAT_ThreadSafePublicAPI {
+    description = "The public API of the communication framework shall be safe to call concurrently from multiple threads on different instances."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_BoundedResourceUsage {
+    description = "The communication framework shall determine the communication resources of a service instance from its configuration before communication starts."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.ASR_InterProcessCommunication@1, Communication.ASR_SafeCommunication@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_NonBlockingCommunication {
+    description = "A communication partner shall not be blocked by the behaviour of another communication partner."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.ASR_SafeCommunication@1, Communication.ASR_SupportForPollingBasedArchitectures@1 ]
+    version = 1
+}
+
+ScoreReq.FeatReq FEAT_CoexistenceWithAdaptiveAutosar {
+    description = "The communication framework shall be operable in the same process as an adaptive AUTOSAR communication stack."
+    safety = ScoreReq.Asil.B
+    derived_from = [ Communication.ASR_InterProcessCommunication@1 ]
+    version = 1
+}

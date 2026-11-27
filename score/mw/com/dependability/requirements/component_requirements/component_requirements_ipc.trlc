@@ -621,7 +621,7 @@ section "com" {
         ScoreReq.CompReq ReEntrancyAndThreadSafety {
             description = '''A class, {{MyClass}}, {{MyClass}}shall be re-entrant and thread-safe for different  class instances. When called re-entrant or concurrently on the same {{MyClass}} instance, the behavior is undefined.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SafeCommunication@1]
+            derived_from = [Communication.FEAT_ThreadSafePublicAPI@1]
             version = 1
         }
 
@@ -997,7 +997,7 @@ section "com" {
 
             This includes that one process (one adaptive Application) shall be able to use ara::com and LoLa in parallel.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
+            derived_from = [Communication.FEAT_CoexistenceWithAdaptiveAutosar@1]
             version = 1
         }
 
@@ -1009,7 +1009,7 @@ section "com" {
 
             In order to operate LoLa in parallel to any adaptive AUTOSAR Stack, we need to ensure, that there are no type clashes and therefore we use a distinct/separate namespace.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
+            derived_from = [Communication.FEAT_CoexistenceWithAdaptiveAutosar@1]
             version = 1
         }
 
@@ -1032,7 +1032,7 @@ section "com" {
 
             This way no blocking communication needs to be implemented via Shared Memory. Easing FFI argumentation.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
+            derived_from = [Communication.FEAT_NonBlockingCommunication@1]
             version = 1
         }
 
@@ -1061,7 +1061,7 @@ section "com" {
             Note:
             It might be necessary to add some further meta information of the shared memory segment  into it. So this does not indicate that the whole shared memory segment is split only into slots.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
+            derived_from = [Communication.FEAT_BoundedResourceUsage@1]
             version = 1
         }
 
@@ -1069,7 +1069,7 @@ section "com" {
         ScoreReq.CompReq TheNumberOfSlotsShallBeConfigurable {
             description = '''The number of available slots (defined here: The shared memory segments shall be divided into slots) shall be configurable.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
+            derived_from = [Communication.FEAT_BoundedResourceUsage@1]
             version = 1
         }
 
@@ -1080,7 +1080,7 @@ section "com" {
             Note:
             A maximum limit of elements needs to be given and a data structure must not reallocate during sample assembly. Otherwise we might run out of memory due to fragmentation, even with more advanced allocation schemes.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
+            derived_from = [Communication.FEAT_BoundedResourceUsage@1]
             version = 1
         }
 
@@ -1182,7 +1182,7 @@ section "com" {
         ScoreReq.CompReq SychronizingSharedMemoryRegionsShallEnsureWaitFreedom {
             description = '''The synchronization between data and control segments shall ensure wait-freedom.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
+            derived_from = [Communication.FEAT_NonBlockingCommunication@1]
             version = 1
         }
 
@@ -1246,7 +1246,7 @@ section "com" {
         ScoreReq.CompReq AProducerShallAlwaysBeAbleToStoreNewData {
             description = '''A producer shall always be able to store new data'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
+            derived_from = [Communication.FEAT_NonBlockingCommunication@1]
             version = 1
         }
 
@@ -1286,7 +1286,7 @@ section "com" {
 
             This rule is designed in a way to assure, that all consumers can hold up to their used "maxSampleCount" in subscription for an arbitrary timespan in parallel!'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SupportForPollingBasedArchitecture@1]
+            derived_from = [Communication.FEAT_BoundedResourceUsage@1]
             version = 1
         }
 
@@ -1320,7 +1320,7 @@ section "com" {
 
             {{static}} (class level) methods/functions are generally not thread-safe (for the same class) unless specified otherwise.'''
             safety = ScoreReq.Asil.B
-            derived_from = [Communication.FEAT_SafeCommunication@1]
+            derived_from = [Communication.FEAT_ThreadSafePublicAPI@1]
             version = 1
         }
 
