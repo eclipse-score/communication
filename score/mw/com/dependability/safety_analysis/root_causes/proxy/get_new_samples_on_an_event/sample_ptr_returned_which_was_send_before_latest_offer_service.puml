@@ -1,0 +1,50 @@
+' ********************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' ********************************************************************************
+
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("Sample pointer returned which was sent before latest offer service", "mw_com.SamplePtrReturnedWhichWasSendBeforeLatestOfferService")
+$OrGate("OrGate1", "mw_com.SamplePtrReturnedWhichWasSendBeforeLatestOfferService")
+
+$IntermediateEvent("Latest offer timestamp in EventDataStorage is older than expected", "LatestOfferTimestampInEventDataStorageIsOlderThanExpected", "OrGate1")
+$OrGate("OrGate4", "LatestOfferTimestampInEventDataStorageIsOlderThanExpected")
+$IntermediateEvent("Skeleton did not update latest offer timestamp in correct EventDataStorage in OfferService", "SkeletonDidNotUpdateLatestOfferTimestampInEventDataStorageInOfferService", "OrGate4")
+$OrGate("OrGate5", "SkeletonDidNotUpdateLatestOfferTimestampInEventDataStorageInOfferService")
+$RootCause("Skeleton did not update latest offer timestamp", "SkeletonDidNotUpdateLatestOfferTimestamp", "OrGate5")
+$IntermediateEvent("Skeleton updated latest offer timestamp in wrong EventDataStorage", "SkeletonUpdatedLatestOfferTimestampInWrongEventDataStorage", "OrGate5")
+$OrGate("OrGate6", "SkeletonUpdatedLatestOfferTimestampInWrongEventDataStorage")
+$RootCause("SkeletonEvent inserted EventDataStorage\ninto ServiceDataStorage with wrong EventFqId", "InvalidServiceDataStorageKey", "OrGate6")
+$RootCause("SkeletonEvent found EventDataStorage\nin ServiceDataStorage with wrong EventFqId", "SkeletonEventFoundWrongServiceDataStorageKey", "OrGate6")
+
+$TransferInGate("Latest offer timestamp in shared memory was corrupted", "SharedMemoryCorruptedByOtherProcess", "LatestOfferTimestampInSharedMemoryWasCorrupted", "OrGate4")
+
+$IntermediateEvent("Latest timestamp in ProxyEvent SlotCollector not\nset to latest offer timestamp of latest service offering", "LatestTimestampInSlotCollectorNotSetToLatestOfferTimestampInEventDataStorage", "OrGate1")
+$OrGate("OrGate3", "LatestTimestampInSlotCollectorNotSetToLatestOfferTimestampInEventDataStorage")
+$RootCause("ProxyEvent did not set latest timestamp\nto latest offer timestamp when subscribing", "ProxyEventDidNotSetLatestTimestampWhenSubscribing", "OrGate3")
+$RootCause("ProxyEvent did not set latest timestamp\nto latest offer timestamp during proxy autoreconnect", "ProxyEventDidNotSetLatestTimestampDuringProxyAutoreconnect", "OrGate3")
+$IntermediateEvent("ProxyEvent read latest timestamp from wrong EventDataStorage", "ProxyEventReadLatestTimestampFromWrongEventDataStorage", "OrGate3")
+$RootCause("ProxyEvent found EventDataStorage\nin ServiceDataStorage with wrong EventFqId", "ProxyEventFoundWrongServiceDataStorageKey", "ProxyEventReadLatestTimestampFromWrongEventDataStorage")
+
+$TransferInGate("Timestamp of sample before reoffer has been corrupted so it's newer than the latest offer timestamp", "SharedMemoryCorruptedByOtherProcess", "TimestampOfSamplesBeforeReofferCorrupted", "OrGate1")
+
+$RootCause("Latest offer timestamp not used by SlotCollector to select samples", "LatestOfferTimestampNotUsedBySlotCollector", "OrGate1")
+
+' gtodo: Create component requirements for latest offer timestamp. These requirements will require the Skeleton to store the timestamp of the latest sample
+'        already in EventDataStorage (from a previous service offering) when reoffering the service. This timestamp should be stored in EventDataStorage
+'        since only the Skeleton should modify it. Each ProxyEvent should initialise the latest timestamp in SlotCollector using this timestamp to ensure
+'        that it doesn't get any samples from previous offers. It should also check and update this timestamp in the proxy auto reconnect state change 
+'        handler so that if it is subscribed and the service stop offers / re offers, then it updates the timestamp accordingly.
+
+@enduml

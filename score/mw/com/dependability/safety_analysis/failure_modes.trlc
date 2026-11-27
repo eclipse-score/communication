@@ -27,17 +27,6 @@ section "LoLa" {
         // potentialcause = "e.g. - Blocked mutex (e.g. dead-lock) - Wrong synchronization algorithm - endless loop - crashed services"
     }
 
-    // ID: 6366726
-    ScoreReq.FailureMode InMemoryConfigurationWrong {
-        guidewords = [ ScoreReq.Guideword.LossOfFunction ]
-        description = "The in-memory (cpp representation) does not match the on file-system JSON configuration."
-        failureeffect = "Other functionality relies on a correct configuration. Without that, multiple functions can not operate normally which could lead to the violation of a safety goal."
-        version = 1
-        safety = ScoreReq.Asil.B
-        rationale = "The wrong user-configuration which could cause an abnormal behavior of the mw-implementation is covered via four AoUs. The broken file is ensured via a safety-certified file system. The broken JSON is covered via a safety-certified JSON-Parser implementation. The read-in-logic to our in-memory is covered via a specific preventive measure."
-        // interface = "mw.com.Runtime.Initialize"
-    }
-
     // ID: 6370893
     ScoreReq.FailureMode FunctionCalledFromMultipleThreads {
         guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
@@ -49,17 +38,6 @@ section "LoLa" {
         // potentialcause = "- static methods are thread-safe - API calls on different instances are thread-safe - API calls on one instance are not thread-safe."
     }
 
-    // ID: 6370898
-    ScoreReq.FailureMode CodeDoesNotMatchConfiguration {
-        guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-        description = "Definitions of service-interfaces may not match the given mw::com configuration."
-        failureeffect = "A faulty configuration which does not lead to compile issues could lead to safety issues according to analysis."
-        version = 1
-        safety = ScoreReq.Asil.B
-        rationale = "Add an AoU that all code artifacts and configurations should be reviewed before use in a safety context."
-        // interface = "score.mw.com.runtime.InitializeRuntime"
-    }
-
     // ID: 6370915
     ScoreReq.FailureMode MisusedApis {
         guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
@@ -69,6 +47,119 @@ section "LoLa" {
         safety = ScoreReq.Asil.B
         rationale = "Each potential cause is covered with a custom AoU."
         // potentialcause = "Potential causes are: - calling APIs of implementation namespace (aka implementation details, thus avoiding public contracts) - Invoking APIs from static context (aka static lifetime) -> can cause issues with static initialization - Using a different operating system as design for (different underlying AoUs and safety measures) - Throwing callbacks could lead to untested code-paths."
+    }
+
+    section "Runtime" {
+
+        // ID: 6366726
+        ScoreReq.FailureMode InMemoryConfigurationWrong {
+            guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+            description = "The in-memory (cpp representation) does not match the on file-system JSON configuration."
+            failureeffect = "Other functionality relies on a correct configuration. Without that, multiple functions can not operate normally which could lead to the violation of a safety goal."
+            version = 1
+            safety = ScoreReq.Asil.B
+            rationale = "The wrong user-configuration which could cause an abnormal behavior of the mw-implementation is covered via four AoUs. The broken file is ensured via a safety-certified file system. The broken JSON is covered via a safety-certified JSON-Parser implementation. The read-in-logic to our in-memory is covered via a specific preventive measure."
+            // interface = "mw.com.Runtime.Initialize"
+        }
+
+        // Contract ResolveInstanceIDs: 
+        //      - An InstanceSpecifier will be resolved to one InstanceIdentifier for each instance listed in the mw_com configuration file 
+        //        corresponding to that InstanceSpecifier. For the single binding case, exactly one InstanceIdentifier will be returned for an 
+        //        InstanceSpecifier which exists in the configuration file. For the multi binding case, one InstanceIdentifier will be returned 
+        //        for each binding instance corresponding to than InstanceSpecifier if it exists in the configuration file.
+        //      - Each returned InstanceIdentifier should contain values specified within the configuration file corresponding to the provided
+        //        InstanceSpecifier.
+        ScoreReq.FailureMode InstanceSpecifierResolvesToWrongInstanceIdentifier {
+            guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+            description = "An InstanceSpecifier resolves to an InstanceIdentifier for a different service instance than specified in the configuration."
+            version = 1
+            safety = ScoreReq.Asil.B
+            interface = "score.mw.com.runtime.ResolveInstanceIDs"
+        }
+
+        // TODO: Enable once multi-bindings is supported. For now, there are no code paths to return more than one InstanceIdentifier.
+        // ScoreReq.FailureMode InstanceSpecifierResolvesToSubsetOfInstanceIdentifiers {
+        //    guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+        //    description = "An InstanceSpecifier resolves to a subset of InstanceIdentifiers although it should resolve to one InstanceIdentifier per binding specified in the configuration."
+        //    version = 1
+        //    safety = ScoreReq.Asil.B
+        //    interface = "score.mw.com.runtime.ResolveInstanceIDs"
+        //}
+
+    }
+
+    section "Service Instance Identifiers"
+
+        // Contract: the string returned by ToString uniquely relates to the string provided to Create. i.e. different strings provided to Create will 
+        //           produce different strings from ToString and providing the same string will produce the same strings from ToString.
+        section "InstanceSpecifier" {
+
+            ScoreReq.FailureMode ToStringCalledOnInstanceSpecifiersCreatedFromDifferentStringsReturnSameStringRepresentations {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "ToString called on two InstanceSpecifiers created from different strings returns the same string representation."
+                version = 1
+                safety = ScoreReq.Asil.B
+                interface = "score.mw.com.InstanceSpecifier.ToString"
+            }
+
+          ScoreReq.FailureMode ToStringCalledOnInstanceSpecifiersCreatedFromSameStringsReturnDifferentStringRepresentations {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "ToString called on two InstanceSpecifiers created from the same string returns different string representations."
+                version = 1
+                safety = ScoreReq.Asil.B
+                interface = "score.mw.com.InstanceSpecifier.ToString"
+        }            
+
+
+            // Contract score.mw.com.InstanceSpecifier.hash:
+            //     InstanceSpecifiers should be able to be used as keys in a map like data structure such that InstanceSpecifiers created 
+            //     from different strings can be uniquely stored / looked up in the data structure. This assumes that the data structure is 
+            //     robust to hash collisions e.g. std::unordered_map. The result of hashing 2 different InstanceSpecifiers does not have to 
+            //     be different (i.e. we don't guarantee no hash collisions)
+            ScoreReq.FailureMode InstanceSpecifiersCreatedFromDifferentStringsAreNotUniqueInAMapRobustToHashCollisions {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "InstanceSpecifiers created from different strings cannot be uniquely stored or looked up as distinct keys in a map-like data structure that handles hash collisions."
+                version = 1
+                safety = ScoreReq.Asil.B
+                interface = "score.mw.com.InstanceSpecifier.hash"
+            }
+        }
+
+        // Contract: the string returned by ToString uniquely relates to the configuration provided to Create. i.e. different configurations provided to 
+        //           Create will produce different strings from ToString and providing the same configuration will produce the same strings from ToString.
+        section "InstanceIdentifier" {
+
+            ScoreReq.FailureMode ToStringCalledOnInstanceIdentifiersCreatedFromDifferentConfigurationsReturnSameStringRepresentations {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "ToString called on two InstanceIdentifiers created from different configurations returns the same string representation."
+                version = 1
+                safety = ScoreReq.Asil.B
+                interface = "score.mw.com.InstanceIdentifier.ToString"
+            }
+
+            ScoreReq.FailureMode ToStringCalledOnInstanceIdentifiersCreatedFromSameConfigurationsReturnDifferentStringRepresentations {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "ToString called on two InstanceIdentifiers created from the same configuration returns different string representations."
+                version = 1
+                safety = ScoreReq.Asil.B
+                interface = "score.mw.com.InstanceIdentifier.ToString"
+            }
+
+            // Contract score.mw.com.InstanceIdentifier.hash:
+            //     InstanceIdentifiers should be able to be used as keys in a map like data structure such that InstanceIdentifiers created
+            //     from different configurations can be uniquely stored / looked up in the data structure. This assumes that the data structure is
+            //     robust to hash collisions e.g. std::unordered_map. The result of hashing 2 different InstanceIdentifiers does not have to
+            //     be different (i.e. we don't guarantee no hash collisions)
+            ScoreReq.FailureMode InstanceIdentifiersCreatedFromDifferentConfigurationsAreNotUniqueInAMapRobustToHashCollisions {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "InstanceIdentifiers created from different configurations cannot be uniquely stored or looked up as distinct keys in a map-like data structure that handles hash collisions."
+                version = 1
+                safety = ScoreReq.Asil.B
+                interface = "score.mw.com.InstanceIdentifier.hash"
+            }
+
+        }
+
     }
 
     section "Skeleton" {
@@ -585,61 +676,107 @@ section "LoLa" {
             }
         }
 
+        // Contracts:
+        //  - GetNewSamples will return an error ComErrc::kNotSubscribed if there hasn't been a successful Subscribe() or there was an Unsubscribe() since then
+        //  - The number of times the provided receiver is up to the minimum of:
+        //    - max_num_samples provided to GetNewSamples 
+        //    - the number of available SamplePtrs (The max_sample_count provided to the last successful call to Subscribe (which has not been unsubscribed) 
+        //      minus the number of currently held SamplePtrs from this ProxyEvent instance).
+        //  - The data pointed to by the SamplePtrs provided to receiver have the same values as the samples sent by SkeletonEvent::Send()
+        //  - The SamplePtrs provided to receiver will only point to samples received from SkeletonEvent::Send() since the last time successful call to GetNewSamples().
+        //  - The SamplePtrs provided to receiver will only point to samples sent by SkeletonEvent::Send() since the last time the service was succesfully offered.
+        //  - The SamplePtrs provided to receiver will always point to the latest samples sent by SkeletonEvent::Send()
+        //  - Returns the number of times the receiver was called
+        //  - Either calls the receiver with all available samples or returns an error (i.e. could call receiver but still return an error)
+        //
+        // Intended behaviour:
+        //  - All samples which have been sent by a successful SkeletonEvent::Send are provided to a call of GetNewSamples receiver (while still adhering to the preceding 
+        //    contracts e.g. regarding number of times receiver is called, must be subscribed etc).
         section "GetNewSamples for an Event" {
 
-            // ID: 6166331
-            ScoreReq.FailureMode CallbackNotInvokedDespiteSamplesAvailable {
+            ScoreReq.FailureMode CallbackNotCalledWithSamplePtrToSentSampleValueAlthoughSkeletonSendSucceeded {
                 guidewords = [ ScoreReq.Guideword.LossOfFunction ]
-                description = "GetNewSamples() gets called on an event with a callback F, but the callback gets called not at all, although at least one new sample is available."
-                failureeffect = "data is not received, causing any possible safety goal violation."
+                description = "Receiver is not called the expected number of times although new samples were received from SkeletonEvent::Send and the number of currently available samples has not exceeded the maximum allowed (See ReceiverIsCalledMoreTimesThanAllowed)"
+                failureeffect = "Data is not received"
                 version = 1
                 safety = ScoreReq.Asil.B
-                rationale = "The wrong values are systematic faults wich are prevented using a correct slot allocation strategy. The overwrite of shared memory data was already built into the original design and can only happen if processes are started using wrong users, which is avoided using our AoU."
+                // interface = "score.mw.com.ProxyEvent.GetNewSamples"
             }
 
-            // ID: 6166345
-            ScoreReq.FailureMode CallbackInvokedWithWrongData {
-                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "A proxy receives a sample pointer via callback F(), but the data does not contain the expected one."
-                failureeffect = "processing of invalid data can cause any safety violation (e.g. violation of the top level safety goal)"
-                version = 1
-                safety = ScoreReq.Asil.B
-                rationale = "All possible faults, have either assigned a preventive measure or respective AoUs."
-            }
-
-            // ID: 6166350
-            ScoreReq.FailureMode UsesTooManySampleptr {
+            ScoreReq.FailureMode ReceiverIsCalledMoreTimesThanAllowed {
                 guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
-                description = "User is already max. sample count SamplePtr, but we are still handing out SamplePtrs in callback F()."
-                failureeffect = "Synchronization algorithm can no longer hold guarantees, which can cause an exceeding of resources. In worst case another proxy might fail to get updated samples (messages lost without full queues aka not detectable)."
+                description = """Receiver is called more than the allowed number of times. This number is the minimum of: 
+                    (1) max number of samples provided to GetNewSamples. 
+                    (2) the number of available SamplePtrs (The max_sample_count provided to the last successful call to Subscribe (which has not been unsubscribed) minus the number of currently held SamplePtrs from this ProxyEvent instance)."""
+                failureeffect = "Could allow a user to hold more SamplePrs than allowed which could affect the ability of other ProxyEvents to receive samples which could lead to data availability issues."
                 version = 1
                 safety = ScoreReq.Asil.B
-                rationale = "The only possibility for this failure mode is actively covered by our preventive measure."
-                // potentialcause = "Reference Counting facility for SamplePtr is broken. Either: - storage or current count - increment logic - decrement logic"
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
             }
 
-            // ID: 6166353
-            ScoreReq.FailureMode ReturnsWrongSampleCount {
+            ScoreReq.FailureMode ReturnsSuccessAlthoughNotInActiveSubscription {
                 guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "Value returned by GetNewSample() does not match with the number of calls to callback F()."
-                failureeffect = "Potential Data loss with unknown effect on safety goals."
+                description = "Subscribe was not called successfully or Unsubscribe has been called since a successful subscription and GetNewSamples does not return ComErrc::kNotSubscribed."
+                failureeffect = "Getting samples without an active subscription could affect the ability of other ProxyEvents to receive samples which could lead to data availability issues."
                 version = 1
                 safety = ScoreReq.Asil.B
-                rationale = "Single systematic failure is covered by single preventive measure."
-                // potentialcause = "The counter of invoked callbacks is wrong."
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
             }
 
-            // ID: 6166357
-            ScoreReq.FailureMode GetNewSamplesSucceedsDespiteAnError {
-                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-                description = "A user calls GetNewSamples() on a proxy instance and receives a sample count, even though he should have received an error."
-                failureeffect = "Receive a sample count instead of an error, implies that the sample count is wrong. Receiving an error instead of a sample count, implies that the sample count is wrong."
+            ScoreReq.FailureMode ReturnsNotSubscribedErrorAthoughInActiveSubscription {
+                guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+                description = "Subscribe was called successfully and Unsubscribe has not been called since and GetNewSamples returns ComErrc::kNotSubscribed"
+                failureeffect = "Cannot receive data although data may be available"
                 version = 1
                 safety = ScoreReq.Asil.B
-                rationale = "Same as [ISSUE:FailureMode ReturnsWrongSampleCount]"
-                // potentialcause = "Same as [ISSUE:FailureMode ReturnsWrongSampleCount]"
-                // interface = "mw.com.Event.GetNewSamples"
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
             }
+
+            ScoreReq.FailureMode ReturnsSuccessAlthoughDidNotCallReceiverCorrectNumberOfTimes {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "Receiver is not called the expected number of times (See ReceiverIsCalledMoreTimesThanAllowed and CallbackNotCalledWithSamplesReceivedFromSkeleton) but no error was returned"
+                failureeffect = "Contract violation"
+                version = 1
+                safety = ScoreReq.Asil.B
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
+            }
+
+            ScoreReq.FailureMode ReturnsAnErrorAlthoughCalledReceiverCorrectNumberOfTimes {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "Receiver is called the expected number of times (See ReceiverIsCalledMoreTimesThanAllowed and CallbackNotCalledWithSamplesReceivedFromSkeleton) but an error was returned"
+                failureeffect = "Contract violation"
+                version = 1
+                safety = ScoreReq.Asil.B
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
+            }
+
+            ScoreReq.FailureMode ReturnedCallCountDifferentToNumberOfTimesReceiverCalled {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "Value returned by GetNewSample() does not match with the number of calls to the receiver"
+                failureeffect = "Contract violation"
+                version = 1
+                safety = ScoreReq.Asil.B
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
+            }
+
+            ScoreReq.FailureMode SamplePtrReturnedWhichWasReceivedBeforeLastGetNewSamples {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "Receiver called with SamplePtr pointing to old sample which was received from SkeletonEvent::Send before the last successful call to GetNewSamples which may have already been provided to a previous call to GetNewSamples."
+                failureeffect = "Insertion of information / Repetition of information"
+                version = 1
+                safety = ScoreReq.Asil.B
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
+            }
+
+            ScoreReq.FailureMode SamplePtrReturnedWhichWasSentBeforeLatestOfferService {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "Receiver called with SamplePtr pointing to old sample which was sent by SkeletonEvent::Send before the last successful call to Skeleton::OfferService."
+                failureeffect = "Insertion of information"
+                version = 1
+                safety = ScoreReq.Asil.B
+		        // interface = "score.mw.com.ProxyEvent.GetNewSamples"
+            }
+
         }
 
         section "GetFreeSampleCount for an Event" {

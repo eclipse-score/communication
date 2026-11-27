@@ -15,8 +15,8 @@
 
 !include fta_metamodel.puml
 
-$FailureMode("User already holds max sample count, but another SamplePtr is handed out", "Communication.UsesTooManySampleptr")
-
-$RootCause("Reference counting facility for SamplePtr is broken", "ReferenceCountingFacilityForSampleptrIsBroken", "Communication.UsesTooManySampleptr")
+$FailureMode("ToString called on two InstanceSpecifiers created from the same string returns different string representations.", "Communication.ToStringCalledOnInstanceSpecifiersCreatedFromSameStringsReturnDifferentStringRepresentations")
+$TransferInGate("ToString called on two InstanceSpecifiers created from different strings returns the same string representation.", "Communication.ToStringCalledOnInstanceSpecifiersCreatedFromDifferentStringsReturnSameStringRepresentations", "TransferInGate1", "Communication.ToStringCalledOnInstanceSpecifiersCreatedFromSameStringsReturnDifferentStringRepresentations")
 
 @enduml
+
