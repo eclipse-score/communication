@@ -67,6 +67,18 @@ class MemoryResourceProxy
     ///          mutable by QM processes. If a QM process would alter the value of bounds_checking_enabled_ (in case of
     ///          it being a member variable), it could corrupt the behaviour of an ASIL-B process (disabling its
     ///          bounds-checking)!
+    ///          Reasoning for having bounds-checking on the level of the MemoryResourceProxy beside the bounds-checking
+    ///          done by the OffsetPtr: The bounds-checking done in MemoryResourceProxy::allocate verifies, that no
+    ///          memory gets allocated from a different memory resource (SharedMemoryResource). I.e. the
+    ///          memory_identifier_ residing in shared-memory could be corrupted in a way, that it identifies a
+    ///          different memory resource, which is valid/registered for the process calling allocate(). This could
+    ///          then lead to the case, that an MemoryResourceProxy::allocate() call on a MemoryResourceProxy residing
+    ///          in shared-mem A leads to an allocation within shared-mem B! While this issue would be detected, when
+    ///          referencing the resulting OffsetPtr within shared-mem A (with OffsetPtr based bounds-checking) we would
+    ///          already have allocated the memory from shared-mem B, thus shared-mem B available memory has been
+    ///          reduced. I.e. the bounds-checking done in MemoryResourceProxy::allocate() is a measure, which avoids
+    ///          availability issues in other shared-memory resources! The bounds-checking done by the OffsetPtr is a
+    ///          measure to avoid memory corruption, thus it is much more important from safety perspective.
     /// \param enable true enables, false disables bounds-checking
     /// \return previous value
     static bool EnableBoundsChecking(const bool enable) noexcept;

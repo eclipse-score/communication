@@ -9,6 +9,7 @@ participant SharedMemoryResource as resource
 participant OS
 participant LockFile
 participant ShmObject
+participant MemoryResourceRegistry as registry
 
 
 activate Process
@@ -56,6 +57,10 @@ else path not opened in process
         activate ShmObject
         ShmObject --> resource : return : baseAddress
         deactivate ShmObject
+        resource -> registry : insert_resource(path, this)
+        activate registry
+        resource <-- registry : return : success
+        deactivate registry
         resource -> Process : Call initializer
         resource <-- Process : return
         factory <-- resource : return : success

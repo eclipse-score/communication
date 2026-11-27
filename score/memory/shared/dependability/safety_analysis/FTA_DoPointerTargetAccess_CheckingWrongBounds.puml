@@ -1,0 +1,45 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+' *******************************************************************************
+
+
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("OffsetPtr target accessed checking wrong bounds", "MemoryShared.TargetAccessDoneCheckingWrongBounds")
+
+$OrGate("Gate1", "MemoryShared.TargetAccessDoneCheckingWrongBounds")
+
+$RootCause("MemoryResourceRegistry failed to lookup correctly", "Memory.RC_MemoryResourceRegistryFailure", "Gate1")
+
+$IntermediateEvent("OffsetPtr locally stored bounds invalid (CopyFrom semantics)", "MemoryShared.IE_OffsetPtrLocalBoundsInvalid", "Gate1")
+
+$OrGate("Gate2", "MemoryShared.IE_OffsetPtrLocalBoundsInvalid")
+$RootCause("Locally stored bounds have been corrupted", "Memory.RC_LocallyStoredMemoryBoundsCorrupted", "Gate2")
+$IntermediateEvent("OffsetPtr stored invalid bounds during copying", "MemoryShared.IE_OffsetPtrStoredInvalidBoundsDuringCopying", "Gate2")
+$OrGate("Gate3", "MemoryShared.IE_OffsetPtrStoredInvalidBoundsDuringCopying")
+
+$RootCause("Lookup memory bounds with wrong address", "MemoryShared.RC_MemoryBoundsLookupWithWrongAddress", "Gate3")
+$RootCause("MemoryResourceRegistry failed to lookup correctly", "Memory.RC_MemoryResourceRegistryFailure", "Gate3")
+
+
+@enduml
+
+
+
+
+@enduml

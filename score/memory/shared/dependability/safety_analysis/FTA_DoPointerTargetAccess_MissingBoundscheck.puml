@@ -1,0 +1,45 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+' *******************************************************************************
+' Copyright (c) 2026 Contributors to the Eclipse Foundation
+'
+' See the NOTICE file(s) distributed with this work for additional
+' information regarding copyright ownership.
+'
+' This program and the accompanying materials are made available under the
+' terms of the Apache License Version 2.0 which is available at
+' https://www.apache.org/licenses/LICENSE-2.0
+'
+' SPDX-License-Identifier: Apache-2.0
+' *******************************************************************************
+
+' *******************************************************************************
+
+
+@startuml
+
+!include fta_metamodel.puml
+
+$FailureMode("OffsetPtr target accessed without checking bounds, although bounds checking shall be done", "MemoryShared.TargetAccessDoneWithoutCheckingBounds")
+
+$OrGate("Gate1", "MemoryShared.TargetAccessDoneWithoutCheckingBounds")
+
+$RootCause("Unwanted call to disable bounds-checking was done", "MemoryShared.BoundsCheckingFalselyDisabled", "Gate1")
+$RootCause("Bounds-checking enable/disable flag incorrectly checked", "MemoryShared.BoundsCheckingFlagIncorrectlyChecked", "Gate1")
+
+$IntermediateEvent("No bounds available for OffsetPtr", "MemoryShared.IE_NoBoundsAvailableForOffsetPtr", "Gate1")
+
+$OrGate("Gate2", "MemoryShared.IE_NoBoundsAvailableForOffsetPtr")
+$RootCause("Bounds stored within OffsetPtr (copiedFrom OffsetPtr) invalid", "MemoryShared.RC_StoredBoundsInvalid", "Gate2")
+$IntermediateEvent("MemoryResourceRegistry did not return bounds, although it should", "MemoryShared.IE_MemoryResourceRegistryDidNotReturnBounds", "Gate2")
+$OrGate("Gate3", "MemoryShared.IE_MemoryResourceRegistryDidNotReturnBounds")
+$RootCause("Memory bounds not registered at all", "Memory.RC_MemoryBoundsNotRegistered", "Gate3")
+$RootCause("Memory bounds registered with wrong start/end", "Memory.RC_WrongMemoryBoundsRegistered", "Gate3")
+$RootCause("MemoryResourceRegistry failed to store or lookup correctly", "Memory.RC_MemoryResourceRegistryFailure", "Gate3")
+
+@enduml
+
+
+
+
+@enduml

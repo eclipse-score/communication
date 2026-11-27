@@ -23,3 +23,13 @@ ScoreReq.AoU AccessToSharedMemoryObjectsAlwaysViaLibrary {
     version = 1
 }
 
+ScoreReq.AoU TogglingOfBoundsChecking {
+    // mitigates =
+    description = """Activation of bounds-checking for OffsetPtr is a process wide setting, which is controlled by the EnableOffsetPtrBoundsChecking() function.
+    It must not be used to disable bounds-checking, when parts of the application (i.e. libraries) require bounds-checking being enabled. The function is also not
+    thread-safe, so usage within an application needs to be synchronized by the user."""
+    safety = ScoreReq.Asil.B
+    note = "The default setting for bounds-checking is enabled. Disabling it could lead to a performance improvement, but takes away safety mechanisms and thus needs to be done with caution and only in ASIL-QM environments."
+    version = 1
+}
+

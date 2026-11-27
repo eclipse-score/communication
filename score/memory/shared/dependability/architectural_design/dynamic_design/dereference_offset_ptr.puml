@@ -4,28 +4,37 @@
 autonumber
 
 actor "User" as Process
-participant "allocator_pointer" as allocator_pointer
-participant "factory_resources" as factory_resources
+participant "OffsetPtr" as offset_ptr
+participant "MemoryResourceRegistry" as registry
 participant "pointer_arithmetic" as pointer_arithmetic
 
 activate Process
 
-Process -> allocator_pointer : OffsetPtr::get()
-activate allocator_pointer
-allocator_pointer -> factory_resources : MemoryResourceRegistry::getInstance().GetBoundsFromAddress(address)
-allocator_pointer <-- factory_resources : return : MemoryRegionBounds [0..1]
-allocator_pointer -> pointer_arithmetic : PointerArithmeticUtil::CastPointerToInteger(offset_ptr_address)
+Process -> offset_ptr : OffsetPtr::get()
+activate offset_ptr
+opt bounds checking enabled
+    offset_ptr -> registry : GetBoundsFromAddress(address)
+    activate registry
+    offset_ptr <-- registry : return : MemoryRegionBounds [0..1]
+    deactivate registry
+    offset_ptr -> pointer_arithmetic : PointerArithmeticUtil::CastPointerToInteger(offset_ptr_address)
+    activate pointer_arithmetic
+    offset_ptr <-- pointer_arithmetic : return : uintptr_t
+    deactivate pointer_arithmetic
+    offset_ptr -> pointer_arithmetic : PointerArithmeticUtil::AddOffsetToPointerAsInteger(offset_ptr_address_as_integer, offset_ptr_size)
+    activate pointer_arithmetic
+    offset_ptr <-- pointer_arithmetic : return : uintptr_t
+    deactivate pointer_arithmetic
+    offset_ptr -> pointer_arithmetic : PointerArithmeticUtil::AddSignedOffsetToPointerAsInteger(offset_ptr_address_as_integer, offset)
+    activate pointer_arithmetic
+    offset_ptr <-- pointer_arithmetic : return : uintptr_t
+    deactivate pointer_arithmetic
+end
+
+offset_ptr -> pointer_arithmetic : PointerArithmeticUtil::AddOffsetToPointer(offset_ptr_address, offset)
 activate pointer_arithmetic
-allocator_pointer <-- pointer_arithmetic : return : uintptr_t
+offset_ptr <-- pointer_arithmetic : return : uintptr_t
 deactivate pointer_arithmetic
-allocator_pointer -> pointer_arithmetic : PointerArithmeticUtil::AddOffsetToPointerAsInteger(offset_ptr_address_as_integer, offset_ptr_size)
-activate pointer_arithmetic
-allocator_pointer <-- pointer_arithmetic : return : uintptr_t
-deactivate pointer_arithmetic
-allocator_pointer -> pointer_arithmetic : PointerArithmeticUtil::AddSignedOffsetToPointerAsInteger(offset_ptr_address_as_integer, offset)
-activate pointer_arithmetic
-allocator_pointer <-- pointer_arithmetic : return : uintptr_t
-deactivate pointer_arithmetic
-Process <-- allocator_pointer : return : pointer
+Process <-- offset_ptr : return : pointer
 
 @enduml

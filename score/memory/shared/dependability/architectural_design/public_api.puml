@@ -93,7 +93,6 @@ namespace score::memory::shared {
     class "PolymorphicOffsetPtrAllocator<T>" as PolymorphicOffsetPtrAllocator {
       + allocate(size : UnsignedInteger) : OffsetPtr<T>
       + deallocate(pointer : OffsetPtr<T>, size : UnsignedInteger)
-      + getMemoryResourceProxy() : OffsetPtr<MemoryResourceProxy>
     }
 
     PolymorphicOffsetPtrAllocator *-- "1" OffsetPtr : uses
