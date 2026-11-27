@@ -1,0 +1,62 @@
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
+# Unprivileged trigger stage for the PR state labelling workflow.
+#
+# Reacts to every event that can change whose turn it is on a pull request,
+# including events of pull requests from forks, which only get a read-only
+# GITHUB_TOKEN. It therefore does not write anything, does not check out any
+# code and only hands the PR number (taken from the trusted event payload)
+# to the privileged `pr_state_apply.yml` via an artifact. The same pattern
+# is used by `review_checklists_trigger.yml`.
+#
+# Events that are not covered here (e.g. check results) are caught by the
+# hourly sweep of the apply stage.
+
+name: PR State (Trigger)
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review, converted_to_draft, review_requested]
+    branches:
+      - main
+  pull_request_review:
+    types: [submitted, dismissed]
+  pull_request_review_comment:
+    types: [created]
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+jobs:
+  trigger-apply:
+    name: Trigger apply stage
+    # issue_comment is also raised for plain issues
+    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Resolve PR number
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+        run: |
+          echo "Resolved PR number: ${PR_NUMBER}"
+          mkdir -p pr-number
+          echo -n "${PR_NUMBER}" > pr-number/pr-number.txt
+
+      - name: Upload PR number
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pr-number
+          path: pr-number/pr-number.txt
+          retention-days: 1
