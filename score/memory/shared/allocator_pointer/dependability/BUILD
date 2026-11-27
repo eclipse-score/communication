@@ -15,7 +15,7 @@ load("@score_tooling//bazel/rules/rules_score:rules_score.bzl", "unit_design")
 unit_design(
     name = "allocator_pointer_unit_design",
     static = [
-        # "class_diagram_allocator_pointer.puml",  # rejected by the rules_score PlantUML parser
+        "class_diagram_allocator_pointer.puml",
     ],
     visibility = ["//score/memory/shared:__pkg__"],
 )
