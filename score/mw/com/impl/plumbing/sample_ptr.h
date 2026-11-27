@@ -189,7 +189,7 @@ class SamplePtr final
         return get();
     }
 
-    bool operator<(const SamplePtr& other) const noexcept
+    friend bool operator<(const SamplePtr& lhs_ptr, const SamplePtr& rhs_ptr) noexcept
     {
         return std::visit(score::cpp::overload(
                               [](const lola::SamplePtr& lhs, const lola::SamplePtr& rhs) noexcept -> bool {
@@ -198,11 +198,11 @@ class SamplePtr final
                               [](const auto&, const auto&) noexcept -> bool {
                                   return false;
                               }),
-                          binding_sample_ptr_,
-                          other.binding_sample_ptr_);
+                          lhs_ptr.binding_sample_ptr_,
+                          rhs_ptr.binding_sample_ptr_);
     }
 
-    bool operator>(const SamplePtr& other) const noexcept
+    friend bool operator>(const SamplePtr& lhs_ptr, const SamplePtr& rhs_ptr) noexcept
     {
         return std::visit(score::cpp::overload(
                               [](const lola::SamplePtr& lhs, const lola::SamplePtr& rhs) noexcept -> bool {
@@ -211,8 +211,8 @@ class SamplePtr final
                               [](const auto&, const auto&) noexcept -> bool {
                                   return false;
                               }),
-                          binding_sample_ptr_,
-                          other.binding_sample_ptr_);
+                          lhs_ptr.binding_sample_ptr_,
+                          rhs_ptr.binding_sample_ptr_);
     }
     explicit operator bool() const noexcept
     {

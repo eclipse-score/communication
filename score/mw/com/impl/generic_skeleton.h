@@ -72,13 +72,6 @@ class GenericSkeleton : public SkeletonBase
     /// \note The returned view is valid as long as the GenericSkeleton lives.
     [[nodiscard]] EventMapView GetEvents() const noexcept;
 
-    /// \brief Offers the service instance.
-    /// \return A blank result, or an error if offering fails.
-    [[nodiscard]] Result<void> OfferService();
-
-    /// \brief Stops offering the service instance.
-    void StopOfferService();
-
   private:
     // Private constructor, only callable by static Create methods.
     GenericSkeleton(const InstanceIdentifier& identifier, std::unique_ptr<SkeletonBinding> binding);

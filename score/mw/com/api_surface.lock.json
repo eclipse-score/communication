@@ -116,6 +116,18 @@
       "signature": "operator= : InstanceIdentifier &(InstanceIdentifier &&) noexcept"
     },
     {
+      "name": "operator<",
+      "qualified_name": "score::mw::com::operator<",
+      "kind": "friend",
+      "signature": "operator< : bool (const InstanceIdentifier &, const InstanceIdentifier &)"
+    },
+    {
+      "name": "operator==",
+      "qualified_name": "score::mw::com::operator==",
+      "kind": "friend",
+      "signature": "operator== : bool (const InstanceIdentifier &, const InstanceIdentifier &)"
+    },
+    {
       "name": "InstanceSpecifier",
       "qualified_name": "score::mw::com::InstanceSpecifier",
       "kind": "type_alias",
@@ -168,6 +180,30 @@
       "qualified_name": "score::mw::com::FindServiceHandle::operator=",
       "kind": "method",
       "signature": "constexpr operator= : FindServiceHandle &(FindServiceHandle &&) noexcept"
+    },
+    {
+      "name": "operator<",
+      "qualified_name": "score::mw::com::operator<",
+      "kind": "friend",
+      "signature": "operator< : bool (const FindServiceHandle &, const FindServiceHandle &) noexcept"
+    },
+    {
+      "name": "operator<<",
+      "qualified_name": "score::mw::com::operator<<",
+      "kind": "friend",
+      "signature": "operator<< : mw::log::LogStream &(mw::log::LogStream &, const FindServiceHandle &)"
+    },
+    {
+      "name": "operator<<",
+      "qualified_name": "score::mw::com::operator<<",
+      "kind": "friend",
+      "signature": "operator<< : std::ostream &(std::ostream &, const FindServiceHandle &)"
+    },
+    {
+      "name": "operator==",
+      "qualified_name": "score::mw::com::operator==",
+      "kind": "friend",
+      "signature": "operator== : bool (const FindServiceHandle &, const FindServiceHandle &) noexcept"
     },
     {
       "name": "HandleType",
@@ -748,6 +784,54 @@
       "signature": "~InstanceIdentifier : void () noexcept"
     },
     {
+      "name": "operator!=",
+      "qualified_name": "score::mw::com::operator!=",
+      "kind": "free_operator",
+      "signature": "operator!= : bool (const InstanceSpecifier &, const InstanceSpecifier &) noexcept"
+    },
+    {
+      "name": "operator!=",
+      "qualified_name": "score::mw::com::operator!=",
+      "kind": "free_operator",
+      "signature": "operator!= : bool (const InstanceSpecifier &, const std::string_view &) noexcept"
+    },
+    {
+      "name": "operator!=",
+      "qualified_name": "score::mw::com::operator!=",
+      "kind": "free_operator",
+      "signature": "operator!= : bool (const std::string_view &, const InstanceSpecifier &) noexcept"
+    },
+    {
+      "name": "operator<",
+      "qualified_name": "score::mw::com::operator<",
+      "kind": "free_operator",
+      "signature": "operator< : bool (const InstanceSpecifier &, const InstanceSpecifier &) noexcept"
+    },
+    {
+      "name": "operator<<",
+      "qualified_name": "score::mw::com::operator<<",
+      "kind": "free_operator",
+      "signature": "operator<< : ::score::mw::log::LogStream &(::score::mw::log::LogStream &, const InstanceSpecifier &)"
+    },
+    {
+      "name": "operator==",
+      "qualified_name": "score::mw::com::operator==",
+      "kind": "free_operator",
+      "signature": "operator== : bool (const InstanceSpecifier &, const InstanceSpecifier &) noexcept"
+    },
+    {
+      "name": "operator==",
+      "qualified_name": "score::mw::com::operator==",
+      "kind": "free_operator",
+      "signature": "operator== : bool (const InstanceSpecifier &, const std::string_view &) noexcept"
+    },
+    {
+      "name": "operator==",
+      "qualified_name": "score::mw::com::operator==",
+      "kind": "free_operator",
+      "signature": "operator== : bool (const std::string_view &, const InstanceSpecifier &) noexcept"
+    },
+    {
       "name": "~FindServiceHandle",
       "qualified_name": "score::mw::com::FindServiceHandle::~FindServiceHandle",
       "kind": "destructor",
@@ -806,6 +890,18 @@
       "qualified_name": "score::mw::com::HandleType::~HandleType",
       "kind": "destructor",
       "signature": "~HandleType : void () noexcept"
+    },
+    {
+      "name": "operator<",
+      "qualified_name": "score::mw::com::operator<",
+      "kind": "friend",
+      "signature": "operator< : bool (const HandleType &, const HandleType &)"
+    },
+    {
+      "name": "operator==",
+      "qualified_name": "score::mw::com::operator==",
+      "kind": "friend",
+      "signature": "operator== : bool (const HandleType &, const HandleType &)"
     },
     {
       "name": "kNotSubscribed",
@@ -910,12 +1006,6 @@
       "signature": "operator-> : pointer () const noexcept"
     },
     {
-      "name": "operator<",
-      "qualified_name": "score::mw::com::SamplePtr::operator<",
-      "kind": "method",
-      "signature": "operator< : bool (const SamplePtr<SampleType> &) const noexcept"
-    },
-    {
       "name": "operator=",
       "qualified_name": "score::mw::com::SamplePtr::operator=",
       "kind": "method",
@@ -928,16 +1018,46 @@
       "signature": "operator= : SamplePtr<SampleType> &(std::nullptr_t) noexcept"
     },
     {
-      "name": "operator>",
-      "qualified_name": "score::mw::com::SamplePtr::operator>",
-      "kind": "method",
-      "signature": "operator> : bool (const SamplePtr<SampleType> &) const noexcept"
-    },
-    {
       "name": "~SamplePtr<SampleType>",
       "qualified_name": "score::mw::com::SamplePtr::~SamplePtr<SampleType>",
       "kind": "destructor",
       "signature": "~SamplePtr<SampleType> : void () noexcept"
+    },
+    {
+      "name": "operator!=",
+      "qualified_name": "score::mw::com::operator!=",
+      "kind": "template_free_operator",
+      "signature": "operator!= : bool (std::nullptr_t, const SamplePtr<SampleType> &) noexcept"
+    },
+    {
+      "name": "operator!=",
+      "qualified_name": "score::mw::com::operator!=",
+      "kind": "template_free_operator",
+      "signature": "operator!= : bool (const SamplePtr<SampleType> &, std::nullptr_t) noexcept"
+    },
+    {
+      "name": "operator<",
+      "qualified_name": "score::mw::com::operator<",
+      "kind": "friend",
+      "signature": "operator< : bool (const SamplePtr<SampleType> &, const SamplePtr<SampleType> &) noexcept"
+    },
+    {
+      "name": "operator==",
+      "qualified_name": "score::mw::com::operator==",
+      "kind": "template_free_operator",
+      "signature": "operator== : bool (std::nullptr_t, const SamplePtr<SampleType> &) noexcept"
+    },
+    {
+      "name": "operator==",
+      "qualified_name": "score::mw::com::operator==",
+      "kind": "template_free_operator",
+      "signature": "operator== : bool (const SamplePtr<SampleType> &, std::nullptr_t) noexcept"
+    },
+    {
+      "name": "operator>",
+      "qualified_name": "score::mw::com::operator>",
+      "kind": "friend",
+      "signature": "operator> : bool (const SamplePtr<SampleType> &, const SamplePtr<SampleType> &) noexcept"
     },
     {
       "name": "data_integrity",
@@ -1144,6 +1264,18 @@
       "signature": "~SampleAllocateePtr<SampleType> : void () noexcept"
     },
     {
+      "name": "operator!=",
+      "qualified_name": "score::mw::com::operator!=",
+      "kind": "template_free_operator",
+      "signature": "operator!= : bool (const SampleAllocateePtr<T1> &, const SampleAllocateePtr<T2> &) noexcept"
+    },
+    {
+      "name": "operator==",
+      "qualified_name": "score::mw::com::operator==",
+      "kind": "template_free_operator",
+      "signature": "operator== : bool (const SampleAllocateePtr<T1> &, const SampleAllocateePtr<T2> &) noexcept"
+    },
+    {
       "name": "GenericProxy",
       "qualified_name": "score::mw::com::GenericProxy::GenericProxy",
       "kind": "constructor",
@@ -1294,22 +1426,10 @@
       "signature": "InjectMock : void (ISkeletonBase &)"
     },
     {
-      "name": "OfferService",
-      "qualified_name": "score::mw::com::GenericSkeleton::OfferService",
-      "kind": "method",
-      "signature": "OfferService : Result<void> () [[nodiscard]]"
-    },
-    {
       "name": "SkeletonBase",
       "qualified_name": "score::mw::com::GenericSkeleton::SkeletonBase",
       "kind": "constructor",
       "signature": "SkeletonBase : void (std::unique_ptr<SkeletonBinding>, InstanceIdentifier)"
-    },
-    {
-      "name": "StopOfferService",
-      "qualified_name": "score::mw::com::GenericSkeleton::StopOfferService",
-      "kind": "method",
-      "signature": "StopOfferService : void ()"
     },
     {
       "name": "~SkeletonBase",

@@ -332,6 +332,15 @@ Full guide: `validation/core/docs/specifications/sequence_design.md`.
   interface connection between two units inside it.
 - `actor` / `<<external>>` declared in any sequence diagram applies to that uid in all of them. Such a
   uid shall not name a unit, component or SEooC.
+- **Zoom**: a call `X -> C : op()` into a SEooC, component or unit is refined by a call from the same
+  sender with the same method to a direct child of `C` in another diagram; the call shall be the first
+  call of that diagram. No marker is needed. Every
+  call `C` makes to its environment shall appear in at least one refining diagram, which shall not use
+  elements outside `C` beyond those partners, nor `C` itself. Close a synchronous zoomed call with
+  `-->`, `return` (after `++` or `activate`) or `deactivate`; an asynchronous one (`->>`) needs no
+  reply
+  (`validation/core/docs/specifications/sequence_refinement.md`). In the docs the call label links to
+  the refining diagram.
 
 ---
 

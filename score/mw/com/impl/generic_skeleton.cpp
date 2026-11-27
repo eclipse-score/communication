@@ -152,16 +152,6 @@ ServiceElementMapView<GenericSkeletonEvent> GenericSkeleton::GetEvents() const n
     return ServiceElementMapViewFactory<GenericSkeletonEvent>::Create(*events_);
 }
 
-Result<void> GenericSkeleton::OfferService()
-{
-    return SkeletonBase::OfferService();
-}
-
-void GenericSkeleton::StopOfferService()
-{
-    SkeletonBase::StopOfferService();
-}
-
 GenericSkeleton::GenericSkeleton(const InstanceIdentifier& identifier, std::unique_ptr<SkeletonBinding> binding)
     : SkeletonBase(std::move(binding), identifier),
       events_(std::make_unique<std::map<std::string_view, GenericSkeletonEvent>>())
