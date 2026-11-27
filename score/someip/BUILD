@@ -18,9 +18,9 @@ unit(
     design_name = "SDControlProtocol",
     maturity = "development",
     scope = [],
+    test_specs = [],
     tests = [],
     unit_design = [],
     visibility = ["//score/someip/dependability:__subpackages__"],
     implementation = [],
-    # test_specs = [], introduced in score-tooling 3.0.2
 )

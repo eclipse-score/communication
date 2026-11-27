@@ -48,3 +48,24 @@ cc_unit_test(
         "//score/mw/com/impl/configuration",
     ],
 )
+
+cc_unit_test(
+    name = "service_discovery_client_test",
+    srcs = ["service_discovery_client_test.cpp"],
+    deps = [
+        "//score/message_passing:common_headers",
+        "//score/message_passing:mock",
+        "//score/mw/com/impl:enriched_instance_identifier",
+        "//score/mw/com/impl:error",
+        "//score/mw/com/impl:find_service_handle",
+        "//score/mw/com/impl:handle_type",
+        "//score/mw/com/impl:instance_identifier",
+        "//score/mw/com/impl:instance_specifier",
+        "//score/mw/com/impl/bindings/someip:runtime",
+        "//score/mw/com/impl/configuration",
+        "//score/mw/com/impl/configuration:quality_type",
+        "//score/someip/sd_client",
+        "@score_baselibs//score/mw/log",
+        "@score_baselibs//score/mw/log:recorder_mock",
+    ],
+)
