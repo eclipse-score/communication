@@ -14,94 +14,850 @@ package MessagePassing
 
 import ScoreReq
 
-// ---------------------------------------------------------------------------
-// Channel availability (includes startup failures)
-// ---------------------------------------------------------------------------
 
-ScoreReq.FailureMode IpcChannelUnavailable {
-    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.PartialFunction, ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.UnintendedFunction, ScoreReq.Guideword.TooEarly, ScoreReq.Guideword.TooLate]
-    description = "The IPC channel between client and server cannot be established or maintained"
-    failureeffect = "Clients cannot send or receive messages."
-    version = 1
-    safety = ScoreReq.Asil.B
+section "IServerFactory Create" {
+
+    // Contracts
+    // - A successful Create will return a valid IServer instance
+    // - The provided configuration parameters will be applied in the correct way
+
+    ScoreReq.FailureMode CreateReturnsNullAlthoughSuccessful {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "Create returns a null pointer although the operation was successful and a valid IServer instance should have been returned."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IServerFactory.Create"]
+    }
+
 }
 
-// ---------------------------------------------------------------------------
-// Message delivery failures
-// ---------------------------------------------------------------------------
+section "IClientFactory Create" {
 
-ScoreReq.FailureMode MessageNotDeliveredCorrectly {
-    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.PartialFunction, ScoreReq.Guideword.Corrupted]
-    description = "A message sent via the IPC channel is not, only partially with corrupted content delivered."
-    failureeffect = "The receiver processes no data, incomplete data, or incorrect data; messages may also be routed to an unintended server instance. Application behavior may be incorrect or a safety goal may be violated."
-    version = 1
-    safety = ScoreReq.Asil.B
+    // Contracts
+    // - A successful Create will return a valid IClient instance
+    // - The provided configuration parameters will be applied in the correct way
+
+    ScoreReq.FailureMode CreateReturnsNullAlthoughSuccessful {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "Create returns a null pointer although the operation was successful and a valid IClient instance should have been returned."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientFactory.Create"]
+    }
+
 }
 
-// ---------------------------------------------------------------------------
-// Notification delivery failures (server -> client)
-// ---------------------------------------------------------------------------
+section "No heap memory allocating operations" {
 
-ScoreReq.FailureMode NotificationNotDelivered {
-    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.PartialFunction, ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.TooLate, ScoreReq.Guideword.UnintendedFunction]
-    description = "A server-initiated notification is not, only partially, delayed, with corrupted content or when not intended delivered."
-    failureeffect = "The client misses an asynchronous server event or acts on incomplete, corrupted, stale, or spurious notification data; application behavior may be incorrect or a safety goal may be violated."
-    version = 1
-    safety = ScoreReq.Asil.B
+    // Contracts
+    // - IClientConnection::Send will not allocate any memory as all heap memory is pre-allocated
+    // - IClientConnection::SendWaitReply will not allocate any memory as all heap memory is pre-allocated
+    // - IClientConnection::SendWithCallback will not allocate any memory as all heap memory is pre-allocated
+    // - IServerConnection::Reply will not allocate any heap memory as all heap memory is pre-allocated
+    // - IServerConnection::Notify will not allocate any heap memory as all heap memory is pre-allocated
+
+
+    ScoreReq.FailureMode SendAllocatesHeapMemory {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "An operation is allocating new heap memory although all memory should be pre-allocated."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWaitReply", "score.message_passing.IClientConnection.SendWithCallback", "score.message_passing.IServerConnection.Reply", "score.message_passing.IServerConnection.Notify"]
+    }
+
 }
 
-// ---------------------------------------------------------------------------
-// Server-side message handling failures
-// ---------------------------------------------------------------------------
+section "ServerFactory/ClientFactory Memory-Resource-based constructor" {
 
-ScoreReq.FailureMode ServerMessageHandlingFailure {
-    guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.UnintendedFunction, ScoreReq.Guideword.TooLate]
-    description = "Server-side message or connection handler fails to process a received message or to produce a required reply."
-    failureeffect = "Request message is silently dropped or never answered; the client's SendWaitReply call blocks or times out, stalling potential safety-relevant communication."
-    version = 1
-    safety = ScoreReq.Asil.B
+    // Contracts
+    // - The ServerFactory/ClientFactory will be initialized with an Engine, which is constructed using the provided memory resource
+
+    ScoreReq.FailureMode FactoryConstructorIgnoresMemoryResource {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "The Factory is constructed with a memory resource, but this memory resource is not used when constructing the factory's used Engine."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientFactory", "score.message_passing.IServerFactory"]
+    }
+
 }
 
-ScoreReq.FailureMode MessageTimingViolated {
-    guidewords = [ScoreReq.Guideword.TooLate]
-    description = "A message or reply is delivered outside of the specified timing bounds required by the application."
-    failureeffect = "FTTI violations may occur on safety-relevant communication paths."
-    version = 1
-    safety = ScoreReq.Asil.B
+section "Factory GetEngine" {
+
+    // Contracts
+    // - GetEngine will return the factory's related Engine
+
+    ScoreReq.FailureMode GetEngineDoesNotReturnRelatedEngine {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "The Factory does not return the Engine that the factory was constructed with."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientFactory.GetEngine", "score.message_passing.IServerFactory.GetEngine"]
+    }
+
 }
 
-// ---------------------------------------------------------------------------
-// API misuse and lifecycle violations
-// ---------------------------------------------------------------------------
+section "Engine" {
 
-ScoreReq.FailureMode IpcApiMisuseOrLifecycleViolation {
-    guidewords = [ScoreReq.Guideword.TooEarly, ScoreReq.Guideword.UnintendedFunction]
-    description = "An IPC operation is invoked at the wrong lifecycle stage or outside its valid call context."
-    failureeffect = "Undefined behavior, silent message drop, or application crash; unexpected messages may corrupt application-level protocol state."
-    version = 1
-    safety = ScoreReq.Asil.B
+    // Contracts
+    // - An Engine will be constructed with the memory resource that has been provided
+
+    ScoreReq.FailureMode EngineDoesNotUseProvidedMemoryResource {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "The Engine is getting constructed with a memory resource that is not the one that has been provided in the constructor."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.Engine"]
+    }
+
 }
 
-// ---------------------------------------------------------------------------
-// Connection context data failures
-// ---------------------------------------------------------------------------
+section "IClientConnection/IServer Engine sharing" {
 
-ScoreReq.FailureMode ConnectionContextDataWrong {
-    guidewords = [ScoreReq.Guideword.Corrupted, ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.PartialFunction]
-    description = "Identity or cached context data associated with a server connection is absent, incomplete, or incorrect."
-    failureeffect = "The server makes access control or application logic decisions based on wrong context data; the client may be incorrectly granted or denied access, or receive incorrect responses, potentially violating safety goals."
-    version = 1
-    safety = ScoreReq.Asil.B
+    // Contracts
+    // - The ServerFactory/ClientFactory will be initialized with the provided Engine instance
+    // - ClientConnections and Servers rely on the shared engine that was provided to the respective Factories and therefore shared the Engine's background thread and memory resources.
+
+    ScoreReq.FailureMode ConnectionDoesNotShareProvidedEngineResources {
+        guidewords = [ScoreReq.Guideword.Wrong, ScoreReq.Guideword.UnintendedFunction]
+        description = "A client connection or server created from a Factory that ignores its caller-provided Engine ends up backed by a different, unshared Engine instance. The connection/server silently consumes its own additional background thread and memory resource instead of the ones the caller explicitly shared across its Factories, and any serialization the caller relied upon from that sharing is lost."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.Start", "score.message_passing.IClientConnection.Restart", "score.message_passing.IClientConnection.Stop", "score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWaitReply", "score.message_passing.IClientConnection.SendWithCallback", "score.message_passing.IServer.StartListening", "score.message_passing.IServer.StopListening"]
+    }
+
 }
 
-// ---------------------------------------------------------------------------
-// State machine failures
-// ---------------------------------------------------------------------------
 
-ScoreReq.FailureMode StateMachineError {
-    guidewords = [ScoreReq.Guideword.Wrong, ScoreReq.Guideword.LossOfFunction]
-    description = "GetState or GetStopReason returns an incorrect lifecycle state that does not match the actual connection state."
-    failureeffect = "Application logic based on connection state makes incorrect decisions; error recovery paths may be triggered incorrectly or missed entirely."
-    version = 1
-    safety = ScoreReq.Asil.B
+section "IClientConnection Start" {
+    // Contracts
+    // - Start will register the provided callbacks
+    // - In case of an error during Start the connection state will trigger a state change so that eventually the state will be in "kStopped"
+    // - If configured (ClientConfig::sync_first_connect), the first connection attempt is performed on the calling thread
+
+    ScoreReq.FailureMode FirstConnectAttemptUsesWrongExecutionContext {
+        guidewords = [ScoreReq.Guideword.DelayedFunction, ScoreReq.Guideword.LossOfFunction]
+        description = "The first connection attempt is performed on the calling thread although ClientConfig::sync_first_connect is not configured, or the engine's background thread is used although sync_first_connect is configured."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.Start", "score.message_passing.IClientConnection.Restart"]
+    }
+
+}
+
+section "IClientConnection Restart" {
+
+    // Contracts
+    // - After a successful call of Restart the client connection will be in state "kReady"
+    // - Restart will not change the connection's state if it is not in the state "kStopped"
+    // - In case of an error during Restart the connection state will be "kStopped"
+    // - If configured (ClientConfig::sync_first_connect), the first connection attempt is performed on the calling thread
+
+    ScoreReq.FailureMode RestartDoesNotRestartConnectionAlthoughStopped {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "Restart is called on a connection that is in the state 'kStopped' but the connection is not restarted and state is not changed to 'kReady'."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.Restart"]
+    }
+
+    ScoreReq.FailureMode RestartChangesConnectionStateAlthoughNotStopped {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "Restart is called on a connection that is not in the state 'kStopped' but the connection will be restarted anyways."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.Restart"]
+    }
+}
+
+section "IClientConnection GetState" {
+
+    // Contracts
+    // - GetState will return the state, the connection is currently in, which might have changed in the meantime. This means the connection definitely was in that state at some point, but not might be in that state anymore.
+    // - Callers that do not register a StateCallback with Start() will use GetState in a polling loop to wait until the connection reaches State::kReady or State::kStopped
+
+    ScoreReq.FailureMode GetStateReturnsWrongConnectionState {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "GetState returns a wrong connection state that the connection never has been in."
+        failureeffect = "If GetState is used in a polling loop to detect a relevant state might miss this and leave the loop to early or never leave it."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.GetState"]
+    }
+}
+
+section "IClientConnection GetStopReason" {
+
+    // Contracts
+    // - GetStopReason will return the reason why this connection was stopped the last time
+
+    ScoreReq.FailureMode GetStopReasonReturnsWrongStopReason {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "GetStopReason returns a wrong stop reason that does not match the actual stop reason."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.GetStopReason"]
+    }
+}
+
+section "IClientConnection Send" {
+
+    // Contracts
+    // - A successful Send call will return no error
+    // - An unsuccessful Send call will return the respective error code
+    // - Send is non-blocking and returns directly
+    // - The buffers provided to the Send call can be reused after the call returns
+    // - Send will not alter the message's content (byte sequence, etc.)
+    // - Send will queue as many send attempts (according to the configuration in ClientConfig) and reject any further send requests once currently outstanding reach the limit
+    // - If configured Send will be deferred until a pending SendWaitReply/SendWithCallback has been received
+
+    ScoreReq.FailureMode ReturnsFailureAlthoughSendWasSuccessful {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "Although the Send call was successful an error is returned."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.Send"]
+    }
+
+    ScoreReq.FailureMode ReturnsNoFailureAlthoughSendFailed {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "The send call failed, but the expected error code is not reported."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.Send"]
+    }
+
+    ScoreReq.FailureMode SendCallBlocksAndDoesNotReturnDirectly {
+        guidewords = [ScoreReq.Guideword.DelayedFunction]
+        description = "The call of Send does not return directly but blocks longer than expected."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.Send"]
+    }
+
+    ScoreReq.FailureMode SendBufferIsAccessedAfterCallFinished {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Corrupted]
+        description = "Send is accessing the message buffer after the call has finished and therefore the buffer can not be reused by the client application."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.Send"]
+    }
+
+    ScoreReq.FailureMode SendDoesNotDeferForPendingReplyWhenFullyOrderedConfigured {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "Although ClientConfig::fully_ordered is configured, a Send call is transmitted immediately while a SendWaitReply/SendWithCallback reply is still pending on the same connection."
+        failureeffect = "Server receives the messages out of the order they were sent."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.Send"]
+    }
+
+    ScoreReq.FailureMode SendQueueCapacityDoesNotMatchConfiguration {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "The send queue does not provide as many slots as actually configured and expected and therefore calls are rejected."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.Send", "score.message_passing.IClientConnection.SendWaitReply", "score.message_passing.IClientConnection.SendWithCallback"]
+    }
+
+}
+
+section "IClientConnection SendWaitReply" {
+
+    // Contracts
+    // - SendWaitReply will block and wait until the server has written the reply
+    // - SendWaitReply will return the reply message in case that the operation was successful
+    // - SendWaitReply will return the respective error in case that the operation did not succeed
+    // - SendWaitReply will write the reply message in the dedicated reply buffer
+    // - SendWaitReply will not alter the message's content nor the reply's content (byte sequence, etc.)
+
+    ScoreReq.FailureMode SendWaitReplyDoesNotReturnAlthoughReplyWasSent {
+        guidewords = [ScoreReq.Guideword.LossOfFunction]
+        description = "The call of SendWaitReply does not return and hangs indefinitely although the server has sent the reply."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.SendWaitReply"]
+    }
+
+    ScoreReq.FailureMode SendWaitReplyReceivesWrongServerData {
+        guidewords = [ScoreReq.Guideword.LossOfFunction]
+        description = "The call of SendWaitReply will return the wrong server data as a response, i.e. different from what the server actually sent."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.SendWaitReply"]
+    }
+
+    ScoreReq.FailureMode SendWaitReplyReturnsErrorAlthoughSuccessful {
+        guidewords = [ScoreReq.Guideword.UnintendedFunction]
+        description = "SendWaitReply returns an error although the operation was successful."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.SendWaitReply"]
+    }
+
+    ScoreReq.FailureMode ReturnsNoFailureAlthoughFailed {
+        guidewords = [ScoreReq.Guideword.DelayedFunction]
+        description = "SendWaitReply does not report an error although the operation failed."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.SendWaitReply"]
+    }
+    
+    ScoreReq.FailureMode SendBufferIsAccessedAfterCallFinished {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Corrupted]
+        description = "SendWaitReply is accessing the message buffer after the call has finished and therefore the buffer can not be reused by the client application."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.SendWaitReply"]
+    }
+
+}
+
+section "IClientConnection SendWithCallback" {
+
+    // Contracts
+    // - SendWithCallback will return an error in case the operation fails before the call is armed
+    // - SendWithCallback will call the provided callback once if the operation was successful
+    // - SendWithCallback will not access the provided message buffer after the call returned
+    // - SendWithCallback is non-blocking and returns directly
+    
+    ScoreReq.FailureMode SendWithCallbackFinishesSuccessfullyButErrorIsReturned {
+        guidewords = [ScoreReq.Guideword.UnintendedFunction]
+        description = "SendWithCallback returns an error although the operation was successful."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.SendWithCallback"]
+    }
+    
+    ScoreReq.FailureMode SendWithCallbackFinishesSuccessfullyButCallbackIsNotCalled {
+        guidewords = [ScoreReq.Guideword.LossOfFunction]
+        description = "The callback provided with SendWithCallback is not called although the call was successful."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.SendWithCallback"]
+    }
+    
+    ScoreReq.FailureMode SendWithCallbackFailsButNoErrorIsReturned {
+        guidewords = [ScoreReq.Guideword.UnintendedFunction]
+        description = "SendWithCallback fails during the call (i.e. error occurs directly during the call and not on callback level) but returns no error code."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.SendWithCallback"]
+    }
+    
+    ScoreReq.FailureMode SendBufferIsAccessedAfterCallFinished {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Corrupted]
+        description = "SendWithCallback is accessing the message buffer after the call has finished and therefore the buffer can not be reused by the client application."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.SendWithCallback"]
+    }
+
+    ScoreReq.FailureMode SendWithCallbackBlocksAndDoesNotReturnDirectly {
+        guidewords = [ScoreReq.Guideword.DelayedFunction]
+        description = "The call of SendWithCallback does not return directly but blocks longer than expected."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.SendWithCallback"]
+    }
+
+}
+
+section "IClientConnection ReplyCallback" {
+
+    // Contracts
+    // - The ReplyCallback will only be invoked for the reply of the message it has been setup for
+    // - The ReplyCallback receives the incoming message content as it was sent by the server
+    // - If an error occurs while receiving the reply, this will be forwarded to the ReplyCallback
+    // - The ReplyCallback invocations are correctly sequenced, invocations are never reordered, duplicated or overlapping/concurrent
+
+     ScoreReq.FailureMode ReplyCallbackNotInvokedForReplyOnMessage {
+        guidewords = [ScoreReq.Guideword.LossOfFunction]
+        description = "A reply is received for a message that has been sent via SentWithCallback, but the related ReplyCallback is not invoked."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.ReplyCallback"]
+     }
+
+     ScoreReq.FailureMode ReplyCallbackInvokedForUnrelatedReply {
+         guidewords = [ScoreReq.Guideword.LossOfFunction]
+         description = "A ReplyCallback is invoked although the reply is for a message that has not been sent with a ReplyCallback or with a different ReplyCallback."
+         version = 1
+         safety = ScoreReq.Asil.B
+         interface = ["score.message_passing.ReplyCallback"]
+     }
+
+     ScoreReq.FailureMode ReplyCallbackReceivesWrongMessageContent {
+        guidewords = [ScoreReq.Guideword.Corrupted]
+        description = "The ReplyCallback receives message content that does not match the message that was sent by the server."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.ReplyCallback"]
+     }
+
+     ScoreReq.FailureMode ErrorIsNotForwardedToReplyCallback {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "The message_passing framework does not report an error that occurred while receiving the reply to the callback."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.ReplyCallback"]
+     }
+
+     ScoreReq.FailureMode ReplyCallbackIsInvokedOutOfSequence {
+         guidewords = [ScoreReq.Guideword.Wrong]
+         description = "The ReplyCallback is invoked in a way that violates the guaranteed sequencing."
+         version = 1
+         safety = ScoreReq.Asil.B
+         interface = ["score.message_passing.ReplyCallback"]
+     }
+
+}
+
+section "IClientConnection StateCallback" {
+
+    // Contracts
+    // - The StateCallback has been registered when IClientConnection::Start was called
+    // - The StateCallback will be invoked for each state change of the associated IClientConnection
+    // - The StateCallback receives the new state and the stop reason (if applicable) of the connection
+    // - The StateCallback invocations are correctly sequenced, invocations are never reordered, duplicated or overlapping/concurrent
+
+    ScoreReq.FailureMode CallbackHasNotBeenRegistered {
+        guidewords = [ScoreReq.Guideword.LossOFunction]
+        description = "The provided callback has not been registered and later calls on it for state updates will not be reported to the user application."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.StateCallback"]
+    }
+
+    ScoreReq.FailureMode StateCallbackNotInvokedForStateChange {
+        guidewords = [ScoreReq.Guideword.LossOfFunction]
+        description = "The registered StateCallback is not being invoked although a state change occurred for the related IClientConnection."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.StateCallback"]
+     }
+
+     ScoreReq.FailureMode StateCallbackReceivesWrongStateOrStopReason {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "The StateCallback is invoked with a wrong state that does not match the actual state of the connection."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.StateCallback"]
+     }
+
+     ScoreReq.FailureMode ConnectionStateUpdateIsNotTriggerToSetToReady {
+         guidewords = [ScoreReq.Guideword.Wrong]
+         description = "Start was called and the connection could be established but the update that will set the connection state to 'kReady' at one point was not triggered. Future operations will imply that the connection is not ready and can be used."
+         version = 1
+         safety = ScoreReq.Asil.B
+         interface = ["score.message_passing.StateCallback"]
+     }
+
+     ScoreReq.FailureMode ConnectionErrorDoesNotTriggerStateUpdateToStopped {
+         guidewords = [ScoreReq.Guideword.Wrong]
+         description = "During the call of Start a connection error occurred but the trigger to update the connection state to 'kStopped' is not invoked."
+         version = 1
+         safety = ScoreReq.Asil.B
+         interface = ["score.message_passing.StateCallback"]
+     }
+
+     ScoreReq.FailureMode SuccessfulRestartDoesNotTriggerStateUpdateToReady {
+         guidewords = [ScoreReq.Guideword.Wrong]
+         description = "After a successful call of Restart the connection state update that will set the state to 'kReady' at one point has not been triggered and future operations will imply that the connection is not ready and can be used."
+         version = 1
+         safety = ScoreReq.Asil.B
+         interface = ["score.message_passing.StateCallback"]
+     }
+
+     ScoreReq.FailureMode ConnectionErrorDuringRestartDoesNotTriggerStateUpdateToStopped {
+         guidewords = [ScoreReq.Guideword.Wrong]
+         description = "During the call of Start a connection error occurred but the connection state update that will set the state to 'kStopped' at one point is not triggered and the user does not know about the connection issue."
+         version = 1
+         safety = ScoreReq.Asil.B
+         interface = ["score.message_passing.StateCallback"]
+     }
+
+
+    ScoreReq.FailureMode SuccessfulStopDoesNotTriggerStateUpdateToStopped {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "After a successful call of Stop the connection state update that will set the state to 'kStopped' at one point is not triggered and will imply that the connection is still ready and can be used."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.StateCallback"]
+    }
+
+    ScoreReq.FailureMode StateCallbackIsInvokedOutOfSequence {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "The StateCallback is invoked in a way that violates the guaranteed sequencing."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.StateCallback"]
+    }
+
+}
+
+section "IClientConnection NotifyCallback" {
+
+    // Contracts
+    // - The NotifyCallback has been registered when IClientConnection::Start was called
+    // - The NotifyCallback will be invoked for each notification received for the associated IClientConnection
+    // - The NotifyCallback receives the incoming message content as it was sent by the server
+    // - The NotifyCallback invocations are correctly sequenced, invocations are never reordered, duplicated or overlapping/concurrent
+
+    ScoreReq.FailureMode CallbackHasNotBeenRegistered {
+        guidewords = [ScoreReq.Guideword.LossOFunction]
+        description = "The provided callback has not been registered and later calls on it for notifications will not be reported to the user application."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IClientConnection.NotifyCallback"]
+    }
+
+     ScoreReq.FailureMode NotifyCallbackNotInvokedForNotificationEvent {
+        guidewords = [ScoreReq.Guideword.LossOfFunction]
+        description = "The registered NotifyCallback is not being invoked although a notification is received for the related IClientConnection."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.NotifyCallback"]
+     }
+
+     ScoreReq.FailureMode NotifyCallbackReceivesWrongMessageContent {
+        guidewords = [ScoreReq.Guideword.Corrupted]
+        description = "The NotifyCallback receives message content that does not match the notify message that was sent by the server."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.NotifyCallback"]
+     }
+
+      ScoreReq.FailureMode NotifyCallbackIsInvokedOutOfSequence {
+          guidewords = [ScoreReq.Guideword.Wrong]
+          description = "The NotifyCallback is invoked in a way that violates the guaranteed sequencing."
+          version = 1
+          safety = ScoreReq.Asil.B
+          interface = ["score.message_passing.NotifyCallback"]
+      }
+}
+
+
+section "IServer StartListening" {
+
+    // Contracts
+    // - StartListening will register the provided callbacks for their intended purposes
+    // - StartListening will return an error in case that a failure occurred
+
+    ScoreReq.FailureMode StartListeningFailedButNoErrorReturned {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "StartListening fails but the intended error is not returned."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IServer.StartListening"]
+    }
+
+    ScoreReq.FailureMode StartListeningSuccessfulButErrorReturned {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "StartListening succeeds but an error is returned."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IServer.StartListening"]
+    }
+
+}
+
+section "IServer StopListening" {
+
+    // Contracts
+    // - The registered callbacks will not be accessed/called anymore after StopListening was called
+
+    ScoreReq.FailureMode CallbacksAreStillCalled {
+        guidewords = [ScoreReq.Guideword.UnintendedFunction]
+        description = "After StopListening has been called, the previously registered callbacks are still accessed by the IServer or invoked for any future connection events."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IServer.StopListening"]
+    }
+}
+
+
+section "IServerConnection GetClientIdentity" {
+
+    // Contracts
+    // - GetClientIdentity will return the identity of the client that is connected to this server connection
+
+    ScoreReq.FailureMode GetClientIdentityReturnsWrongClientIdentity {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "GetClientIdentity returns a wrong client identity that does not match the actual client identity."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IServerConnection.GetClientIdentity"]
+    }
+
+}
+
+section "IServerConnection GetUserData" {
+
+    // Contracts
+    // - GetUserData will return the user data registered for this server connection
+
+    ScoreReq.FailureMode GetUserDataReturnsWrongUserData {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "GetUserData returns wrong user data that does not match the actual user data for this connection."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IServerConnection.GetUserData"]
+    }
+
+}
+
+section "IServerConnection Reply" {
+
+    // Contracts
+    // - A successful Reply will not return an error
+    // - Reply will return the dedicated error code in case of a failure
+    // - Reply will not access the provided message buffer after the call returned
+
+    ScoreReq.FailureMode ReplyReturnsErrorAlthoughSuccessful {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "Reply returns an error although the reply operation finished successfully."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IServerConnection.Reply"]
+    }
+
+    ScoreReq.FailureMode ReplyDoesNotReturnErrorForFailure {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "Reply does not return an error although the reply operation failed."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IServerConnection.Reply"]
+    }
+
+    ScoreReq.FailureMode ReplyBufferIsAccessedAfterCallFinished {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Corrupted]
+        description = "Reply is accessing the message buffer after the call has finished and therefore the buffer can not be reused by the server application."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IServerConnection.Reply"]
+    }
+
+}
+
+section "IServerConnection Notify" {
+
+    // Contracts
+    // - A successful Notify will not return an error
+    // - Notify will return the dedicated error code in case of a failure
+    // - Notify will not access the provided message buffer after the call returned
+
+    ScoreReq.FailureMode NotifyReturnsErrorAlthoughSuccessful {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "Notify returns an error although the notify operation finished successfully."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IServerConnection.Notify"]
+    }
+
+    ScoreReq.FailureMode NotifyDoesNotReturnErrorForFailure {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "Notify does not return an error although the notify operation failed."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IServerConnection.Notify"]
+    }
+
+    ScoreReq.FailureMode NotifyBufferIsAccessedAfterCallFinished {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Corrupted]
+        description = "Notify is accessing the message buffer after the call has finished and therefore the buffer can not be reused by the server application."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IServerConnection.Notify"]
+    }
+
+}
+
+section "IConnectionHandler OnMessageSent/OnMessageSentWithReply" {
+
+    // Contracts
+    // - The message_passing framework will handle the potential error (based on user's implementation) that the implementation of OnMessageSent/OnMessageSentWithReply might return
+    // - OnMessageSent/OnMessageSentWithReply will be called for the IServerConnection it was registered for
+    // - OnMessageSent/OneMessageSentWithReply will receive the message content as it was sent by the client
+
+    ScoreReq.FailureMode UsersErrorReturnValueNotHandledByFramework {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "The user's implementations of OnMessageSent/OnMessageSentWithReply return an error, which is not handled by the message_passing framework."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IConnectionHandler.OnMessageSent", "score.message_passing.IConnectionHandler.OnMessageSentWithReply"]
+    }
+
+    ScoreReq.FailureMode IsCalledForWrongConnection {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Wrong]
+        description = "OnMessageSent/OnMessageSentWithReply is called for a different IServerConnection than it was actually registered for."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IConnectionHandler.OnMessageSent", "score.message_passing.IConnectionHandler.OnMessageSentWithReply"]
+    }
+
+    ScoreReq.FailureMode ReceivesWrongMessageContent {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Corrupted]
+        description = "OnMessageSent/OnMessageSentWithReply receives a different message content than actually sent by the client."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IConnectionHandler.OnMessageSent", "score.message_passing.IConnectionHandler.OnMessageSentWithReply"]
+    }
+}
+
+section "IConnectionHandler OnDisconnect" {
+
+    // Contracts
+    // - OnDisconnect will be called for the IServerConnection it was registered for
+
+    ScoreReq.FailureMode IsCalledForWrongConnection {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Wrong]
+        description = "OnDisconnect is called for a different IServerConnection than it was actually registered for."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.IConnectionHandler.OnDisconnect"]
+    }
+}
+
+section "ConnectCallback" {
+
+    // Contracts
+    // - The ConnectCallback has been registered during the call of IServer::StartListening
+    // - The ConnectCallback will be invoked for each connection event that occurs for the associated IServer
+    // - The returned UserData returned by this callback (based on the user's callback implementation) will be registered
+    // - A potential error returned by this callback (based on the user's callback implementation) will be handled
+    // - The ConnectCallback invocations are correctly sequenced, invocations are never reordered, duplicated or overlapping/concurrent
+
+    ScoreReq.FailureMode CallbackHasNotBeenRegistered {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Wrong]
+        description = "The callback has not been not registered and will not be called in case of a connect event."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.ConnectCallback"]
+    }
+
+    ScoreReq.FailureMode UserDataReturnValueIsNotRegistered {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "The user's ConnectCallback implementation is returning a UserData instance, but the return value is not registered by the message_passing framework."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.ConnectCallback"]
+    }
+
+    ScoreReq.FailureMode UserErrorIsNotHandled {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "The user's ConnectCallback implementation is returning an error, but the error is not handled by the message_passing framework."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.ConnectCallback"]
+    }
+
+    ScoreReq.FailureMode ConnectCallbackIsNotInvoked {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Wrong]
+        description = "A connection event occurs for an IServer, but the related ConnectCallback is not invoked."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.ConnectCallback"]
+    }
+
+    ScoreReq.FailureMode ConnectCallbackIsInvokedOutOfSequence {
+          guidewords = [ScoreReq.Guideword.Wrong]
+          description = "The ConnectCallback is invoked in a way that violates the guaranteed sequencing."
+          version = 1
+          safety = ScoreReq.Asil.B
+          interface = ["score.message_passing.ConnectCallback"]
+    }
+
+}
+
+section "DisconnectCallback" {
+
+    // Contracts
+    // - The DisconnectCallback has been registered with the call of IServer::StartListening
+    // - The DisconnectCallback will be invoked for each disconnect event that occurs for the associated IServerConnection, where no IConnectionHandler is registered.
+    // - The DisconnectCallback invocations are correctly sequenced, invocations are never reordered, duplicated or overlapping/concurrent
+
+    ScoreReq.FailureMode CallbackHasNotBeenRegistered {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Wrong]
+        description = "The callback has not been not registered and will not be called in case of a disconnect event."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.DisconnectCallback"]
+    }
+
+    ScoreReq.FailureMode DisconnectCallbackIsNotInvoked {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Wrong]
+        description = "A disconnect event occurs for an IServerConnection and no IConnectionHandler is registered for this connection, but the related DisconnectCallback is not invoked."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.DisconnectCallback"]
+    }
+
+    ScoreReq.FailureMode DisconnectCallbackInvokedAlthoughConnectionHandlerRegistered {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Wrong]
+        description = "A disconnect event occurs for an IServerConnection and although an IConnectionHandler has been registered for this connection, the DisconnectCallback is invoked."
+        failureeffect = "The user might not have registered a DisconnectCallback and therefore the default callback is invoked."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.DisconnectCallback"]
+    }
+
+    ScoreReq.FailureMode DisconnectCallbackIsInvokedOutOfSequence {
+          guidewords = [ScoreReq.Guideword.Wrong]
+          description = "The DisconnectCallback is invoked in a way that violates the guaranteed sequencing."
+          version = 1
+          safety = ScoreReq.Asil.B
+          interface = ["score.message_passing.DisconnectCallback"]
+    }
+
+}
+
+section "MessageCallback" {
+
+    // Contracts
+    // - The MessageCallbacks have been registered with the call of IServer::StartListening
+    // - A potential error returned by this callback (based on the user's callback implementation) will be handled
+    // - The MessageCallback will be invoked for each message event that occurs for the associated IServerConnection, where no IConnectionHandler is registered.
+    // - The MessageCallback invocations are correctly sequenced, invocations are never reordered, duplicated or overlapping/concurrent
+
+    ScoreReq.FailureMode CallbackHasNotBeenRegistered {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Wrong]
+        description = "The callback has not been not registered and will not be called in case the related event (sent_callback, sent_with_reply) occurs."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.MessageCallback"]
+    }
+
+    ScoreReq.FailureMode UsersErrorReturnValueNotHandledByFramework {
+        guidewords = [ScoreReq.Guideword.Wrong]
+        description = "The user's implementations of the MessageCallback return an error, which is not handled by the message_passing framework."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.MessageCallback"]
+    }
+
+    ScoreReq.FailureMode MessageCallbackIsNotInvoked {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Wrong]
+        description = "A message is received on an IServerConnection and no IConnectionHandler is registered for this connection, but the related MessageCallback is not invoked."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.MessageCallback"]
+    }
+
+    ScoreReq.FailureMode MessageCallbackInvokedAlthoughConnectionHandlerRegistered {
+        guidewords = [ScoreReq.Guideword.LossOfFunction, ScoreReq.Guideword.Wrong]
+        description = "A message is received on an IServerConnection and although an IConnectionHandler has been registered for this connection, the DisconnectCallback is invoked."
+        failureeffect = "The user might not have registered a MessageCallback and therefore the default callback is invoked."
+        version = 1
+        safety = ScoreReq.Asil.B
+        interface = ["score.message_passing.MessageCallback"]
+    }
+
+    ScoreReq.FailureMode MessageCallbackIsInvokedOutOfSequence {
+          guidewords = [ScoreReq.Guideword.Wrong]
+          description = "The MessageCallback is invoked in a way that violates the guaranteed sequencing."
+          version = 1
+          safety = ScoreReq.Asil.B
+          interface = ["score.message_passing.MessageCallback"]
+    }
 }
