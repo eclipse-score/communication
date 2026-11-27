@@ -44,7 +44,7 @@ class SkeletonMethod : public SkeletonMethodBinding
   public:
     SkeletonMethod(Skeleton& skeleton, const UniqueMethodIdentifier unique_method_identifier);
 
-    Result<void> RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback) override;
+    Result<void> RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& callback) override;
 
     Result<void> OnProxyMethodSubscribeFinished(
         const TypeErasedCallQueue::TypeErasedElementInfo type_erased_element_info,

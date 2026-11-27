@@ -14,8 +14,6 @@
 
 #include "score/mw/com/impl/com_error.h"
 
-#include <cctype>
-
 namespace score::mw::com::impl
 {
 
@@ -44,10 +42,12 @@ bool IsShortNameValid(const std::string_view shortname) noexcept
 
     auto validate_chars = [](auto it_begin, auto it_end, const bool first_char) -> bool {
         const auto found_invalid_chars = std::find_if_not(it_begin, it_end, [first_char](const auto curent_char) {
-            const auto u_ch = static_cast<int>(static_cast<unsigned char>(curent_char));
-            const auto is_alpha_or_num = first_char ? std::isalpha(u_ch) : std::isalnum(u_ch);
+            const bool is_alpha =
+                ((curent_char >= 'a') && (curent_char <= 'z')) || ((curent_char >= 'A') && (curent_char <= 'Z'));
+            const bool is_digit = (curent_char >= '0') && (curent_char <= '9');
+            const bool is_alpha_or_num = first_char ? is_alpha : (is_alpha || is_digit);
             // coverity[autosar_cpp14_a5_2_6_violation: FALSE] False positive: each operand is parenthesized
-            return ((is_alpha_or_num != 0) || (curent_char == '_') || (curent_char == '/'));
+            return (is_alpha_or_num || (curent_char == '_') || (curent_char == '/'));
         });
         return found_invalid_chars == it_end;
     };

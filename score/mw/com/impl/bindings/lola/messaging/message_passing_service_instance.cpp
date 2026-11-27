@@ -243,7 +243,7 @@ MessagePassingServiceInstance::MessagePassingServiceInstance(
     score::message_passing::IServerFactory::ServerConfig server_config{};
     server_ = server_factory.Create(protocol_config, server_config);
 
-    auto connect_callback = [](score::message_passing::IServerConnection& connection) noexcept -> std::uintptr_t {
+    auto connect_callback = [](const score::message_passing::IServerConnection& connection) noexcept -> std::uintptr_t {
         const pid_t client_pid = connection.GetClientIdentity().pid;
         return static_cast<std::uintptr_t>(client_pid);
     };

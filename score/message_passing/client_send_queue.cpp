@@ -120,7 +120,7 @@ ClientSendQueue::ReplyResult ClientSendQueue::SendWaitReply(Message message, Rep
             future.UpdateValueMarkReady(score::cpp::make_unexpected(score::os::Error::createFromErrno(EMSGSIZE)));
             return;
         }
-        std::copy(reply_message.begin(), reply_message.end(), reply.begin());
+        static_cast<void>(std::copy(reply_message.begin(), reply_message.end(), reply.begin()));
         future.UpdateValueMarkReady(Message{reply.data(), reply_message.size()});
     };
 

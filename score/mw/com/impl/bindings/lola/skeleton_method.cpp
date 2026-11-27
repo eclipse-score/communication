@@ -45,9 +45,9 @@ SkeletonMethod::SkeletonMethod(Skeleton& skeleton, UniqueMethodIdentifier unique
     skeleton.RegisterMethod(unique_method_identifier, *this);
 }
 
-Result<void> SkeletonMethod::RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& type_erased_callback)
+Result<void> SkeletonMethod::RegisterHandler(SkeletonMethodBinding::TypeErasedHandler&& callback)
 {
-    type_erased_callback_ = std::move(type_erased_callback);
+    type_erased_callback_ = std::move(callback);
     return {};
 }
 

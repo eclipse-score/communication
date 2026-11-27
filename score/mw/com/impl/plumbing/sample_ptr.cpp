@@ -50,13 +50,7 @@ SamplePtr<void> CreateSamplePtrFromSampleAllocateePtr(SampleAllocateePtr<void>& 
         [](someip::SampleAllocateePtr&) -> SamplePtr<void> {
             std::terminate();
         },
-        // Suppress "AUTOSAR C++14 A8-4-12" rule finding. This rule states: "A std::unique_ptr shall be passed to a
-        // function as: (1) a copy to express the function assumes ownership (2) an lvalue reference to express that
-        // the function replaces the managed object".
-        // Here we can't use a raw pointer / reference since we're using score::cpp::overload, and the function is
-        // not replacing the managed object, so this should be a non-const reference (matching the lola case above).
-        // coverity[autosar_cpp14_a8_4_12_violation]
-        [](mock_binding::SampleAllocateePtr& ptr) -> SamplePtr<void> {
+        [](const mock_binding::SampleAllocateePtr& ptr) -> SamplePtr<void> {
             return SamplePtr<void>{mock_binding::SamplePtr{ptr.get(), [](void*) noexcept {}}, SampleReferenceGuard{}};
         },
         // LCOV_EXCL_START (Defensive programming: CreateSamplePtrFromSampleAllocateePtr is always expected to be

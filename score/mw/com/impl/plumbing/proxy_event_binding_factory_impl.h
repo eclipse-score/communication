@@ -37,12 +37,12 @@ class ProxyEventBindingFactoryImpl : public IProxyEventBindingFactory
   public:
     /// Creates instances of the binding specific implementations for a proxy event with a particular data type.
     /// \param handle The handle containing the binding information.
-    /// \param event_name The binding unspecific name of the event inside the proxy denoted by handle.
+    /// \param event_or_field_name The binding unspecific name of the event inside the proxy denoted by handle.
     /// \param data_type_size_info Size/alignment info of the event's data type.
     /// \return An instance of ProxyEventBinding or an error in case binding creation fails.
     Result<std::unique_ptr<ProxyEventBinding>> Create(HandleType parent_handle,
                                                       ProxyBinding& parent_binding,
-                                                      const std::string_view event_name,
+                                                      const std::string_view event_or_field_name,
                                                       const ServiceElementType service_element_type,
                                                       memory::DataTypeSizeInfo data_type_size_info) noexcept override;
 };
@@ -54,11 +54,11 @@ class GenericProxyEventBindingFactoryImpl : public IGenericProxyEventBindingFact
   public:
     /// Creates instances of the binding specific implementations for a generic proxy event that has no data type.
     /// \param handle The handle containing the binding information.
-    /// \param event_name The binding unspecific name of the event inside the proxy denoted by handle.
+    /// \param event_or_field_name The binding unspecific name of the event inside the proxy denoted by handle.
     /// \return An instance of ProxyEventBinding or an error in case binding creation fails.
     Result<std::unique_ptr<GenericProxyEventBinding>> Create(HandleType parent_handle,
                                                              ProxyBinding& parent_binding,
-                                                             const std::string_view event_name,
+                                                             const std::string_view event_or_field_name,
                                                              const ServiceElementType service_element_type) override;
 };
 

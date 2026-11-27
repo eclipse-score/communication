@@ -119,7 +119,7 @@ class MessagePassingService final : public IMessagePassingService
 
     /// \brief Register a handler on Skeleton side which will be called when CallMethod is called by a Proxy.
     /// \details see IMessagePassingService::RegisterMethodCallHandler
-    Result<MethodSubscriptionRegistrationGuard> RegisterMethodCallHandler(
+    Result<MethodCallRegistrationGuard> RegisterMethodCallHandler(
         const QualityType asil_level,
         ProxyMethodInstanceIdentifier proxy_method_instance_identifier,
         MethodCallHandler method_call_callback,
