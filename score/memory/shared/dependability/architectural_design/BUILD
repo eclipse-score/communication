@@ -35,9 +35,9 @@ architectural_design(
         #"internal_api.puml",
     ],
     maturity = "development",
-    # package = "memory_shared_api",
+    package = "memory_shared_api",
     public_api = [
-        #"public_api.puml",  # rejected by the rules_score PlantUML parser
+        "public_api.puml",
     ],
     static = [
         "static_design/overall.puml",
