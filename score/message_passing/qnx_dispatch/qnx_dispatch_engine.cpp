@@ -16,6 +16,7 @@
 #include "score/message_passing/non_allocating_future/non_allocating_future.h"
 #include "score/message_passing/qnx_dispatch/qnx_resource_path.h"
 
+#include <array>
 #include <iostream>
 #include <tuple>
 
@@ -180,11 +181,12 @@ void QnxDispatchEngine::InitClientThread() noexcept
 
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used as a pulse callback
-int QnxDispatchEngine::TimerPulseCallback(message_context_t* /*ctp*/,
-                                          int /*code*/,
-                                          unsigned /*flags*/,
-                                          // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
-                                          void* handle) noexcept
+std::int32_t QnxDispatchEngine::TimerPulseCallback(
+    message_context_t* /*ctp*/,
+    std::int32_t /*code*/,
+    std::uint32_t /*flags*/,
+    // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
+    void* handle) noexcept
 {
     // Suppress "AUTOSAR C++14 M5-2-8" rule finding: "An object with integer type or pointer to void type shall not be
     // converted to an object with pointer type".
@@ -197,11 +199,12 @@ int QnxDispatchEngine::TimerPulseCallback(message_context_t* /*ctp*/,
 // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used as a pulse callback
-int QnxDispatchEngine::SelectPulseCallback(message_context_t* ctp,
-                                           int /*code*/,
-                                           unsigned /*flags*/,
-                                           // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
-                                           void* handle) noexcept
+std::int32_t QnxDispatchEngine::SelectPulseCallback(
+    message_context_t* ctp,
+    std::int32_t /*code*/,
+    std::uint32_t /*flags*/,
+    // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
+    void* handle) noexcept
 {
     // Suppress "AUTOSAR C++14 M5-2-8" rule finding: "An object with integer type or pointer to void type shall not be
     // converted to an object with pointer type".
@@ -235,11 +238,12 @@ int QnxDispatchEngine::SelectPulseCallback(message_context_t* ctp,
 // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used as a pulse callback
-int QnxDispatchEngine::CoidDeathPulseCallback(message_context_t* ctp,
-                                              int /*code*/,
-                                              unsigned /*flags*/,
-                                              // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
-                                              void* handle) noexcept
+std::int32_t QnxDispatchEngine::CoidDeathPulseCallback(
+    message_context_t* ctp,
+    std::int32_t /*code*/,
+    std::uint32_t /*flags*/,
+    // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
+    void* handle) noexcept
 {
     // Suppress "AUTOSAR C++14 M5-2-8" rule finding: "An object with integer type or pointer to void type shall not be
     // converted to an object with pointer type".
@@ -249,7 +253,7 @@ int QnxDispatchEngine::CoidDeathPulseCallback(message_context_t* ctp,
     LogDebug(self.logger_, "QnxDispatchEngine::CoidDeathPulseCallback ", &self);
 
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-union-access) C API
-    const auto coid = ctp->msg->pulse.value.sival_int;
+    const std::int32_t coid = ctp->msg->pulse.value.sival_int;
 
     const auto coid_expected = self.os_resources_.channel->ConnectServerInfo(0, coid, nullptr);
     if (coid_expected.has_value() && (coid_expected.value() == coid))
@@ -349,9 +353,9 @@ void QnxDispatchEngine::RegisterPosixEndpoint(PosixEndpointEntry& endpoint) noex
     select_msg.hdr.subtype = 0U;
 
     auto& registered_events = poll_endpoints_[index].registered_events;
-    for (auto [signal, event_ptr, registered] :
-         {std::make_tuple(kSignalNewData, &select_msg.select_event, &registered_events[0U]),
-          std::make_tuple(kSignalPing, &select_msg.ping_event, &registered_events[1U])})
+    const std::array registrations{std::make_tuple(kSignalNewData, &select_msg.select_event, &registered_events[0U]),
+                                   std::make_tuple(kSignalPing, &select_msg.ping_event, &registered_events[1U])};
+    for (const auto& [signal, event_ptr, registered] : registrations)
     {
         SelectPulseValue value{};
         value.index = index;
@@ -566,7 +570,10 @@ void QnxDispatchEngine::ProcessTimerQueue() noexcept
 void QnxDispatchEngine::SetupResourceManagerCallbacks() noexcept
 {
     // pre-configure resmgr callback data
-    os_resources_.iofunc->iofunc_func_init(_RESMGR_CONNECT_NFUNCS, &connect_funcs_, _RESMGR_IO_NFUNCS, &io_funcs_);
+    os_resources_.iofunc->iofunc_func_init(static_cast<std::uint32_t>(_RESMGR_CONNECT_NFUNCS),
+                                           &connect_funcs_,
+                                           static_cast<std::uint32_t>(_RESMGR_IO_NFUNCS),
+                                           &io_funcs_);
     // Suppress "AUTOSAR C++14 M5-2-6", The rule states: "A cast shall not convert a pointer to a function
     // to any other pointer type, including a pointer to function type used."
     // QNX API
@@ -802,7 +809,7 @@ std::int32_t QnxDispatchEngine::io_msg(resmgr_context_t* const ctp,
                                        // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
                                        RESMGR_OCB_T* const ocb) noexcept
 {
-    if (msg->i.mgrid != kIomgrStickySelect)
+    if (static_cast<std::uint32_t>(msg->i.mgrid) != static_cast<std::uint32_t>(kIomgrStickySelect))
     {
         return ENOSYS;
     }

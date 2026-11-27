@@ -163,11 +163,12 @@ void DispatchThreadRunner::RunOnThread() noexcept
 // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 // coverity[autosar_cpp14_a0_1_3_violation] false-positive: used as a pulse callback
-int DispatchThreadRunner::QuitPulseCallback(message_context_t* /*ctp*/,
-                                            int /*code*/,
-                                            unsigned /*flags*/,
-                                            // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
-                                            void* handle) noexcept
+std::int32_t DispatchThreadRunner::QuitPulseCallback(
+    message_context_t* /*ctp*/,
+    std::int32_t /*code*/,
+    std::uint32_t /*flags*/,
+    // coverity[autosar_cpp14_a8_4_10_violation]: see "Note 'C++14 A8-4-10'"
+    void* handle) noexcept
 {
     // Suppress "AUTOSAR C++14 M5-2-8" rule finding: "An object with integer type or pointer to void type shall not be
     // converted to an object with pointer type".

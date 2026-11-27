@@ -328,7 +328,6 @@ QnxDispatchServer::~QnxDispatchServer() noexcept
     QnxDispatchEngine::ResourceManagerServer::Stop();
 }
 
-// NOLINTNEXTLINE(google-default-arguments) TODO:
 // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
 score::cpp::expected_blank<score::os::Error> QnxDispatchServer::StartListening(
     ConnectCallback connect_callback,

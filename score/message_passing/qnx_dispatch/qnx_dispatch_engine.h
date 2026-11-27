@@ -267,9 +267,18 @@ class QnxDispatchEngine final : public ISharedResourceEngine
     void WakeUpTimerQueue() noexcept;
     void ProcessCleanup(const void* const owner) noexcept;
 
-    static int TimerPulseCallback(message_context_t* ctp, int code, unsigned flags, void* handle) noexcept;
-    static int SelectPulseCallback(message_context_t* ctp, int code, unsigned flags, void* handle) noexcept;
-    static int CoidDeathPulseCallback(message_context_t* ctp, int code, unsigned flags, void* handle) noexcept;
+    static std::int32_t TimerPulseCallback(message_context_t* ctp,
+                                           std::int32_t code,
+                                           std::uint32_t flags,
+                                           void* handle) noexcept;
+    static std::int32_t SelectPulseCallback(message_context_t* ctp,
+                                            std::int32_t code,
+                                            std::uint32_t flags,
+                                            void* handle) noexcept;
+    static std::int32_t CoidDeathPulseCallback(message_context_t* ctp,
+                                               std::int32_t code,
+                                               std::uint32_t flags,
+                                               void* handle) noexcept;
 
     // coverity[autosar_cpp14_m7_3_1_violation] false-positive: class method (Ticket-234468)
     void UnselectEndpoint(PosixEndpointEntry& endpoint) noexcept;
