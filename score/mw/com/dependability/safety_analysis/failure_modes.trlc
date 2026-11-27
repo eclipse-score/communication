@@ -27,17 +27,6 @@ section "LoLa" {
         // potentialcause = "e.g. - Blocked mutex (e.g. dead-lock) - Wrong synchronization algorithm - endless loop - crashed services"
     }
 
-    // ID: 6366726
-    ScoreReq.FailureMode InMemoryConfigurationWrong {
-        guidewords = [ ScoreReq.Guideword.LossOfFunction ]
-        description = "The in-memory (cpp representation) does not match the on file-system JSON configuration."
-        failureeffect = "Other functionality relies on a correct configuration. Without that, multiple functions can not operate normally which could lead to the violation of a safety goal."
-        version = 1
-        safety = ScoreReq.Asil.B
-        rationale = "The wrong user-configuration which could cause an abnormal behavior of the mw-implementation is covered via four AoUs. The broken file is ensured via a safety-certified file system. The broken JSON is covered via a safety-certified JSON-Parser implementation. The read-in-logic to our in-memory is covered via a specific preventive measure."
-        // interface = "mw.com.Runtime.Initialize"
-    }
-
     // ID: 6370893
     ScoreReq.FailureMode FunctionCalledFromMultipleThreads {
         guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
@@ -49,17 +38,6 @@ section "LoLa" {
         // potentialcause = "- static methods are thread-safe - API calls on different instances are thread-safe - API calls on one instance are not thread-safe."
     }
 
-    // ID: 6370898
-    ScoreReq.FailureMode CodeDoesNotMatchConfiguration {
-        guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
-        description = "Definitions of service-interfaces may not match the given mw::com configuration."
-        failureeffect = "A faulty configuration which does not lead to compile issues could lead to safety issues according to analysis."
-        version = 1
-        safety = ScoreReq.Asil.B
-        rationale = "Add an AoU that all code artifacts and configurations should be reviewed before use in a safety context."
-        // interface = "score.mw.com.runtime.InitializeRuntime"
-    }
-
     // ID: 6370915
     ScoreReq.FailureMode MisusedApis {
         guidewords = [ ScoreReq.Guideword.ExceedingFunction ]
@@ -69,6 +47,119 @@ section "LoLa" {
         safety = ScoreReq.Asil.B
         rationale = "Each potential cause is covered with a custom AoU."
         // potentialcause = "Potential causes are: - calling APIs of implementation namespace (aka implementation details, thus avoiding public contracts) - Invoking APIs from static context (aka static lifetime) -> can cause issues with static initialization - Using a different operating system as design for (different underlying AoUs and safety measures) - Throwing callbacks could lead to untested code-paths."
+    }
+
+    section "Runtime" {
+
+        // ID: 6366726
+        ScoreReq.FailureMode InMemoryConfigurationWrong {
+            guidewords = [ ScoreReq.Guideword.LossOfFunction ]
+            description = "The in-memory (cpp representation) does not match the on file-system JSON configuration."
+            failureeffect = "Other functionality relies on a correct configuration. Without that, multiple functions can not operate normally which could lead to the violation of a safety goal."
+            version = 1
+            safety = ScoreReq.Asil.B
+            rationale = "The wrong user-configuration which could cause an abnormal behavior of the mw-implementation is covered via four AoUs. The broken file is ensured via a safety-certified file system. The broken JSON is covered via a safety-certified JSON-Parser implementation. The read-in-logic to our in-memory is covered via a specific preventive measure."
+            // interface = "mw.com.Runtime.Initialize"
+        }
+
+        // Contract ResolveInstanceIDs: 
+        //      - An InstanceSpecifier will be resolved to one InstanceIdentifier for each instance listed in the mw_com configuration file 
+        //        corresponding to that InstanceSpecifier. For the single binding case, exactly one InstanceIdentifier will be returned for an 
+        //        InstanceSpecifier which exists in the configuration file. For the multi binding case, one InstanceIdentifier will be returned 
+        //        for each binding instance corresponding to than InstanceSpecifier if it exists in the configuration file.
+        //      - Each returned InstanceIdentifier should contain values specified within the configuration file corresponding to the provided
+        //        InstanceSpecifier.
+        ScoreReq.FailureMode InstanceSpecifierResolvesToWrongInstanceIdentifier {
+            guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+            description = "An InstanceSpecifier resolves to an InstanceIdentifier for a different service instance than specified in the configuration."
+            version = 1
+            safety = ScoreReq.Asil.B
+            interface = "score.mw.com.runtime.ResolveInstanceIDs"
+        }
+
+        // TODO: Enable once multi-bindings is supported. For now, there are no code paths to return more than one InstanceIdentifier.
+        // ScoreReq.FailureMode InstanceSpecifierResolvesToSubsetOfInstanceIdentifiers {
+        //    guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+        //    description = "An InstanceSpecifier resolves to a subset of InstanceIdentifiers although it should resolve to one InstanceIdentifier per binding specified in the configuration."
+        //    version = 1
+        //    safety = ScoreReq.Asil.B
+        //    interface = "score.mw.com.runtime.ResolveInstanceIDs"
+        //}
+
+    }
+
+    section "Service Instance Identifiers"
+
+        // Contract: the string returned by ToString uniquely relates to the string provided to Create. i.e. different strings provided to Create will 
+        //           produce different strings from ToString and providing the same string will produce the same strings from ToString.
+        section "InstanceSpecifier" {
+
+            ScoreReq.FailureMode ToStringCalledOnInstanceSpecifiersCreatedFromDifferentStringsReturnSameStringRepresentations {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "ToString called on two InstanceSpecifiers created from different strings returns the same string representation."
+                version = 1
+                safety = ScoreReq.Asil.B
+                interface = "score.mw.com.InstanceSpecifier.ToString"
+            }
+
+          ScoreReq.FailureMode ToStringCalledOnInstanceSpecifiersCreatedFromSameStringsReturnDifferentStringRepresentations {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "ToString called on two InstanceSpecifiers created from the same string returns different string representations."
+                version = 1
+                safety = ScoreReq.Asil.B
+                interface = "score.mw.com.InstanceSpecifier.ToString"
+        }            
+
+
+            // Contract score.mw.com.InstanceSpecifier.hash:
+            //     InstanceSpecifiers should be able to be used as keys in a map like data structure such that InstanceSpecifiers created 
+            //     from different strings can be uniquely stored / looked up in the data structure. This assumes that the data structure is 
+            //     robust to hash collisions e.g. std::unordered_map. The result of hashing 2 different InstanceSpecifiers does not have to 
+            //     be different (i.e. we don't guarantee no hash collisions)
+            ScoreReq.FailureMode InstanceSpecifiersCreatedFromDifferentStringsAreNotUniqueInAMapRobustToHashCollisions {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "InstanceSpecifiers created from different strings cannot be uniquely stored or looked up as distinct keys in a map-like data structure that handles hash collisions."
+                version = 1
+                safety = ScoreReq.Asil.B
+                interface = "score.mw.com.InstanceSpecifier.hash"
+            }
+        }
+
+        // Contract: the string returned by ToString uniquely relates to the configuration provided to Create. i.e. different configurations provided to 
+        //           Create will produce different strings from ToString and providing the same configuration will produce the same strings from ToString.
+        section "InstanceIdentifier" {
+
+            ScoreReq.FailureMode ToStringCalledOnInstanceIdentifiersCreatedFromDifferentConfigurationsReturnSameStringRepresentations {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "ToString called on two InstanceIdentifiers created from different configurations returns the same string representation."
+                version = 1
+                safety = ScoreReq.Asil.B
+                interface = "score.mw.com.InstanceIdentifier.ToString"
+            }
+
+            ScoreReq.FailureMode ToStringCalledOnInstanceIdentifiersCreatedFromSameConfigurationsReturnDifferentStringRepresentations {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "ToString called on two InstanceIdentifiers created from the same configuration returns different string representations."
+                version = 1
+                safety = ScoreReq.Asil.B
+                interface = "score.mw.com.InstanceIdentifier.ToString"
+            }
+
+            // Contract score.mw.com.InstanceIdentifier.hash:
+            //     InstanceIdentifiers should be able to be used as keys in a map like data structure such that InstanceIdentifiers created
+            //     from different configurations can be uniquely stored / looked up in the data structure. This assumes that the data structure is
+            //     robust to hash collisions e.g. std::unordered_map. The result of hashing 2 different InstanceIdentifiers does not have to
+            //     be different (i.e. we don't guarantee no hash collisions)
+            ScoreReq.FailureMode InstanceIdentifiersCreatedFromDifferentConfigurationsAreNotUniqueInAMapRobustToHashCollisions {
+                guidewords = [ ScoreReq.Guideword.UnintendedFunction ]
+                description = "InstanceIdentifiers created from different configurations cannot be uniquely stored or looked up as distinct keys in a map-like data structure that handles hash collisions."
+                version = 1
+                safety = ScoreReq.Asil.B
+                interface = "score.mw.com.InstanceIdentifier.hash"
+            }
+
+        }
+
     }
 
     section "Skeleton" {
